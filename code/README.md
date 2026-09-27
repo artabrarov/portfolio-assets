@@ -17,7 +17,6 @@ Rebuild: `npx esbuild code/emoji-game.js --minify --target=es2020 > code/emoji-g
 |---|---|
 | `components/src/SitesGallery.tsx` | `components/SitesGallery.js` |
 | `components/src/DotGridRepel.tsx` | `components/DotGridRepel.js` |
-| `components/src/NowReading.tsx` | `components/NowReading.js` |
 | `components/src/LayeredShot.tsx` | `components/LayeredShot.js` |
 
 Each Framer code file is a small wrapper:
@@ -25,13 +24,13 @@ Each Framer code file is a small wrapper:
 ```tsx
 import * as React from "react"
 import * as Framer from "framer"
-import NowReading, { register } from "https://artabrarov.github.io/portfolio-assets/code/components/NowReading.js"
+import DotGridRepel, { register } from "https://artabrarov.github.io/portfolio-assets/code/components/DotGridRepel.js"
 register({ React, Framer })
 /**
- * @framerSupportedLayoutWidth auto
- * @framerSupportedLayoutHeight auto
+ * @framerSupportedLayoutWidth any
+ * @framerSupportedLayoutHeight any
  */
-export default NowReading
+export default DotGridRepel
 ```
 
 The builds don't bundle React or Framer: `build/shim.js` stands in for them and `register()` hands over the real ones from Framer, so the component uses Framer's own React.
