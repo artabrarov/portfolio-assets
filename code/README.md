@@ -1,16 +1,39 @@
 # Code for arthurabrarov.com
 
-Scripts the live site loads from here (GitHub Pages), so changes ship with a push instead of a paste into Framer.
+Everything the live site runs, loaded from GitHub Pages (`https://artabrarov.github.io/portfolio-assets/code/...`), so changes ship with a push instead of a paste into Framer. Pages caches for ~10 minutes.
 
-| File | What it is | Loaded by |
-|---|---|---|
-| `emoji-game.js` | Readable source of the homepage emoji game | — |
-| `emoji-game.min.js` | Minified build of the above | Framer → Site Settings → Custom Code (end of body) |
+## Emoji game
 
-Update the game: edit `emoji-game.js`, rebuild, push.
+| File | What it is |
+|---|---|
+| `emoji-game.js` | Readable source |
+| `emoji-game.min.js` | Build loaded by Framer → Site Settings → Custom Code (end of body): `<script src="https://artabrarov.github.io/portfolio-assets/code/emoji-game.min.js" defer></script>` |
 
+Rebuild: `npx esbuild code/emoji-game.js --minify --target=es2020 > code/emoji-game.min.js`
+
+## Code components
+
+| Source | Build Framer imports |
+|---|---|
+| `components/src/SitesGallery.tsx` | `components/SitesGallery.js` |
+| `components/src/DotGridRepel.tsx` | `components/DotGridRepel.js` |
+| `components/src/NowReading.tsx` | `components/NowReading.js` |
+| `components/src/LayeredShot.tsx` | `components/LayeredShot.js` |
+
+Each Framer code file is a small wrapper:
+
+```tsx
+import * as React from "react"
+import * as Framer from "framer"
+import NowReading, { register } from "https://artabrarov.github.io/portfolio-assets/code/components/NowReading.js"
+register({ React, Framer })
+/**
+ * @framerSupportedLayoutWidth auto
+ * @framerSupportedLayoutHeight auto
+ */
+export default NowReading
 ```
-npx esbuild code/emoji-game.js --minify --target=es2020 > code/emoji-game.min.js
-```
 
-GitHub Pages caches for ~10 minutes, so changes reach visitors within minutes of a push.
+The builds don't bundle React or Framer: `build/shim.js` stands in for them and `register()` hands over the real ones from Framer, so the component uses Framer's own React.
+
+Rebuild after editing a source: `sh code/build/build-components.sh`
