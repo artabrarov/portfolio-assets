@@ -12,18 +12,28 @@
   const MIN_SIZE = 80;                     // px: smaller images and videos (avatar, logos) don't zoom
   const RADIUS = '24px';                   // corner of media whose rounding comes from a mask (Framer's squircles)
   const MARGIN = 32;                       // px around the image when open
+  const BOTTOM = 64;                       // px below it, room for the counter
   const EASE = 'cubic-bezier(.2,.8,.2,1)';
   const TIME = 420;                        // ms
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const MOUSE = matchMedia('(hover: hover) and (pointer: fine)');   // phones and tablets: off, media stays as it is
-  const BACKDROP = 0.3;                    // opacity of the black overlay behind open media
+  const BACKDROP = 0.3;                    // darkness of the black overlay behind open media
+  const BLUR = 3;                          // px, light blur of the page behind it
 
   const css = document.createElement('style');
   css.textContent = `
     .lb-zoomable{cursor:zoom-in !important;}   /* !important: Framer's Video component sets cursor:auto inline */
-    .lb-backdrop{position:fixed;inset:0;z-index:10001;background:#000;opacity:0;cursor:zoom-out;}
+    .lb-backdrop{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,${BACKDROP});opacity:0;cursor:zoom-out;
+      -webkit-backdrop-filter:blur(${BLUR}px);backdrop-filter:blur(${BLUR}px);}
     .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;
       box-shadow:0 24px 80px rgba(0,0,0,.12);}
+    /* sized like the site's buttons (32px tall, 18px sides), in the paragraph text style (14/20 at weight 460) */
+    .lb-count{position:fixed;left:50%;bottom:16px;z-index:10003;translate:-50% 0;box-sizing:border-box;height:32px;padding:6px 18px;
+      border-radius:999px;background:rgba(0,0,0,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);color:#fff;white-space:nowrap;
+      pointer-events:none;opacity:0;transition:opacity .25s ease;
+      font:460 14px/20px "Instrument Sans Variable","Instrument Sans",sans-serif;font-variation-settings:"wght" 460;
+      font-variant-numeric:tabular-nums;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+    .lb-count.lb-show{opacity:1;}
   `;
   document.head.appendChild(css);
 
@@ -62,12 +72,12 @@
     } catch (e) { return img.currentSrc || img.src; }
   }
 
-  // where the open image sits: as large as fits on screen, centred, never bigger than the file
+  // where the open image sits: as large as fits on screen above the counter, centred
   function targetRect(el) {
-    const ratio = ratioOf(el);
+    const ratio = ratioOf(el), room = innerHeight - MARGIN - BOTTOM;
     let w = innerWidth - MARGIN * 2, h = w / ratio;
-    if (h > innerHeight - MARGIN * 2) { h = innerHeight - MARGIN * 2; w = h * ratio; }
-    return { left: (innerWidth - w) / 2, top: (innerHeight - h) / 2, width: w, height: h };
+    if (h > room) { h = room; w = h * ratio; }
+    return { left: (innerWidth - w) / 2, top: MARGIN + (room - h) / 2, width: w, height: h };
   }
   const px = r => ({ left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
 
@@ -95,12 +105,39 @@
     clone.setAttribute('aria-label', el.alt || (video ? 'Video, full screen' : 'Image, full screen'));
     return clone;
   }
-  // swap in the sharper version of an image once it has loaded
+  // swap in the sharper version of an image once it has loaded (straight away if it was preloaded)
+  const loaded = new Set();
   function sharpen(el, clone) {
     if (clone instanceof HTMLVideoElement) return;
+    const src = bigSrc(el);
+    if (loaded.has(src)) { clone.src = src; return; }
     const big = new Image();
-    big.onload = () => { if (open && open.clone === clone) clone.src = big.src; };
-    big.src = bigSrc(el);
+    big.onload = () => { loaded.add(src); if (open && open.clone === clone) clone.src = src; };
+    big.src = src;
+  }
+  // start loading the sharp versions either side, so the arrow keys show them crisp at once
+  function preloadAround(el) {
+    const list = allMedia(), i = list.indexOf(el);
+    [list[i - 1], list[i + 1]].forEach(n => {
+      if (!(n instanceof HTMLImageElement)) return;
+      const src = bigSrc(n);
+      if (loaded.has(src)) return;
+      const img = new Image();
+      img.onload = () => loaded.add(src);
+      img.src = src;
+    });
+  }
+
+  // the counter below the media ("4 / 13"), only when there's more than one to browse
+  const count = document.createElement('div');
+  count.className = 'lb-count';
+  count.setAttribute('aria-live', 'polite');
+  function showCount(el) {
+    const list = allMedia(), i = list.indexOf(el);
+    if (list.length < 2 || i < 0) { count.classList.remove('lb-show'); return; }
+    if (!count.isConnected) document.body.append(count);
+    count.textContent = `${i + 1} / ${list.length}`;
+    requestAnimationFrame(() => count.classList.add('lb-show'));
   }
 
   function openMedia(el) {
@@ -119,8 +156,10 @@
     const time = REDUCED ? 0 : TIME;
     clone.animate([{ ...px(from), borderRadius: radius }, { ...px(to), borderRadius: '12px' }],
       { duration: time, easing: EASE, fill: 'forwards' });
-    backdrop.animate([{ opacity: 0 }, { opacity: BACKDROP }], { duration: time || 150, easing: 'ease', fill: 'forwards' });
+    backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: time || 150, easing: 'ease', fill: 'forwards' });
     sharpen(el, clone);
+    showCount(el);
+    preloadAround(el);
   }
 
   // every zoomable image and video on the page, top to bottom (zoomable skips Framer's hidden copies for other breakpoints)
@@ -134,13 +173,12 @@
     // hand the playhead back to the page clip being left, and show it again
     if (old instanceof HTMLVideoElement) try { prev.currentTime = old.currentTime; } catch (e) {}
     prev.style.visibility = '';
-    // bring the next one into view behind the overlay, so closing flies back to where it sits
-    next.scrollIntoView({ block: 'center', behavior: 'instant' });
+    // the page stays still while browsing: closing flies back if this one is on screen, and fades out otherwise
     const clone = makeClone(next);
     Object.assign(clone.style, px(targetRect(next)), { borderRadius: '12px' });
     document.body.append(clone);
     next.style.visibility = 'hidden';
-    open = { ...open, src: next, clone, radius: radiusOf(next), y: scrollY };
+    open = { ...open, src: next, clone, radius: radiusOf(next) };
     const time = REDUCED ? 0 : 280, shift = 48 * dir;
     const at = px(old.getBoundingClientRect());
     old.getAnimations().forEach(a => a.cancel());
@@ -150,6 +188,8 @@
     clone.animate([{ opacity: 0, translate: `${shift}px 0` }, { opacity: 1, translate: '0 0' }],
       { duration: time || 1, easing: EASE, fill: 'backwards' });
     sharpen(next, clone);
+    showCount(next);
+    preloadAround(next);
   }
 
   // places the open media at its full screen size, without animating (on resize, or once a video knows its shape)
@@ -164,7 +204,10 @@
     if (!open) return;
     const { src, clone, backdrop, radius } = open;
     open = null;
-    const to = src.isConnected ? src.getBoundingClientRect() : null;
+    count.classList.remove('lb-show');
+    // fly back only to a spot that's on screen (after browsing with the arrows it may not be)
+    const r = src.isConnected ? src.getBoundingClientRect() : null;
+    const to = r && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth ? r : null;
     const time = REDUCED ? 0 : TIME * 0.8;
     const current = px(clone.getBoundingClientRect());
     clone.getAnimations().forEach(a => a.cancel());
@@ -174,10 +217,11 @@
       if (clone instanceof HTMLVideoElement && src.isConnected) try { src.currentTime = clone.currentTime; } catch (e) {}
       clone.remove(); backdrop.remove(); src.style.visibility = '';
     };
-    backdrop.animate([{ opacity: BACKDROP }, { opacity: 0 }], { duration: time || 150, easing: 'ease', fill: 'forwards' });
+    backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: time || 150, easing: 'ease', fill: 'forwards' });
     if (to) clone.animate([{ ...current, borderRadius: '12px' }, { ...px(to), borderRadius: radius }],
       { duration: time, easing: EASE, fill: 'forwards' }).finished.then(done, done);
-    else clone.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, fill: 'forwards' }).finished.then(done, done);
+    else clone.animate([{ opacity: 1, scale: 1 }, { opacity: 0, scale: 0.96 }],
+      { duration: REDUCED ? 150 : 240, easing: EASE, fill: 'forwards' }).finished.then(done, done);
   }
 
   // event delegation: Framer re-renders images, so nothing is bound to them directly
