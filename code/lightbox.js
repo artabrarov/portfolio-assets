@@ -7,8 +7,8 @@
   if (window.__lightbox) return;           // run once, even with Framer's page transitions
   window.__lightbox = true;
 
-  const PAGES = ['/', ''];                 // paths where images zoom
-  const MIN_SIZE = 200;                    // px: smaller images and videos (avatar, logos) don't zoom
+  const SKIP = ['/sites'];                 // pages (and their subpages) where media doesn't zoom: the /sites cards are links
+  const MIN_SIZE = 80;                     // px: smaller images and videos (avatar, logos) don't zoom
   const RADIUS = '24px';                   // corner of media whose rounding comes from a mask (Framer's squircles)
   const MARGIN = 32;                       // px around the image when open
   const EASE = 'cubic-bezier(.2,.8,.2,1)';
@@ -26,10 +26,10 @@
   `;
   document.head.appendChild(css);
 
-  const onPage = () => PAGES.includes(location.pathname) && MOUSE.matches;
+  const onPage = () => MOUSE.matches && !SKIP.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
   const isMedia = el => el instanceof HTMLImageElement || el instanceof HTMLVideoElement;
   const zoomable = el => isMedia(el) && onPage() && !el.closest('a, button, .fx-av, .fx-world, .lb-media') &&
-    el.offsetWidth >= MIN_SIZE && el.offsetHeight >= MIN_SIZE / 2;
+    el.offsetWidth >= MIN_SIZE && el.offsetHeight >= MIN_SIZE;
   // the zoomable image or video under the pointer, also when a layer without content sits on top of it
   function mediaAt(e) {
     if (zoomable(e.target)) return e.target;
@@ -99,7 +99,7 @@
     Object.assign(clone.style, px(from), { borderRadius: radius });
     document.body.append(backdrop, clone);
     el.style.visibility = 'hidden';
-    open = { src: el, clone, backdrop, radius };
+    open = { src: el, clone, backdrop, radius, y: scrollY };
 
     const to = targetRect(video && clone.videoWidth ? clone : el);
     const time = REDUCED ? 0 : TIME;
@@ -160,6 +160,7 @@
   }, true);
   addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
   addEventListener('wheel', () => close(), { passive: true });
-  addEventListener('scroll', () => close(), { passive: true });
+  // only a real scroll closes it: the page nudges itself by a few px while images further down load
+  addEventListener('scroll', () => { if (open && Math.abs(scrollY - open.y) > 40) close(); }, { passive: true });
   addEventListener('resize', fit);
 })();
