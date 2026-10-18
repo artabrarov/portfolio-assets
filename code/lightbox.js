@@ -1,7 +1,8 @@
 /*  Image lightbox for arthurabrarov.com
     Loaded on the live site from GitHub Pages (code/lightbox.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
-    On computers (not phones or tablets), click a large image or video to open it full screen, zooming from where it sits; click, Esc or scroll closes it.
+    On computers (not phones or tablets), click a large image or video to open it full screen, zooming from where it sits;
+    the left and right arrow keys move through the page's images and videos; click, Esc or scroll closes it.
     Media stays in Framer: images open in a bigger version from Framer's image server, videos keep playing from where they were. */
 (() => {
   if (window.__lightbox) return;           // run once, even with Framer's page transitions
@@ -70,14 +71,10 @@
   }
   const px = r => ({ left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
 
-  let open = null;   // { src, clone, backdrop, radius }
+  let open = null;   // { src, clone, backdrop, radius, y }
 
-  function openMedia(el) {
-    if (open) return;
-    const from = el.getBoundingClientRect();
-    const radius = radiusOf(el);
-    const backdrop = document.createElement('div');
-    backdrop.className = 'lb-backdrop';
+  // the full screen copy of an image or video
+  function makeClone(el) {
     const video = el instanceof HTMLVideoElement;
     const clone = document.createElement(video ? 'video' : 'img');
     clone.className = 'lb-media';
@@ -96,6 +93,23 @@
     }
     clone.setAttribute('role', 'dialog');
     clone.setAttribute('aria-label', el.alt || (video ? 'Video, full screen' : 'Image, full screen'));
+    return clone;
+  }
+  // swap in the sharper version of an image once it has loaded
+  function sharpen(el, clone) {
+    if (clone instanceof HTMLVideoElement) return;
+    const big = new Image();
+    big.onload = () => { if (open && open.clone === clone) clone.src = big.src; };
+    big.src = bigSrc(el);
+  }
+
+  function openMedia(el) {
+    if (open) return;
+    const from = el.getBoundingClientRect();
+    const radius = radiusOf(el);
+    const backdrop = document.createElement('div');
+    backdrop.className = 'lb-backdrop';
+    const clone = makeClone(el), video = clone instanceof HTMLVideoElement;
     Object.assign(clone.style, px(from), { borderRadius: radius });
     document.body.append(backdrop, clone);
     el.style.visibility = 'hidden';
@@ -106,12 +120,36 @@
     clone.animate([{ ...px(from), borderRadius: radius }, { ...px(to), borderRadius: '12px' }],
       { duration: time, easing: EASE, fill: 'forwards' });
     backdrop.animate([{ opacity: 0 }, { opacity: BACKDROP }], { duration: time || 150, easing: 'ease', fill: 'forwards' });
+    sharpen(el, clone);
+  }
 
-    if (video) return;
-    // swap in the sharper version once it has loaded
-    const big = new Image();
-    big.onload = () => { if (open && open.clone === clone) clone.src = big.src; };
-    big.src = bigSrc(el);
+  // every zoomable image and video on the page, top to bottom (zoomable skips Framer's hidden copies for other breakpoints)
+  const allMedia = () => [...document.querySelectorAll('img, video')].filter(zoomable);
+  // arrow keys: slide to the previous or next one; stops at either end
+  function step(dir) {
+    if (!open) return;
+    const list = allMedia(), next = list[list.indexOf(open.src) + dir];
+    if (!next) return;
+    const { src: prev, clone: old } = open;
+    // hand the playhead back to the page clip being left, and show it again
+    if (old instanceof HTMLVideoElement) try { prev.currentTime = old.currentTime; } catch (e) {}
+    prev.style.visibility = '';
+    // bring the next one into view behind the overlay, so closing flies back to where it sits
+    next.scrollIntoView({ block: 'center', behavior: 'instant' });
+    const clone = makeClone(next);
+    Object.assign(clone.style, px(targetRect(next)), { borderRadius: '12px' });
+    document.body.append(clone);
+    next.style.visibility = 'hidden';
+    open = { ...open, src: next, clone, radius: radiusOf(next), y: scrollY };
+    const time = REDUCED ? 0 : 280, shift = 48 * dir;
+    const at = px(old.getBoundingClientRect());
+    old.getAnimations().forEach(a => a.cancel());
+    Object.assign(old.style, at);
+    old.animate([{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: `${-shift}px 0` }],
+      { duration: time || 1, easing: EASE, fill: 'forwards' }).finished.then(() => old.remove(), () => old.remove());
+    clone.animate([{ opacity: 0, translate: `${shift}px 0` }, { opacity: 1, translate: '0 0' }],
+      { duration: time || 1, easing: EASE, fill: 'backwards' });
+    sharpen(next, clone);
   }
 
   // places the open media at its full screen size, without animating (on resize, or once a video knows its shape)
@@ -158,7 +196,12 @@
     e.preventDefault();
     openMedia(m);
   }, true);
-  addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  addEventListener('keydown', e => {
+    if (!open) return;
+    if (e.key === 'Escape') close();
+    else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+  });
   addEventListener('wheel', () => close(), { passive: true });
   // only a real scroll closes it: the page nudges itself by a few px while images further down load
   addEventListener('scroll', () => { if (open && Math.abs(scrollY - open.y) > 40) close(); }, { passive: true });
