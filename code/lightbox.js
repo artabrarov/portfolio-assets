@@ -1,7 +1,7 @@
 /*  Image lightbox for arthurabrarov.com
     Loaded on the live site from GitHub Pages (code/lightbox.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
-    Click a large image or video to open it full screen, zooming from where it sits; click, Esc or scroll closes it.
+    On computers (not phones or tablets), click a large image or video to open it full screen, zooming from where it sits; click, Esc or scroll closes it.
     Media stays in Framer: images open in a bigger version from Framer's image server, videos keep playing from where they were. */
 (() => {
   if (window.__lightbox) return;           // run once, even with Framer's page transitions
@@ -14,6 +14,7 @@
   const EASE = 'cubic-bezier(.2,.8,.2,1)';
   const TIME = 420;                        // ms
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const MOUSE = matchMedia('(hover: hover) and (pointer: fine)');   // phones and tablets: off, media stays as it is
   const BACKDROP = 0.3;                    // opacity of the black overlay behind open media
 
   const css = document.createElement('style');
@@ -25,7 +26,7 @@
   `;
   document.head.appendChild(css);
 
-  const onPage = () => PAGES.includes(location.pathname);
+  const onPage = () => PAGES.includes(location.pathname) && MOUSE.matches;
   const isMedia = el => el instanceof HTMLImageElement || el instanceof HTMLVideoElement;
   const zoomable = el => isMedia(el) && onPage() && !el.closest('a, button, .fx-av, .fx-world, .lb-media') &&
     el.offsetWidth >= MIN_SIZE && el.offsetHeight >= MIN_SIZE / 2;
