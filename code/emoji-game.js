@@ -53,6 +53,19 @@
     const LIMIT = innerWidth < 700 ? 100 : 350;   // oldest emoji is removed past this (fewer on phones)
 
 
+    // Colours follow the Framer colour styles (their --token variables); text follows the Framer text styles,
+    // copied into --fx-* variables by syncFramerStyles() below. The values after the commas are fallbacks.
+    const C = {
+      dark: 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,rgb(31,31,31))',
+      grey: 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2,rgb(104,104,112))',
+      stroke: 'var(--token-c0c08a01-85af-48e1-a222-d1e74edf9e8e,#E3E3E3)',
+      fill: 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)',
+    };
+    const FAMILY = '"Instrument Sans Variable","Instrument Sans","Instrument Sans Placeholder",sans-serif';
+    const font = (role, size, lh, wght) => `font-family:var(--fx-${role}-family,${FAMILY});font-size:var(--fx-${role}-size,${size});` +
+      `line-height:var(--fx-${role}-lh,${lh});font-weight:var(--fx-${role}-weight,${wght});` +
+      `font-variation-settings:var(--fx-${role}-wght,"wght" ${wght});letter-spacing:var(--fx-${role}-ls,normal);`;
+
     const css = document.createElement('style');
     css.textContent = `
       .fx-av-emoji{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;line-height:1;
@@ -74,11 +87,11 @@
       .fx-av-emoji.fx-legend{background:linear-gradient(115deg,#f7e7b4,#fff6d8 40%,#f2d98a 60%,#f7e7b4);
         background-size:250% 100%;animation:fx-shimmer 2.4s linear infinite;}
       @keyframes fx-shimmer{from{background-position:100% 0}to{background-position:-150% 0}}
-      .fx-rarity{position:absolute;left:44px;top:6px;font:460 14px/20px "Instrument Sans Variable","Instrument Sans","Instrument Sans Placeholder",sans-serif;font-variation-settings:"wght" 460;
-        color:rgb(104,104,112);white-space:nowrap;pointer-events:none;opacity:0;translate:-4px 0;
+      .fx-rarity{position:absolute;left:44px;top:6px;${font('small', '14px', '20px', 460)}
+        color:${C.grey};white-space:nowrap;pointer-events:none;opacity:0;translate:-4px 0;
         transition:opacity .3s ease,translate .3s ease;}
       .fx-rarity.fx-show{opacity:1;translate:0 0;}
-      .fx-rarity[data-tier]{color:transparent;-webkit-background-clip:text;background-clip:text;font-weight:560;font-variation-settings:"wght" 560;
+      .fx-rarity[data-tier]{color:transparent;-webkit-background-clip:text;background-clip:text;font-weight:var(--fx-strong-weight,560);font-variation-settings:var(--fx-strong-wght,"wght" 560);
         background-size:250% 100%;animation:fx-wave 1.6s linear infinite;}
       .fx-rarity[data-tier="1"]{background-image:linear-gradient(100deg,#2f9e5b 0%,#2f9e5b 35%,#8ee6a9 50%,#2f9e5b 65%,#2f9e5b 100%);}
       .fx-rarity[data-tier="2"]{background-image:linear-gradient(100deg,#2f6fe0 0%,#2f6fe0 35%,#9cc3ff 50%,#2f6fe0 65%,#2f6fe0 100%);}
@@ -91,38 +104,38 @@
       .fx-rarity[data-tier="4"]{filter:drop-shadow(0 0 10px rgba(242,201,76,.55));}
       @keyframes fx-wave{from{background-position:125% 0}to{background-position:-125% 0}}
       .fx-body.fx-pop{animation:fx-pop .45s cubic-bezier(.3,1.6,.5,1);}
-      .fx-score{position:absolute;right:0;top:4px;font:460 16px/24px "Instrument Sans Variable","Instrument Sans","Instrument Sans Placeholder",sans-serif;font-variation-settings:"wght" 460;
-        color:rgb(31,31,31);font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none;
+      .fx-score{position:absolute;right:0;top:4px;${font('body', '16px', '24px', 460)}
+        color:${C.dark};font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none;
         opacity:0;translate:0 -6px;scale:.6;transform-origin:100% 50%;
         transition:opacity .35s ease,translate .5s cubic-bezier(.3,1.6,.5,1),scale .5s cubic-bezier(.3,1.6,.5,1);}
       .fx-score.fx-show{opacity:1;translate:0 0;scale:1;}
       .fx-score .fx-pts{margin-left:4px;}
       .fx-score .fx-num{display:inline-block;transform-origin:100% 60%;}
-      .fx-back{all:unset;align-self:flex-start;cursor:pointer;color:rgb(104,104,112);
-        font:460 14px/20px "Instrument Sans Variable","Instrument Sans","Instrument Sans Placeholder",sans-serif;font-variation-settings:"wght" 460;
-        text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:color .2s,text-decoration-color .2s;}
-      .fx-back:hover{color:rgb(31,31,31);text-decoration-color:#E3E3E3;}
+      .fx-back{all:unset;align-self:flex-start;cursor:pointer;color:var(--fx-link-color,${C.grey});
+        ${font('small', '14px', '20px', 460)}
+        text-decoration:underline;text-decoration-color:var(--fx-link-deco,transparent);text-underline-offset:var(--fx-link-offset,3px);transition:color .2s,text-decoration-color .2s;}
+      .fx-back:hover{color:var(--fx-link-hover-color,${C.dark});text-decoration-color:var(--fx-link-hover-deco,${C.stroke});}
       .fx-shop-foot{display:flex;gap:16px;margin-top:8px;}
       .fx-shop > .fx-up:first-child{margin-top:8px;}   /* spacing inside the shop, so it collapses with it */
       .fx-game [data-framer-name="Hero"] [data-framer-name="Footer"]{pointer-events:none !important;}
       .fx-game-full [data-framer-name="Hero"] [data-framer-name="Footer"]{display:none !important;}
       .fx-play > :not(.fx-av):not(.fx-shop):not(.fx-score):not(:has(.fx-av)){display:none !important;}
       .fx-shop{display:flex;flex-direction:column;gap:10px;overflow:hidden;align-self:stretch;width:100%;box-sizing:border-box;
-        font:460 14px/20px "Instrument Sans Variable","Instrument Sans","Instrument Sans Placeholder",sans-serif;font-variation-settings:"wght" 460;color:rgb(31,31,31);}
+        ${font('small', '14px', '20px', 460)}color:${C.dark};}
       .fx-up{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:8px;
         transition:padding-bottom .4s cubic-bezier(.45,0,.2,1);}
       .fx-up.fx-has-bar{padding-bottom:18px;}   /* room for the progress line, so the gap to the next row stays the same */
-      .fx-up-name{font-size:16px;line-height:24px;}
-      .fx-up-lvl{color:rgb(104,104,112);}
-      .fx-up-info{color:rgb(104,104,112);font-size:14px;line-height:20px;font-variant-numeric:tabular-nums;}
-      .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:32px;padding:0 12px;border-radius:999px;background:#f4f4f4;
-        font:460 14px/32px "Instrument Sans Variable","Instrument Sans","Instrument Sans Placeholder",sans-serif;font-variation-settings:"wght" 460;color:rgb(31,31,31);
+      .fx-up-name{font-size:var(--fx-body-size,16px);line-height:var(--fx-body-lh,24px);}
+      .fx-up-lvl{color:${C.grey};}
+      .fx-up-info{color:${C.grey};font-size:var(--fx-small-size,14px);line-height:var(--fx-small-lh,20px);font-variant-numeric:tabular-nums;}
+      .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:32px;padding:0 12px;border-radius:999px;background:${C.fill};
+        ${font('small', '14px', '32px', 460)}line-height:32px;color:${C.dark};
         white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums;transition:background-color .2s,opacity .2s;}
       .fx-buy:hover{background:#ebebeb;}
       .fx-buy.fx-cant{opacity:.45;cursor:default;}
       .fx-buy.fx-max{cursor:default;opacity:.45;}
-      .fx-buy.fx-max:hover{background:#f4f4f4;}
-      .fx-buy.fx-cant:hover{background:#f4f4f4;}
+      .fx-buy.fx-max:hover{background:${C.fill};}
+      .fx-buy.fx-cant:hover{background:${C.fill};}
       .fx-up-bar{position:absolute;left:0;right:0;bottom:8px;height:2px;border-radius:2px;background:rgba(31,31,31,.12);
         transform-origin:0 50%;scale:0 1;}
       .fx-float{position:absolute;right:0;top:0;font:700 13px/20px "Instrument Sans","Instrument Sans Placeholder",sans-serif;
@@ -130,6 +143,43 @@
       @keyframes fx-pop{from{scale:.3}to{scale:1}}
     `;
     document.head.appendChild(css);
+
+    // Copies the Framer text styles from the homepage elements that use them: body text from the bio in "Hero",
+    // small text and the link style from the "Footer" links, strong text from the "Button" label.
+    // Runs again on resize, since Framer text styles can change per breakpoint.
+    function syncFramerStyles() {
+      const heroes = [...document.querySelectorAll('[data-framer-name="Hero"]')];   // one per breakpoint: read the one on screen
+      const hero = heroes.find(h => h.offsetHeight > 0) || heroes[0];
+      if (!hero) return;
+      const root = document.documentElement.style;
+      const copy = (role, el) => {
+        if (!el) return;
+        const s = getComputedStyle(el);
+        root.setProperty(`--fx-${role}-family`, s.fontFamily);
+        root.setProperty(`--fx-${role}-size`, s.fontSize);
+        root.setProperty(`--fx-${role}-lh`, s.lineHeight);
+        root.setProperty(`--fx-${role}-weight`, s.fontWeight);
+        root.setProperty(`--fx-${role}-wght`, s.fontVariationSettings);
+        root.setProperty(`--fx-${role}-ls`, s.letterSpacing);
+      };
+      const link = hero.querySelector('[data-framer-name="Footer"] a');
+      copy('body', [...hero.querySelectorAll('p')].find(p => !p.closest('[data-framer-name="Footer"],[data-framer-name="Button"],[class^="fx-"]')));
+      copy('small', link);
+      copy('strong', hero.querySelector('[data-framer-name="Button"] p'));
+      if (link) {
+        const s = getComputedStyle(link), v = p => s.getPropertyValue(p).trim();
+        const deco = v('--framer-link-text-decoration'), hoverDeco = v('--framer-link-hover-text-decoration') || deco;
+        const decoColor = v('--framer-link-text-decoration-color') || s.color;
+        root.setProperty('--fx-link-color', s.color);
+        root.setProperty('--fx-link-hover-color', v('--framer-link-hover-text-color') || s.color);
+        root.setProperty('--fx-link-deco', deco === 'underline' ? decoColor : 'transparent');
+        root.setProperty('--fx-link-hover-deco', hoverDeco === 'underline' ? v('--framer-link-hover-text-decoration-color') || decoColor : 'transparent');
+        root.setProperty('--fx-link-offset', v('--framer-link-hover-text-decoration-offset') || v('--framer-link-text-decoration-offset') || '3px');
+      }
+    }
+    syncFramerStyles();
+    let syncQueued = false;
+    addEventListener('resize', () => { if (!syncQueued) { syncQueued = true; requestAnimationFrame(() => { syncQueued = false; syncFramerStyles(); }); } });
 
     const world = document.createElement('div');
     world.className = 'fx-world';
@@ -345,7 +395,7 @@
         background-size:250% 100%;animation:fx-wave 1.4s linear infinite;}
       .fx-show-name[data-tier="3"]{background-image:linear-gradient(100deg,#8a3ee0 0%,#8a3ee0 30%,#e08bff 45%,#6a8bff 55%,#8a3ee0 70%,#8a3ee0 100%);}
       .fx-show-name[data-tier="4"]{background-image:linear-gradient(100deg,#b8860b 0%,#b8860b 30%,#ffe27a 45%,#fff6cf 50%,#ffe27a 55%,#b8860b 70%,#b8860b 100%);}
-      .fx-show-odds{font:460 14px/1 "Instrument Sans Variable","Instrument Sans","Instrument Sans Placeholder",sans-serif;font-variation-settings:"wght" 460;color:rgb(104,104,112);}
+      .fx-show-odds{${font('small', '14px', '1', 460)}line-height:1;color:${C.grey};}
       .fx-rays{position:absolute;width:520px;height:520px;border-radius:50%;
         background:repeating-conic-gradient(from 0deg,rgba(var(--c),.22) 0deg 7deg,transparent 7deg 20deg);
         -webkit-mask:radial-gradient(circle,#000 20%,transparent 68%);mask:radial-gradient(circle,#000 20%,transparent 68%);
@@ -526,7 +576,7 @@
       const amp = [1.18, 1.3, 1.45, 1.6, 1.9][tier];
       numEl.animate([{ scale: 1 }, { scale: amp, offset: 0.3 }, { scale: 1 }],
         { duration: 450 + tier * 120, easing: 'cubic-bezier(.3,1.6,.5,1)' });
-      if (tier >= 1) numEl.animate([{ color: TIER_INK[tier] }, { color: TIER_INK[tier], offset: 0.6 }, { color: 'rgb(31,31,31)' }],
+      if (tier >= 1) numEl.animate([{ color: TIER_INK[tier] }, { color: TIER_INK[tier], offset: 0.6 }, { color: getComputedStyle(scoreEl).color }],
         { duration: 900 + tier * 300 });
       if (tier >= 3) scoreEl.animate([{ rotate: '0deg' }, { rotate: '-6deg' }, { rotate: '5deg' }, { rotate: '-3deg' }, { rotate: '0deg' }],
         { duration: 500 });
