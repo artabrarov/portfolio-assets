@@ -11,6 +11,17 @@ Scripts the live site loads from GitHub Pages (`https://artabrarov.github.io/por
 
 Rebuild: `npx esbuild code/emoji-game.js --minify --target=es2020 > code/emoji-game.min.js`
 
+## Image lightbox
+
+Click a large image on the homepage to open it full screen; click, Esc or scroll closes it. The images stay in Framer: the full screen view asks Framer's image server for a bigger version. Pages and the minimum image size are set at the top of the file.
+
+| File | What it is |
+|---|---|
+| `lightbox.js` | Readable source |
+| `lightbox.min.js` | Build loaded by Framer → Site Settings → Custom Code (end of body): `<script src="https://artabrarov.github.io/portfolio-assets/code/lightbox.min.js" defer></script>` |
+
+Rebuild: `npx esbuild code/lightbox.js --minify --target=es2020 > code/lightbox.min.js`
+
 ## Styles come from Framer
 
 The game follows the site's Framer styles, so tweaks made in Framer reach the game without a code change:

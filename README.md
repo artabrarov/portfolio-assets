@@ -8,7 +8,7 @@ It isn't a library or a template, just the assets behind one site, kept in the o
 
 | Folder | What it is | Used by |
 |---|---|---|
-| [`code/`](code/) | The emoji clicker game on the homepage | One `<script>` tag in Framer's site-wide custom code |
+| [`code/`](code/) | The emoji clicker game and the image lightbox on the homepage | `<script>` tags in Framer's site-wide custom code |
 | [`sites/`](sites/) | Screenshots and hover videos of portfolio sites I admire | The gallery on [arthurabrarov.com/sites](https://arthurabrarov.com/sites) |
 
 ## How changes go live
