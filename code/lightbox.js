@@ -238,8 +238,10 @@
       if (clone instanceof HTMLVideoElement && src.isConnected) try { src.currentTime = clone.currentTime; } catch (e) {}
       clone.remove(); backdrop.remove(); src.style.opacity = '';
     };
-    // focus goes straight back to where the lightbox was (the last one browsed to), so Tab carries on from there
-    if (src.isConnected && src.hasAttribute(KEY)) src.focus({ preventScroll: true });
+    // keyboard use (opened with Enter, or Tab pressed): focus goes straight back to where the lightbox was, so Tab
+    // carries on from there. Opened with the mouse: just let go of focus, so Esc doesn't leave a ring on the image
+    if (!closeBtn.classList.contains('lb-quiet') && src.isConnected && src.hasAttribute(KEY)) src.focus({ preventScroll: true });
+    else closeBtn.blur();
     backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: time || 150, easing: 'ease', fill: 'forwards' });
     if (to) clone.animate([{ ...current, borderRadius: '12px' }, { ...px(to), borderRadius: radius }],
       { duration: time, easing: EASE, fill: 'forwards' }).finished.then(done, done);
