@@ -115,7 +115,7 @@
         ${font('small', '14px', '20px', 460)}
         text-decoration:underline;text-decoration-color:var(--fx-link-deco,transparent);text-underline-offset:var(--fx-link-offset,3px);transition:color .2s,text-decoration-color .2s;}
       .fx-back:hover{color:var(--fx-link-hover-color,${C.dark});text-decoration-color:var(--fx-link-hover-deco,${C.stroke});}
-      .fx-shop-foot{display:flex;gap:16px;margin-top:8px;}
+      .fx-shop-foot{display:flex;gap:16px;margin-top:8px;padding-bottom:10px;}   /* room for the hover underline: .fx-shop clips what overflows */
       .fx-shop > .fx-up:first-child{margin-top:8px;}   /* spacing inside the shop, so it collapses with it */
       .fx-game [data-framer-name="Hero"] [data-framer-name="Footer"]{pointer-events:none !important;}
       .fx-game-full [data-framer-name="Hero"] [data-framer-name="Footer"]{display:none !important;}
