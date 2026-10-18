@@ -12,14 +12,16 @@
   const SKIP = ['/sites'];                 // pages (and their subpages) where media doesn't zoom: the /sites cards are links
   const MIN_SIZE = 80;                     // px: smaller images and videos (avatar, logos) don't zoom
   const RADIUS = '24px';                   // corner of media whose rounding comes from a mask (Framer's squircles)
-  const MARGIN = 32;                       // px around the image when open
-  const BOTTOM = 64;                       // px below it, room for the counter
+  const MARGIN = 32;                       // px between the open media and the screen edges; the buttons sit the same distance in
+  const TOP = MARGIN + 32 + 16;            // px above the media: the buttons (32px tall) and a 16px gap
   const EASE = 'cubic-bezier(.2,.8,.2,1)';
   const TIME = 420;                        // ms
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const MOUSE = matchMedia('(hover: hover) and (pointer: fine)');   // phones and tablets: off, media stays as it is
-  const BACKDROP = 0.3;                    // darkness of the black overlay behind open media
-  const BLUR = 3;                          // px, light blur of the page behind it
+  const OVERLAY = '#fff';                  // behind open media: solid white, no effects
+  const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#1f1f1f)';   // the site's colour styles
+  const FILL = 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)';
+  const FILL_HOVER = 'var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e7)';   // the buttons' hover colour
 
   const css = document.createElement('style');
   css.textContent = `
@@ -27,17 +29,18 @@
     /* the ring sits inside the edge: Framer's card frames clip anything drawn outside */
     [data-lb-key]:focus-visible{outline:3px solid #1f1f1f !important;outline-offset:-3px;}
     .lb-media:focus{outline:none;}
-    .lb-backdrop{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,${BACKDROP});opacity:0;cursor:zoom-out;
-      -webkit-backdrop-filter:blur(${BLUR}px);backdrop-filter:blur(${BLUR}px);}
-    .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;
-      box-shadow:0 24px 80px rgba(0,0,0,.12);}
-    /* sized like the site's buttons (32px tall, 18px sides), in the paragraph text style (14/20 at weight 460) */
-    .lb-count{position:fixed;left:50%;bottom:16px;z-index:10003;translate:-50% 0;box-sizing:border-box;height:32px;padding:6px 18px;
-      border-radius:999px;background:rgba(0,0,0,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);color:#fff;white-space:nowrap;
-      pointer-events:none;opacity:0;transition:opacity .25s ease;
-      font:460 14px/20px "Instrument Sans Variable","Instrument Sans",sans-serif;font-variation-settings:"wght" 460;
-      font-variant-numeric:tabular-nums;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
-    .lb-count.lb-show{opacity:1;}
+    .lb-backdrop{position:fixed;inset:0;z-index:10001;background:${OVERLAY};opacity:0;cursor:zoom-out;}
+    .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;}
+    /* counter (top left) and Close (top right) look like the site's buttons: 32px tall, 18px sides, grey fill, dark text */
+    .lb-count,.lb-close{position:fixed;top:${MARGIN}px;z-index:10003;box-sizing:border-box;height:32px;padding:6px 18px;margin:0;border:0;
+      border-radius:999px;background:${FILL};color:${DARK};white-space:nowrap;opacity:0;transition:opacity .25s ease,background-color .2s;
+      font:460 14px/20px "Instrument Sans Variable","Instrument Sans",sans-serif;font-variation-settings:"wght" 460;}
+    .lb-count{left:${MARGIN}px;pointer-events:none;font-variant-numeric:tabular-nums;}   /* paragraph style */
+    .lb-close{right:${MARGIN}px;cursor:pointer;font-weight:560;font-variation-settings:"wght" 560;}   /* button label style */
+    .lb-close:hover{background:${FILL_HOVER};}
+    .lb-close:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
+    .lb-close.lb-quiet:focus-visible{outline:none;}   /* opened with the mouse: no ring until Tab is pressed */
+    .lb-count.lb-show,.lb-close.lb-show{opacity:1;}
   `;
   document.head.appendChild(css);
 
@@ -76,12 +79,12 @@
     } catch (e) { return img.currentSrc || img.src; }
   }
 
-  // where the open image sits: as large as fits on screen above the counter, centred
+  // where the open image sits: as large as fits between the controls, centred
   function targetRect(el) {
-    const ratio = ratioOf(el), room = innerHeight - MARGIN - BOTTOM;
+    const ratio = ratioOf(el), room = innerHeight - TOP - MARGIN;
     let w = innerWidth - MARGIN * 2, h = w / ratio;
     if (h > room) { h = room; w = h * ratio; }
-    return { left: (innerWidth - w) / 2, top: MARGIN + (room - h) / 2, width: w, height: h };
+    return { left: (innerWidth - w) / 2, top: TOP + (room - h) / 2, width: w, height: h };
   }
   const px = r => ({ left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
 
@@ -134,10 +137,18 @@
     });
   }
 
-  // the counter below the media ("4 / 13"), only when there's more than one to browse
+  // the counter ("4 / 13", top left, only when there's more than one to browse) and the Close button (top right)
   const count = document.createElement('div');
   count.className = 'lb-count';
   count.setAttribute('aria-live', 'polite');
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'lb-close';
+  closeBtn.type = 'button';
+  closeBtn.textContent = 'Close';
+  function showClose() {
+    if (!closeBtn.isConnected) document.body.append(closeBtn);
+    requestAnimationFrame(() => closeBtn.classList.add('lb-show'));
+  }
   function showCount(el) {
     const list = allMedia(), i = list.indexOf(el);
     if (list.length < 2 || i < 0) { count.classList.remove('lb-show'); return; }
@@ -146,7 +157,7 @@
     requestAnimationFrame(() => count.classList.add('lb-show'));
   }
 
-  function openMedia(el) {
+  function openMedia(el, viaPointer = false) {
     if (open) return;
     const from = el.getBoundingClientRect();
     const radius = radiusOf(el);
@@ -155,7 +166,9 @@
     const clone = makeClone(el), video = clone instanceof HTMLVideoElement;
     Object.assign(clone.style, px(from), { borderRadius: radius });
     document.body.append(backdrop, clone);
-    clone.focus({ preventScroll: true });
+    showClose();
+    closeBtn.classList.toggle('lb-quiet', viaPointer);
+    closeBtn.focus({ preventScroll: true });
     el.style.opacity = '0';
     open = { src: el, clone, backdrop, radius, y: scrollY };
 
@@ -184,7 +197,6 @@
     const clone = makeClone(next);
     Object.assign(clone.style, px(targetRect(next)), { borderRadius: '12px' });
     document.body.append(clone);
-    clone.focus({ preventScroll: true });
     next.style.opacity = '0';
     open = { ...open, src: next, clone, radius: radiusOf(next) };
     const time = REDUCED ? 0 : 280, shift = 48 * dir;
@@ -213,6 +225,7 @@
     const { src, clone, backdrop, radius } = open;
     open = null;
     count.classList.remove('lb-show');
+    closeBtn.classList.remove('lb-show');
     // fly back only to a spot that's on screen (after browsing with the arrows it may not be)
     const r = src.isConnected ? src.getBoundingClientRect() : null;
     const to = r && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth ? r : null;
@@ -271,7 +284,7 @@
     const m = mediaAt(e);
     if (!m) return;
     e.preventDefault();
-    openMedia(m);
+    openMedia(m, true);
   }, true);
   addEventListener('keydown', e => {
     if (!open) {
@@ -279,7 +292,8 @@
       if ((e.key === 'Enter' || e.key === ' ') && el && el.hasAttribute(KEY) && zoomable(el)) { e.preventDefault(); openMedia(el); }
       return;
     }
-    if (e.key === 'Tab') { e.preventDefault(); open.clone.focus({ preventScroll: true }); }   // keep focus in the lightbox
+    // Tab is the key that moves focus, so it brings the ring back; the arrows and Esc leave it hidden
+    if (e.key === 'Tab') { e.preventDefault(); closeBtn.classList.remove('lb-quiet'); closeBtn.focus({ preventScroll: true }); }   // keep focus in the lightbox
     else if (e.key === 'Escape') close();
     else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
