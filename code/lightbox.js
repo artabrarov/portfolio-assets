@@ -19,7 +19,7 @@
 
   const css = document.createElement('style');
   css.textContent = `
-    .lb-zoomable{cursor:zoom-in;}
+    .lb-zoomable{cursor:zoom-in !important;}   /* !important: Framer's Video component sets cursor:auto inline */
     .lb-backdrop{position:fixed;inset:0;z-index:10001;background:#000;opacity:0;cursor:zoom-out;}
     .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;
       box-shadow:0 24px 80px rgba(0,0,0,.12);}
