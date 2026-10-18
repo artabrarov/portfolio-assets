@@ -78,7 +78,7 @@
         color:rgb(104,104,112);white-space:nowrap;pointer-events:none;opacity:0;translate:-4px 0;
         transition:opacity .3s ease,translate .3s ease;}
       .fx-rarity.fx-show{opacity:1;translate:0 0;}
-      .fx-rarity[data-tier]{color:transparent;-webkit-background-clip:text;background-clip:text;font-weight:600;
+      .fx-rarity[data-tier]{color:transparent;-webkit-background-clip:text;background-clip:text;font-weight:560;font-variation-settings:"wght" 560;
         background-size:250% 100%;animation:fx-wave 1.6s linear infinite;}
       .fx-rarity[data-tier="1"]{background-image:linear-gradient(100deg,#2f9e5b 0%,#2f9e5b 35%,#8ee6a9 50%,#2f9e5b 65%,#2f9e5b 100%);}
       .fx-rarity[data-tier="2"]{background-image:linear-gradient(100deg,#2f6fe0 0%,#2f6fe0 35%,#9cc3ff 50%,#2f6fe0 65%,#2f6fe0 100%);}
