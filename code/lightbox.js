@@ -54,6 +54,10 @@
     .lb-logo{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;width:32px;height:32px;overflow:hidden;opacity:0;
       pointer-events:none;transition:opacity ${M.controls}ms ease;}
     .lb-logo img{display:block;width:100%;height:100%;object-fit:cover;}
+    /* a logo that links somewhere on the page (Home's card logos go to their case studies) does too */
+    a.lb-logo{pointer-events:auto;cursor:pointer;transition:opacity ${M.controls}ms ease,scale .2s ease;}
+    a.lb-logo:hover{scale:1.06;}
+    a.lb-logo:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
     /* a logo made of an image tile with text on it (Lab: an emoji on a tile) */
     .lb-logo span{position:absolute;inset:0;display:grid;place-items:center;line-height:1;}
     .lb-logo.lb-show{opacity:1;}
@@ -65,7 +69,7 @@
       font-weight:var(--lb-btn-weight,560);font-variation-settings:var(--lb-btn-wght,"wght" 560);}   /* button label style */
     .lb-close:hover,.lb-arrow:hover:not(:disabled){background:${FILL_HOVER};}
     .lb-close:focus-visible,.lb-arrow:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
-    .lb-quiet:focus-visible{outline:none;}   /* opened with the mouse: no rings until Tab is pressed */
+    .lb-quiet:focus-visible,a.lb-logo.lb-quiet:focus-visible{outline:none;}   /* opened with the mouse: no rings until Tab is pressed */
     .lb-nav.lb-show,.lb-close.lb-show{opacity:1;}
   `;
   document.head.appendChild(css);
@@ -261,8 +265,16 @@
     return null;
   }
   function makeLogo(src, url) {
-    const d = document.createElement('div'), img = document.createElement('img');
-    d.className = 'lb-logo'; d.setAttribute('aria-hidden', 'true'); d.dataset.src = url;
+    const link = src.closest('a[href]');
+    const d = document.createElement(link ? 'a' : 'div'), img = document.createElement('img');
+    d.className = 'lb-logo'; d.dataset.src = url;
+    if (link) {   // e.g. "./apron" → "Apron case study"
+      d.href = link.href;
+      const name = decodeURIComponent(new URL(link.href).pathname.split('/').filter(Boolean).pop() || '');
+      const label = name ? name[0].toUpperCase() + name.slice(1) + ' case study' : 'Open';
+      d.setAttribute('aria-label', label); d.title = label;
+      if (closeBtn.classList.contains('lb-quiet')) d.classList.add('lb-quiet');   // same focus-ring state as the buttons
+    } else d.setAttribute('aria-hidden', 'true');
     d.style.borderRadius = radiusOf(src);
     img.alt = ''; img.src = url; d.append(img);
     // text laid over the logo's image in the same box (an emoji on a tile): copy it, scaled from the page's size
@@ -297,7 +309,7 @@
     }
   }
   // mouse opens hide focus rings on the buttons until Tab is pressed
-  const setQuiet = on => [closeBtn, prevBtn, nextBtn].forEach(b => b.classList.toggle('lb-quiet', on));
+  const setQuiet = on => [closeBtn, prevBtn, nextBtn, logo].forEach(b => b && b.classList.toggle('lb-quiet', on));
 
   function openMedia(el, viaPointer = false) {
     if (open) return;
@@ -428,6 +440,7 @@
     if (hovered) hovered.classList.add('lb-zoomable');
   }, { passive: true });
   document.addEventListener('click', e => {
+    if (open && e.target instanceof Element && e.target.closest('a.lb-logo')) return;   // the logo's link: let it go there
     if (open && e.target instanceof Element && e.target.closest('.lb-nav')) {   // the arrows step; the counter does nothing
       e.preventDefault(); e.stopPropagation();
       const b = e.target.closest('.lb-arrow');
@@ -449,7 +462,8 @@
     // Tab is the key that moves focus, so it brings the ring back; the arrows and Esc leave it hidden
     if (e.key === 'Tab') {   // keep focus in the lightbox, cycling ← → Close
       e.preventDefault(); setQuiet(false);
-      const stops = [prevBtn, nextBtn, closeBtn].filter(b => b.isConnected && !b.disabled && (b === closeBtn || nav.classList.contains('lb-show')));
+      const linkLogo = logo && logo.tagName === 'A' && logo.classList.contains('lb-show') ? [logo] : [];
+      const stops = [...linkLogo, ...[prevBtn, nextBtn, closeBtn].filter(b => b.isConnected && !b.disabled && (b === closeBtn || nav.classList.contains('lb-show')))];
       const i = stops.indexOf(document.activeElement);
       const to = stops[(i < 0 ? 0 : i + (e.shiftKey ? -1 : 1) + stops.length) % stops.length];
       (i < 0 ? closeBtn : to).focus({ preventScroll: true });
