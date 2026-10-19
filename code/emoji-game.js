@@ -9,9 +9,9 @@
 
   /* ───────────── Emoji avatar + gravity playground ───────────── */
   function emojiDrop() {
-    // rarity tiers: chance, avatar tint, emoji pool
+    // rarity tiers: chance, avatar tint, emoji pool (Common's tint is the Framer Fill colour style, as the buttons)
     const TIERS = [
-      { name: 'Common',    p: 0.85,   tint: '#f4f4f4', pool: ['😄','😎','🥳','😊','😁','😂','🤩','😍','🙂','😜'] },   // yellow faces
+      { name: 'Common',    p: 0.85,   tint: 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)', pool: ['😄','😎','🥳','😊','😁','😂','🤩','😍','🙂','😜'] },   // yellow faces
       { name: 'Uncommon',  p: 0.12,   tint: '#e9f5ec', pool: ['🍀','🐸','🥑','🌵','🐢','🥝','🌿','🍏'] },           // green
       { name: 'Rare',      p: 0.025,  tint: '#e7efff', pool: ['🐳','🦋','💧','🧊','🐬'] },                          // blue
       { name: 'Epic',      p: 0.0045, tint: '#f1e7ff', pool: ['🔮','🍇','👾','💜','😈','☂️'] },                               // purple
@@ -69,7 +69,7 @@
     const css = document.createElement('style');
     css.textContent = `
       .fx-av-emoji{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;line-height:1;
-        background:#f4f4f4;border-radius:50%;
+        background:${C.fill};border-radius:50%;
         opacity:0;scale:.5;transition:opacity .2s ease,scale .3s cubic-bezier(.3,1.6,.5,1);
         pointer-events:none;user-select:none;}
       .fx-av{cursor:pointer;touch-action:none;}
