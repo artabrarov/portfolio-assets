@@ -138,7 +138,8 @@
       .fx-buy.fx-cant:hover{background:${C.fill};}
       .fx-up-bar{position:absolute;left:0;right:0;bottom:8px;height:2px;border-radius:2px;background:rgba(31,31,31,.12);
         transform-origin:0 50%;scale:0 1;}
-      .fx-float{position:absolute;right:0;top:0;font:700 13px/20px "Instrument Sans","Instrument Sans Placeholder",sans-serif;
+      .fx-float{position:absolute;right:0;top:0;font-size:13px;line-height:20px;
+        font-family:var(--fx-strong-family,${FAMILY});font-weight:var(--fx-strong-weight,700);font-variation-settings:var(--fx-strong-wght,"wght" 700);
         pointer-events:none;white-space:nowrap;}
       @keyframes fx-pop{from{scale:.3}to{scale:1}}
     `;
@@ -390,7 +391,9 @@
       .fx-show-wrap{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:10000;}
       .fx-show-card{display:grid;justify-items:center;gap:10px;}
       .fx-show-emoji{font-size:120px;line-height:1;filter:drop-shadow(0 12px 30px rgba(0,0,0,.18));}
-      .fx-show-name{font:700 22px/1 "Instrument Sans","Instrument Sans Placeholder",sans-serif;letter-spacing:.14em;
+      .fx-show-name{font-size:22px;line-height:1;letter-spacing:.14em;
+        font-family:var(--fx-strong-family,"Instrument Sans Variable","Instrument Sans",sans-serif);
+        font-weight:var(--fx-strong-weight,700);font-variation-settings:var(--fx-strong-wght,"wght" 700);
         text-transform:uppercase;color:transparent;-webkit-background-clip:text;background-clip:text;
         background-size:250% 100%;animation:fx-wave 1.4s linear infinite;}
       .fx-show-name[data-tier="3"]{background-image:linear-gradient(100deg,#8a3ee0 0%,#8a3ee0 30%,#e08bff 45%,#6a8bff 55%,#8a3ee0 70%,#8a3ee0 100%);}

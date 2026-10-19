@@ -21,6 +21,7 @@
   const OVERLAY = '#fff';                  // behind open media: solid white, no effects
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#1f1f1f)';   // the site's colour styles
   const FILL = 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)';
+  const TYPE = '"Instrument Sans Variable","Instrument Sans",sans-serif';   // fallback before the page's styles are read
   const FILL_HOVER = 'var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e7)';   // the buttons' hover colour
 
   const css = document.createElement('style');
@@ -34,9 +35,12 @@
     /* counter (top left) and Close (top right) look like the site's buttons: 32px tall, 18px sides, grey fill, dark text */
     .lb-count,.lb-close{position:fixed;top:${MARGIN}px;z-index:10003;box-sizing:border-box;height:32px;padding:6px 18px;margin:0;border:0;
       border-radius:999px;background:${FILL};color:${DARK};white-space:nowrap;opacity:0;transition:opacity .25s ease,background-color .2s;
-      font:460 14px/20px "Instrument Sans Variable","Instrument Sans",sans-serif;font-variation-settings:"wght" 460;}
+      /* type copied from the page's Framer styles by syncType(); the values after the commas are fallbacks */
+      font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);
+      letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);}
     .lb-count{left:${MARGIN}px;pointer-events:none;font-variant-numeric:tabular-nums;}   /* paragraph style */
-    .lb-close{right:${MARGIN}px;cursor:pointer;font-weight:560;font-variation-settings:"wght" 560;}   /* button label style */
+    .lb-close{right:${MARGIN}px;cursor:pointer;font-family:var(--lb-btn-family,${TYPE});
+      font-weight:var(--lb-btn-weight,560);font-variation-settings:var(--lb-btn-wght,"wght" 560);}   /* button label style */
     .lb-close:hover{background:${FILL_HOVER};}
     .lb-close:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
     .lb-close.lb-quiet:focus-visible{outline:none;}   /* opened with the mouse: no ring until Tab is pressed */
@@ -145,6 +149,23 @@
   closeBtn.className = 'lb-close';
   closeBtn.type = 'button';
   closeBtn.textContent = 'Close';
+  // the counter and Close take their type from the page's Framer styles: Close copies a button label, the counter
+  // a paragraph's font at the button size. Read each time the lightbox opens, so changes in Framer carry over
+  function syncType() {
+    const visible = list => [...list].find(e => e.offsetWidth > 0);
+    const label = visible(document.querySelectorAll('[data-framer-name="Button"] p'));
+    const para = visible([...document.querySelectorAll('p')].filter(p => !p.closest('[data-framer-name="Button"]') && p.textContent.trim().length > 20));
+    const root = document.documentElement.style, set = (k, v) => { if (v) root.setProperty(k, v); };
+    if (label) {
+      const t = getComputedStyle(label);
+      set('--lb-btn-family', t.fontFamily); set('--lb-btn-weight', t.fontWeight); set('--lb-btn-wght', t.fontVariationSettings);
+      set('--lb-size', t.fontSize); set('--lb-lh', t.lineHeight); set('--lb-ls', t.letterSpacing);
+    }
+    if (para) {
+      const t = getComputedStyle(para);
+      set('--lb-text-family', t.fontFamily); set('--lb-text-weight', t.fontWeight); set('--lb-text-wght', t.fontVariationSettings);
+    }
+  }
   function showClose() {
     if (!closeBtn.isConnected) document.body.append(closeBtn);
     requestAnimationFrame(() => closeBtn.classList.add('lb-show'));
@@ -166,6 +187,7 @@
     const clone = makeClone(el), video = clone instanceof HTMLVideoElement;
     Object.assign(clone.style, px(from), { borderRadius: radius });
     document.body.append(backdrop, clone);
+    syncType();
     showClose();
     closeBtn.classList.toggle('lb-quiet', viaPointer);
     closeBtn.focus({ preventScroll: true });
