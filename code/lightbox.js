@@ -14,8 +14,18 @@
   const RADIUS = '24px';                   // corner of media whose rounding comes from a mask (Framer's squircles)
   const MARGIN = 32;                       // px between the open media and the screen edges; the buttons sit the same distance in
   const TOP = MARGIN + 32 + 16;            // px above the media: the buttons (32px tall) and a 16px gap
-  const EASE = 'cubic-bezier(.2,.8,.2,1)';
-  const TIME = 420;                        // ms
+  // motion, in ms: soft, to match the site's calm type and colours (was 420 / 336 / 280 ms, 48px, on .2,.8,.2,1).
+  // window.__lbMotion (set by the local preview's ?motion= switch) can override any of these
+  const M = Object.assign({
+    ease: 'cubic-bezier(.32,.72,0,1)',   // a smooth glide that lands softly
+    open: 560,          // zoom from the page to full screen
+    close: 460,         // and back
+    fadeOut: 320,       // close when the item is off screen: fade and shrink in place
+    bgIn: 640, bgOut: 460,   // the white background, a touch slower than the image
+    slide: 380, shift: 24,   // arrows: the cross-slide between items, and how far they drift (px)
+    controls: 350,      // the counter, arrows and Close fading in and out
+  }, window.__lbMotion || {});
+  const EASE = M.ease;
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const MOUSE = matchMedia('(hover: hover) and (pointer: fine)');   // phones and tablets: off, media stays as it is
   const OVERLAY = '#fff';                  // behind open media: solid white, no effects
@@ -34,12 +44,12 @@
     .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;}
     /* top left: ← counter →, top right: Close. All look like the site's buttons: 32px tall, grey fill, dark text */
     .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:32px;margin:0;border:0;
-      border-radius:999px;background:${FILL};color:${DARK};white-space:nowrap;transition:opacity .25s ease,background-color .2s;
+      border-radius:999px;background:${FILL};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color .2s;
       /* type copied from the page's Framer styles by syncType(); the values after the commas are fallbacks */
       font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);
       letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);}
     .lb-count,.lb-close{padding:6px 18px;}
-    .lb-nav{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;display:flex;gap:8px;opacity:0;transition:opacity .25s ease;}
+    .lb-nav{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;display:flex;gap:8px;opacity:0;transition:opacity ${M.controls}ms ease;}
     .lb-count{pointer-events:none;font-variant-numeric:tabular-nums;text-align:center;}   /* paragraph style */
     .lb-arrow{width:32px;padding:0;display:grid;place-items:center;cursor:pointer;}
     .lb-arrow svg{display:block;width:16px;height:16px;}   /* Instance Kit's arrow-left / arrow-right */
@@ -251,10 +261,10 @@
     open = { src: el, clone, backdrop, radius, y: scrollY };
 
     const to = targetRect(video && clone.videoWidth ? clone : el);
-    const time = REDUCED ? 0 : TIME;
+    const time = REDUCED ? 0 : M.open;
     clone.animate([{ ...px(from), borderRadius: radius }, { ...px(to), borderRadius: '12px' }],
       { duration: time, easing: EASE, fill: 'forwards' });
-    backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: time || 150, easing: 'ease', fill: 'forwards' });
+    backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: REDUCED ? 150 : M.bgIn, easing: 'ease', fill: 'forwards' });
     sharpen(el, clone);
     showCount(el);
     preloadAround(el);
@@ -277,7 +287,7 @@
     document.body.append(clone);
     next.style.opacity = '0';
     open = { ...open, src: next, clone, radius: radiusOf(next) };
-    const time = REDUCED ? 0 : 280, shift = 48 * dir;
+    const time = REDUCED ? 0 : M.slide, shift = M.shift * dir;
     const at = px(old.getBoundingClientRect());
     old.getAnimations().forEach(a => a.cancel());
     Object.assign(old.style, at);
@@ -307,7 +317,7 @@
     // fly back only to a spot that's on screen (after browsing with the arrows it may not be)
     const r = src.isConnected ? src.getBoundingClientRect() : null;
     const to = r && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth ? r : null;
-    const time = REDUCED ? 0 : TIME * 0.8;
+    const time = REDUCED ? 0 : M.close;
     const current = px(clone.getBoundingClientRect());
     clone.getAnimations().forEach(a => a.cancel());
     Object.assign(clone.style, current, { borderRadius: '12px' });
@@ -320,11 +330,11 @@
     // carries on from there. Opened with the mouse: just let go of focus, so Esc doesn't leave a ring on the image
     if (!closeBtn.classList.contains('lb-quiet') && src.isConnected && src.hasAttribute(KEY)) src.focus({ preventScroll: true });
     else closeBtn.blur();
-    backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: time || 150, easing: 'ease', fill: 'forwards' });
+    backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: REDUCED ? 150 : M.bgOut, easing: 'ease', fill: 'forwards' });
     if (to) clone.animate([{ ...current, borderRadius: '12px' }, { ...px(to), borderRadius: radius }],
       { duration: time, easing: EASE, fill: 'forwards' }).finished.then(done, done);
     else clone.animate([{ opacity: 1, scale: 1 }, { opacity: 0, scale: 0.96 }],
-      { duration: REDUCED ? 150 : 240, easing: EASE, fill: 'forwards' }).finished.then(done, done);
+      { duration: REDUCED ? 150 : M.fadeOut, easing: EASE, fill: 'forwards' }).finished.then(done, done);
   }
 
   // keyboard: every zoomable image and video gets a Tab stop and a button role. Framer re-renders the page and
