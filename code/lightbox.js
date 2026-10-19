@@ -249,12 +249,9 @@
     requestAnimationFrame(() => nav.classList.add('lb-show'));
   }
   // the company logo, top left: the nearest small image around the item (the card's logo on Home, the company's
-  // logo on a case study), skipping the game's avatar. Cross-fades when browsing into another company's items
-  const logo = document.createElement('div');
-  logo.className = 'lb-logo'; logo.setAttribute('aria-hidden', 'true');
-  const logoImg = document.createElement('img'), logoText = document.createElement('span');
-  logoImg.alt = '';
-  logo.append(logoImg, logoText);
+  // logo on a case study), skipping the game's avatar. Into another company's items, it slides like the images
+  const LOGO_SHIFT = 8;   // px: the logo's slide, shorter than the images' (it's only 32px wide)
+  let logo = null;        // the logo on screen
   function logoOf(el) {
     for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
       const c = [...n.querySelectorAll('img')].find(i => i !== el && i.offsetWidth > 0 && i.offsetWidth <= 48 &&
@@ -263,32 +260,41 @@
     }
     return null;
   }
-  let logoSwap = null;
-  function showLogo(el) {
+  function makeLogo(src, url) {
+    const d = document.createElement('div'), img = document.createElement('img');
+    d.className = 'lb-logo'; d.setAttribute('aria-hidden', 'true'); d.dataset.src = url;
+    d.style.borderRadius = radiusOf(src);
+    img.alt = ''; img.src = url; d.append(img);
+    // text laid over the logo's image in the same box (an emoji on a tile): copy it, scaled from the page's size
+    let box = src;
+    for (const n of sameBox(src)) box = n;
+    const t = [...box.querySelectorAll('*')].find(e => e !== src && e.childElementCount === 0 && e.textContent.trim());
+    if (t) {
+      const span = document.createElement('span');
+      span.textContent = t.textContent.trim();
+      span.style.fontSize = parseFloat(getComputedStyle(t).fontSize) * 32 / box.getBoundingClientRect().width + 'px';
+      d.append(span);
+    }
+    document.body.append(d);
+    return d;
+  }
+  const fadeIn = d => { d.getBoundingClientRect(); d.classList.add('lb-show'); };   // reflow first, so the fade runs
+  function showLogo(el, dir = 0) {
     const src = logoOf(el), url = src ? src.currentSrc || src.src : '';
-    if (!url) { logo.classList.remove('lb-show'); logo.dataset.src = ''; return; }
-    if (!logo.isConnected) document.body.append(logo);
-    const fadeIn = () => { logo.getBoundingClientRect(); logo.classList.add('lb-show'); };   // reflow first, so the fade runs
-    if (logo.dataset.src === url) { fadeIn(); return; }
-    const put = () => {
-      logoImg.src = url; logo.dataset.src = url; logo.style.borderRadius = radiusOf(src);
-      // text laid over the logo's image in the same box (an emoji on a tile): copy it, scaled from the page's size
-      let box = src, text = null;
-      for (const n of sameBox(src)) box = n;
-      const t = [...box.querySelectorAll('*')].find(e => e !== src && e.childElementCount === 0 && e.textContent.trim());
-      if (t) {
-        const k = 32 / box.getBoundingClientRect().width;
-        logoText.textContent = t.textContent.trim();
-        logoText.style.fontSize = parseFloat(getComputedStyle(t).fontSize) * k + 'px';
-        text = true;
-      }
-      if (!text) logoText.textContent = '';
-    };
-    if (logo.classList.contains('lb-show') && !REDUCED) {   // another company: fade the old logo out, the new one in
-      logo.classList.remove('lb-show');
-      clearTimeout(logoSwap);
-      logoSwap = setTimeout(() => { put(); logo.classList.add('lb-show'); }, M.controls);
-    } else { put(); fadeIn(); }
+    if (!url) { if (logo) logo.classList.remove('lb-show'); return; }
+    if (logo && logo.dataset.src === url) { fadeIn(logo); return; }
+    const old = logo, shown = old && old.classList.contains('lb-show');
+    logo = makeLogo(src, url);
+    if (shown && dir && !REDUCED) {   // another company while browsing: the old logo slides out as the new one slides in
+      const shift = LOGO_SHIFT * dir, o = { duration: M.slide, easing: EASE, fill: 'forwards' };
+      logo.classList.add('lb-show');
+      logo.animate([{ opacity: 0, translate: `${shift}px 0` }, { opacity: 1, translate: '0 0' }], { ...o, fill: 'backwards' });
+      old.animate([{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: `${-shift}px 0` }], o)
+        .finished.then(() => old.remove(), () => old.remove());
+    } else {
+      if (old) old.remove();
+      fadeIn(logo);
+    }
   }
   // mouse opens hide focus rings on the buttons until Tab is pressed
   const setQuiet = on => [closeBtn, prevBtn, nextBtn].forEach(b => b.classList.toggle('lb-quiet', on));
@@ -347,7 +353,7 @@
       { duration: time || 1, easing: EASE, fill: 'backwards' });
     sharpen(next, clone);
     showCount(next);
-    showLogo(next);
+    showLogo(next, dir);
     preloadAround(next);
   }
 
@@ -364,7 +370,7 @@
     const { src, clone, backdrop, radius } = open;
     open = null;
     nav.classList.remove('lb-show');
-    logo.classList.remove('lb-show'); clearTimeout(logoSwap);
+    if (logo) logo.classList.remove('lb-show');
     closeBtn.classList.remove('lb-show');
     // fly back only to a spot that's on screen (after browsing with the arrows it may not be)
     const r = src.isConnected ? src.getBoundingClientRect() : null;
