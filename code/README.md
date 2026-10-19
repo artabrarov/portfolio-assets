@@ -13,7 +13,7 @@ Rebuild: `npx esbuild code/emoji-game.js --minify --target=es2020 > code/emoji-g
 
 ## Image lightbox
 
-On computers, click an image or video on any page except /sites to open it full screen over a 30% black overlay; the left and right arrow keys move through the page's images and videos. It opens on plain white with a counter (top left) and a Close button (top right) styled like the site's buttons and linked to its Framer colour styles; Close, a click anywhere, Esc or scroll closes it. Keyboard: Tab reaches each image and video, Enter or Space opens it, and focus returns to it on close. Media stays in Framer: images open in a bigger version from Framer's image server, and videos carry on from the frame they were on. Phones and tablets are left as they are. The skipped pages and the minimum size (80px, which leaves out the avatar and logos) are set at the top of the file.
+On computers, click an image or video on any page except /sites to open it full screen over a 30% black overlay; the left and right arrow keys move through the page's images and videos. It opens on plain white with ← counter → buttons (top left) and a Close button (top right) styled like the site's buttons and linked to its Framer colour styles; Close, a click anywhere, Esc or scroll closes it. Keyboard: Tab reaches each image and video, Enter or Space opens it, and focus returns to it on close. Media stays in Framer: images open in a bigger version from Framer's image server, and videos carry on from the frame they were on. Phones and tablets are left as they are. The skipped pages and the minimum size (80px, which leaves out the avatar and logos) are set at the top of the file.
 
 | File | What it is |
 |---|---|

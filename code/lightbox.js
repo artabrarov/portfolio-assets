@@ -32,19 +32,24 @@
     .lb-media:focus{outline:none;}
     .lb-backdrop{position:fixed;inset:0;z-index:10001;background:${OVERLAY};opacity:0;cursor:zoom-out;}
     .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;}
-    /* counter (top left) and Close (top right) look like the site's buttons: 32px tall, 18px sides, grey fill, dark text */
-    .lb-count,.lb-close{position:fixed;top:${MARGIN}px;z-index:10003;box-sizing:border-box;height:32px;padding:6px 18px;margin:0;border:0;
-      border-radius:999px;background:${FILL};color:${DARK};white-space:nowrap;opacity:0;transition:opacity .25s ease,background-color .2s;
+    /* top left: ← counter →, top right: Close. All look like the site's buttons: 32px tall, grey fill, dark text */
+    .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:32px;margin:0;border:0;
+      border-radius:999px;background:${FILL};color:${DARK};white-space:nowrap;transition:opacity .25s ease,background-color .2s;
       /* type copied from the page's Framer styles by syncType(); the values after the commas are fallbacks */
       font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);
       letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);}
-    .lb-count{left:${MARGIN}px;pointer-events:none;font-variant-numeric:tabular-nums;}   /* paragraph style */
-    .lb-close{right:${MARGIN}px;cursor:pointer;font-family:var(--lb-btn-family,${TYPE});
+    .lb-count,.lb-close{padding:6px 18px;}
+    .lb-nav{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;display:flex;gap:8px;opacity:0;transition:opacity .25s ease;}
+    .lb-count{pointer-events:none;font-variant-numeric:tabular-nums;text-align:center;}   /* paragraph style */
+    .lb-arrow{width:32px;padding:0;display:grid;place-items:center;cursor:pointer;}
+    .lb-arrow svg{display:block;width:16px;height:16px;}   /* Instance Kit's arrow-left / arrow-right */
+    .lb-arrow:disabled{opacity:.4;cursor:default;}
+    .lb-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;cursor:pointer;font-family:var(--lb-btn-family,${TYPE});
       font-weight:var(--lb-btn-weight,560);font-variation-settings:var(--lb-btn-wght,"wght" 560);}   /* button label style */
-    .lb-close:hover{background:${FILL_HOVER};}
-    .lb-close:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
-    .lb-close.lb-quiet:focus-visible{outline:none;}   /* opened with the mouse: no ring until Tab is pressed */
-    .lb-count.lb-show,.lb-close.lb-show{opacity:1;}
+    .lb-close:hover,.lb-arrow:hover:not(:disabled){background:${FILL_HOVER};}
+    .lb-close:focus-visible,.lb-arrow:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
+    .lb-quiet:focus-visible{outline:none;}   /* opened with the mouse: no rings until Tab is pressed */
+    .lb-nav.lb-show,.lb-close.lb-show{opacity:1;}
   `;
   document.head.appendChild(css);
 
@@ -168,10 +173,22 @@
     });
   }
 
-  // the counter ("4 / 13", top left, only when there's more than one to browse) and the Close button (top right)
+  // top left, when there's more than one to browse: ← "4 / 13" → (the arrows dim at either end); top right: Close
+  const nav = document.createElement('div');
+  nav.className = 'lb-nav';
+  const arrow = (label, d) => {
+    const b = document.createElement('button');
+    b.className = 'lb-arrow'; b.type = 'button'; b.setAttribute('aria-label', label);
+    b.innerHTML = `<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="${d}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    return b;
+  };
+  // paths from Instance Kit's Icons (arrow-left.svg, arrow-right.svg)
+  const prevBtn = arrow('Previous', 'M12.6667 7.99998H3.33333M7.99999 3.33331L3.33333 7.99998L7.99999 12.6666');
+  const nextBtn = arrow('Next', 'M3.33333 8.00004H12.6667M7.99999 12.6667L12.6667 8.00004L7.99999 3.33337');
   const count = document.createElement('div');
   count.className = 'lb-count';
   count.setAttribute('aria-live', 'polite');
+  nav.append(prevBtn, count, nextBtn);
   const closeBtn = document.createElement('button');
   closeBtn.className = 'lb-close';
   closeBtn.type = 'button';
@@ -199,11 +216,23 @@
   }
   function showCount(el) {
     const list = allMedia(), i = list.indexOf(el);
-    if (list.length < 2 || i < 0) { count.classList.remove('lb-show'); return; }
-    if (!count.isConnected) document.body.append(count);
+    if (list.length < 2 || i < 0) { nav.classList.remove('lb-show'); return; }
+    if (!nav.isConnected) document.body.append(nav);
+    // a fixed width, sized for the widest number on this page ("88 / 88"), so the arrows never shift as it counts
+    const wide = String(list.length).replace(/\d/g, '8');
+    if (count.dataset.wide !== wide) {
+      count.style.width = '';
+      count.textContent = `${wide} / ${wide}`;
+      count.style.width = Math.ceil(count.getBoundingClientRect().width) + 'px';
+      count.dataset.wide = wide;
+    }
     count.textContent = `${i + 1} / ${list.length}`;
-    requestAnimationFrame(() => count.classList.add('lb-show'));
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === list.length - 1;
+    requestAnimationFrame(() => nav.classList.add('lb-show'));
   }
+  // mouse opens hide focus rings on the buttons until Tab is pressed
+  const setQuiet = on => [closeBtn, prevBtn, nextBtn].forEach(b => b.classList.toggle('lb-quiet', on));
 
   function openMedia(el, viaPointer = false) {
     if (open) return;
@@ -216,7 +245,7 @@
     document.body.append(backdrop, clone);
     syncType();
     showClose();
-    closeBtn.classList.toggle('lb-quiet', viaPointer);
+    setQuiet(viaPointer);
     closeBtn.focus({ preventScroll: true });
     el.style.opacity = '0';
     open = { src: el, clone, backdrop, radius, y: scrollY };
@@ -273,7 +302,7 @@
     if (!open) return;
     const { src, clone, backdrop, radius } = open;
     open = null;
-    count.classList.remove('lb-show');
+    nav.classList.remove('lb-show');
     closeBtn.classList.remove('lb-show');
     // fly back only to a spot that's on screen (after browsing with the arrows it may not be)
     const r = src.isConnected ? src.getBoundingClientRect() : null;
@@ -331,6 +360,12 @@
     if (hovered) hovered.classList.add('lb-zoomable');
   }, { passive: true });
   document.addEventListener('click', e => {
+    if (open && e.target instanceof Element && e.target.closest('.lb-nav')) {   // the arrows step; the counter does nothing
+      e.preventDefault(); e.stopPropagation();
+      const b = e.target.closest('.lb-arrow');
+      if (b && !b.disabled) step(b === prevBtn ? -1 : 1);
+      return;
+    }
     if (open) { e.preventDefault(); e.stopPropagation(); close(); return; }
     const m = mediaAt(e);
     if (!m) return;
@@ -344,7 +379,13 @@
       return;
     }
     // Tab is the key that moves focus, so it brings the ring back; the arrows and Esc leave it hidden
-    if (e.key === 'Tab') { e.preventDefault(); closeBtn.classList.remove('lb-quiet'); closeBtn.focus({ preventScroll: true }); }   // keep focus in the lightbox
+    if (e.key === 'Tab') {   // keep focus in the lightbox, cycling ← → Close
+      e.preventDefault(); setQuiet(false);
+      const stops = [prevBtn, nextBtn, closeBtn].filter(b => b.isConnected && !b.disabled && (b === closeBtn || nav.classList.contains('lb-show')));
+      const i = stops.indexOf(document.activeElement);
+      const to = stops[(i < 0 ? 0 : i + (e.shiftKey ? -1 : 1) + stops.length) % stops.length];
+      (i < 0 ? closeBtn : to).focus({ preventScroll: true });
+    }
     else if (e.key === 'Escape') close();
     else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
