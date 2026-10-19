@@ -49,7 +49,14 @@
       font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);
       letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);}
     .lb-count,.lb-close{padding:6px 18px;}
-    .lb-nav{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;display:flex;gap:8px;opacity:0;transition:opacity ${M.controls}ms ease;}
+    .lb-nav{position:fixed;top:${MARGIN}px;left:50%;translate:-50% 0;z-index:10003;display:flex;gap:8px;opacity:0;transition:opacity ${M.controls}ms ease;}
+    /* top left: the logo of the company the current item belongs to */
+    .lb-logo{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;width:32px;height:32px;overflow:hidden;opacity:0;
+      pointer-events:none;transition:opacity ${M.controls}ms ease;}
+    .lb-logo img{display:block;width:100%;height:100%;object-fit:cover;}
+    /* a logo made of an image tile with text on it (Lab: an emoji on a tile) */
+    .lb-logo span{position:absolute;inset:0;display:grid;place-items:center;line-height:1;}
+    .lb-logo.lb-show{opacity:1;}
     .lb-count{pointer-events:none;font-variant-numeric:tabular-nums;text-align:center;}   /* paragraph style */
     .lb-arrow{width:32px;padding:0;display:grid;place-items:center;cursor:pointer;}
     .lb-arrow svg{display:block;width:16px;height:16px;}   /* Instance Kit's arrow-left / arrow-right */
@@ -241,6 +248,48 @@
     nextBtn.disabled = i === list.length - 1;
     requestAnimationFrame(() => nav.classList.add('lb-show'));
   }
+  // the company logo, top left: the nearest small image around the item (the card's logo on Home, the company's
+  // logo on a case study), skipping the game's avatar. Cross-fades when browsing into another company's items
+  const logo = document.createElement('div');
+  logo.className = 'lb-logo'; logo.setAttribute('aria-hidden', 'true');
+  const logoImg = document.createElement('img'), logoText = document.createElement('span');
+  logoImg.alt = '';
+  logo.append(logoImg, logoText);
+  function logoOf(el) {
+    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+      const c = [...n.querySelectorAll('img')].find(i => i !== el && i.offsetWidth > 0 && i.offsetWidth <= 48 &&
+        i.offsetHeight <= 48 && !i.closest('.fx-av, .fx-world, [class^="lb-"]'));
+      if (c) return c;
+    }
+    return null;
+  }
+  let logoSwap = null;
+  function showLogo(el) {
+    const src = logoOf(el), url = src ? src.currentSrc || src.src : '';
+    if (!url) { logo.classList.remove('lb-show'); logo.dataset.src = ''; return; }
+    if (!logo.isConnected) document.body.append(logo);
+    const fadeIn = () => { logo.getBoundingClientRect(); logo.classList.add('lb-show'); };   // reflow first, so the fade runs
+    if (logo.dataset.src === url) { fadeIn(); return; }
+    const put = () => {
+      logoImg.src = url; logo.dataset.src = url; logo.style.borderRadius = radiusOf(src);
+      // text laid over the logo's image in the same box (an emoji on a tile): copy it, scaled from the page's size
+      let box = src, text = null;
+      for (const n of sameBox(src)) box = n;
+      const t = [...box.querySelectorAll('*')].find(e => e !== src && e.childElementCount === 0 && e.textContent.trim());
+      if (t) {
+        const k = 32 / box.getBoundingClientRect().width;
+        logoText.textContent = t.textContent.trim();
+        logoText.style.fontSize = parseFloat(getComputedStyle(t).fontSize) * k + 'px';
+        text = true;
+      }
+      if (!text) logoText.textContent = '';
+    };
+    if (logo.classList.contains('lb-show') && !REDUCED) {   // another company: fade the old logo out, the new one in
+      logo.classList.remove('lb-show');
+      clearTimeout(logoSwap);
+      logoSwap = setTimeout(() => { put(); logo.classList.add('lb-show'); }, M.controls);
+    } else { put(); fadeIn(); }
+  }
   // mouse opens hide focus rings on the buttons until Tab is pressed
   const setQuiet = on => [closeBtn, prevBtn, nextBtn].forEach(b => b.classList.toggle('lb-quiet', on));
 
@@ -267,6 +316,7 @@
     backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: REDUCED ? 150 : M.bgIn, easing: 'ease', fill: 'forwards' });
     sharpen(el, clone);
     showCount(el);
+    showLogo(el);
     preloadAround(el);
   }
 
@@ -297,6 +347,7 @@
       { duration: time || 1, easing: EASE, fill: 'backwards' });
     sharpen(next, clone);
     showCount(next);
+    showLogo(next);
     preloadAround(next);
   }
 
@@ -313,6 +364,7 @@
     const { src, clone, backdrop, radius } = open;
     open = null;
     nav.classList.remove('lb-show');
+    logo.classList.remove('lb-show'); clearTimeout(logoSwap);
     closeBtn.classList.remove('lb-show');
     // fly back only to a spot that's on screen (after browsing with the arrows it may not be)
     const r = src.isConnected ? src.getBoundingClientRect() : null;
