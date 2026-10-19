@@ -157,7 +157,8 @@
       }, { once: true });
     } else {
       clone.alt = el.alt;
-      clone.src = el.currentSrc || el.src;
+      // a page image Framer hasn't loaded yet (lazy, further down): go straight for the sharp one, which may already be on its way
+      clone.src = el.complete && el.naturalWidth ? el.currentSrc || el.src : bigSrc(el);
     }
     // draw the card behind a transparent image (its fill, and its stroke as an inset line that follows the corners)
     const card = cardOf(el);
@@ -181,10 +182,17 @@
     big.onload = () => { loaded.add(src); if (open && open.clone === clone) clone.src = src; };
     big.src = src;
   }
-  // start loading the sharp versions either side, so the arrow keys show them crisp at once
+  // start loading the sharp versions either side, so the arrow keys show them crisp at once; for a video, build its full
+  // screen copy ahead and let it buffer (Framer doesn't load clips that haven't been on screen), and drop ones no longer next door
+  const ready = new Map();   // page video → its buffering full screen copy
   function preloadAround(el) {
-    const list = allMedia(), i = list.indexOf(el);
-    [list[i - 1], list[i + 1]].forEach(n => {
+    const list = allMedia(), i = list.indexOf(el), near = [list[i - 1], list[i + 1]];
+    ready.forEach((clone, v) => { if (!near.includes(v)) { clone.removeAttribute('src'); clone.load(); ready.delete(v); } });
+    near.forEach(n => {
+      if (n instanceof HTMLVideoElement) {
+        if (!ready.has(n)) { const clone = makeClone(n); clone.preload = 'auto'; clone.autoplay = false; ready.set(n, clone); }
+        return;
+      }
       if (!(n instanceof HTMLImageElement)) return;
       const src = bigSrc(n);
       if (loaded.has(src)) return;
@@ -350,7 +358,9 @@
     if (old instanceof HTMLVideoElement) try { prev.currentTime = old.currentTime; } catch (e) {}
     prev.style.opacity = '';
     // the page stays still while browsing: closing flies back if this one is on screen, and fades out otherwise
-    const clone = makeClone(next);
+    let clone = ready.get(next);
+    if (clone) { ready.delete(next); if (next.currentTime) try { clone.currentTime = next.currentTime; } catch (e) {} clone.autoplay = true; clone.play().catch(() => {}); }
+    else clone = makeClone(next);
     Object.assign(clone.style, px(targetRect(next)), { borderRadius: '12px' });
     document.body.append(clone);
     next.style.opacity = '0';
@@ -381,6 +391,7 @@
     if (!open) return;
     const { src, clone, backdrop, radius } = open;
     open = null;
+    ready.forEach(c => { c.removeAttribute('src'); c.load(); }); ready.clear();
     nav.classList.remove('lb-show');
     if (logo) logo.classList.remove('lb-show');
     closeBtn.classList.remove('lb-show');
