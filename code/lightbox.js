@@ -59,17 +59,38 @@
     return document.elementsFromPoint(e.clientX, e.clientY).find(zoomable) || null;
   }
   const ratioOf = el => (el.naturalWidth / el.naturalHeight) || (el.videoWidth / el.videoHeight) || (el.offsetWidth / el.offsetHeight);
-  // the visible corner: the media's own rounding, an ancestor's, or RADIUS for masked shapes
-  function radiusOf(el) {
+  // the media's own box and the ancestors that share it (Framer adds zero-size wrappers in between: skip those)
+  function* sameBox(el) {
     const r = el.getBoundingClientRect();
     for (let n = el; n && n !== document.body; n = n.parentElement) {
       const q = n.getBoundingClientRect();
-      if (Math.abs(q.width - r.width) > 2 || Math.abs(q.height - r.height) > 2) break;
+      if (!q.width && !q.height) continue;
+      if (Math.abs(q.width - r.width) > 2 || Math.abs(q.height - r.height) > 2) return;
+      yield n;
+    }
+  }
+  // the visible corner: the media's own rounding, an ancestor's, or RADIUS for masked shapes
+  function radiusOf(el) {
+    for (const n of sameBox(el)) {
       const s = getComputedStyle(n);
       if (parseFloat(s.borderTopLeftRadius)) return s.borderTopLeftRadius;
       if (s.clipPath !== 'none' || s.maskImage !== 'none' || s.webkitMaskImage && s.webkitMaskImage !== 'none') return RADIUS;
     }
     return '0px';
+  }
+  // a transparent image sitting in a Framer card (a frame with a fill, a stroke and rounded corners): the card's
+  // look, so the lightbox can draw it behind the image. Read from the page, so it follows the colour styles
+  function cardOf(el) {
+    for (const n of sameBox(el)) {
+      if (n === el) continue;
+      const s = getComputedStyle(n);
+      if (s.backgroundColor === 'rgba(0, 0, 0, 0)' || s.backgroundColor === 'transparent') continue;
+      const a = getComputedStyle(n, '::after');   // Framer draws a frame's stroke on ::after
+      const line = parseFloat(a.borderTopWidth) ? `${a.borderTopWidth} ${a.borderTopColor}`
+        : parseFloat(s.borderTopWidth) ? `${s.borderTopWidth} ${s.borderTopColor}` : '';
+      return { bg: s.backgroundColor, line };
+    }
+    return null;
   }
 
   // Framer serves scaled-down images (?scale-down-to=1024); ask for one big enough for this screen
@@ -111,6 +132,12 @@
     } else {
       clone.alt = el.alt;
       clone.src = el.currentSrc || el.src;
+    }
+    // draw the card behind a transparent image (its fill, and its stroke as an inset line that follows the corners)
+    const card = cardOf(el);
+    if (card) {
+      clone.style.backgroundColor = card.bg;
+      if (card.line) clone.style.boxShadow = `inset 0 0 0 ${card.line}`;
     }
     clone.setAttribute('role', 'dialog');
     clone.setAttribute('aria-modal', 'true');
