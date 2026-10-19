@@ -519,7 +519,7 @@
       return (v >= 100 ? Math.floor(v) : v) + unit[1];
     };
     const TIER_INK = ['#b08a00', '#2f9e5b', '#2f6fe0', '#8a3ee0', '#c98a12'];
-    let scoreEl = null, numEl = null, score = Math.max(0, saved.coins | 0), shown = score, tween = 0;
+    let scoreEl = null, numEl = null, ptsEl = null, score = Math.max(0, saved.coins | 0), shown = score, tween = 0;
     let saveTimer = 0;
     function save() {                                          // batched, so auto-drops don't write every second
       clearTimeout(saveTimer);
@@ -530,11 +530,13 @@
       try { localStorage.setItem(SAVE_KEY, JSON.stringify({ coins: score, auto: game.auto, luck: game.luck, muted: !soundOn })); } catch (e) {}
     }
     addEventListener('pagehide', saveNow);
+    const coinWord = n => n === 1 ? 'coin' : 'coins';   // "1 coin", "2 coins"
     function mountScore(row) {
       scoreEl = document.createElement('div');
       scoreEl.className = 'fx-score';
-      scoreEl.innerHTML = `\x3Cspan class="fx-num">${short(score)}\x3C/span>\x3Cspan class="fx-pts">coins\x3C/span>`;
+      scoreEl.innerHTML = `\x3Cspan class="fx-num">${short(score)}\x3C/span>\x3Cspan class="fx-pts">${coinWord(score)}\x3C/span>`;
       numEl = scoreEl.querySelector('.fx-num');
+      ptsEl = scoreEl.querySelector('.fx-pts');
       row.appendChild(scoreEl);
     }
     function countTo(to, dur) {
@@ -544,6 +546,7 @@
         const k = Math.min(1, (now - t0) / dur), e = 1 - (1 - k) ** 3;
         shown = Math.round(from + (to - from) * e);
         numEl.textContent = short(shown);
+        ptsEl.textContent = coinWord(shown);
         if (k < 1) tween = requestAnimationFrame(tick);
       };
       tween = requestAnimationFrame(tick);
