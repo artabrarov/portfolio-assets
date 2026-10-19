@@ -19,9 +19,9 @@
   const M = Object.assign({
     ease: 'cubic-bezier(.32,.72,0,1)',   // a smooth glide that lands softly
     open: 400,          // zoom from the page to full screen
-    close: 400,         // and back
+    close: 350,         // and back
     fadeOut: 320,       // close when the item is off screen: fade and shrink in place
-    bgIn: 400, bgOut: 400,   // the white background, in step with the image
+    bgIn: 400, bgOut: 350,   // the white background, in step with the image
     slide: 380, shift: 24,   // arrows: the cross-slide between items, and how far they drift (px)
     controls: 350,      // the counter, arrows and Close fading in and out
   }, window.__lbMotion || {});
