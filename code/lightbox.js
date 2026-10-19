@@ -2,7 +2,8 @@
     Loaded on the live site from GitHub Pages (code/lightbox.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
     On computers (not phones or tablets), click a large image or video to open it full screen, zooming from where it sits;
-    the left and right arrow keys move through the page's images and videos; click, Esc or scroll closes it.
+    the left and right arrow keys move through the page's images and videos. Pinch on a trackpad to zoom into an open
+    image, and two fingers then pan. Clicking the background, Close, Esc or scrolling closes it.
     Keyboard: Tab reaches each image and video, Enter or Space opens it, and focus returns to it on close.
     Media stays in Framer: images open in a bigger version from Framer's image server, videos keep playing from where they were. */
 (() => {
@@ -29,6 +30,7 @@
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const MOUSE = matchMedia('(hover: hover) and (pointer: fine)');   // phones and tablets: off, media stays as it is
   const OVERLAY = '#fff';                  // behind open media: solid white, no effects
+  const MAX_ZOOM = 4;                      // a pinch zooms an open image up to 4×
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#1f1f1f)';   // the site's colour styles
   const FILL = 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)';
   const TYPE = '"Instrument Sans Variable","Instrument Sans",sans-serif';   // fallback before the page's styles are read
@@ -41,7 +43,9 @@
     [data-lb-key]:focus-visible{outline:3px solid #1f1f1f !important;outline-offset:-3px;}
     .lb-media:focus{outline:none;}
     .lb-backdrop{position:fixed;inset:0;z-index:10001;background:${OVERLAY};opacity:0;cursor:zoom-out;}
-    .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;}
+    .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;
+      transform-origin:0 0;}
+    img.lb-media{cursor:default;}   /* an open image is for looking (and pinching); the white around it closes */
     /* top left: ← counter →, top right: Close. All look like the site's buttons: 32px tall, grey fill, dark text */
     .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:32px;margin:0;border:0;
       border-radius:999px;background:${FILL};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color .2s;
@@ -179,7 +183,7 @@
     const src = bigSrc(el);
     if (loaded.has(src)) { clone.src = src; return; }
     const big = new Image();
-    big.onload = () => { loaded.add(src); if (open && open.clone === clone) clone.src = src; };
+    big.onload = () => { loaded.add(src); if (open && open.clone === clone && !clone.dataset.full) clone.src = src; };
     big.src = src;
   }
   // start loading the sharp versions either side, so the arrow keys show them crisp at once; for a video, build its full
@@ -333,7 +337,8 @@
     setQuiet(viaPointer);
     closeBtn.focus({ preventScroll: true });
     el.style.opacity = '0';
-    open = { src: el, clone, backdrop, radius, y: scrollY };
+    open = { src: el, clone, backdrop, radius, y: scrollY, z: 1, tx: 0, ty: 0 };
+    addEventListener('wheel', onWheel, { passive: false });
 
     const to = targetRect(video && clone.videoWidth ? clone : el);
     const time = REDUCED ? 0 : M.open;
@@ -364,11 +369,9 @@
     Object.assign(clone.style, px(targetRect(next)), { borderRadius: '12px' });
     document.body.append(clone);
     next.style.opacity = '0';
-    open = { ...open, src: next, clone, radius: radiusOf(next) };
+    open = { ...open, src: next, clone, radius: radiusOf(next), z: 1, tx: 0, ty: 0 };
     const time = REDUCED ? 0 : M.slide, shift = M.shift * dir;
-    const at = px(old.getBoundingClientRect());
-    old.getAnimations().forEach(a => a.cancel());
-    Object.assign(old.style, at);
+    flatten(old);
     old.animate([{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: `${-shift}px 0` }],
       { duration: time || 1, easing: EASE, fill: 'forwards' }).finished.then(() => old.remove(), () => old.remove());
     clone.animate([{ opacity: 0, translate: `${shift}px 0` }, { opacity: 1, translate: '0 0' }],
@@ -384,8 +387,85 @@
     if (!open) return;
     const { clone, src } = open;
     clone.getAnimations().forEach(a => a.cancel());
+    clone.style.transform = '';
+    Object.assign(open, { z: 1, tx: 0, ty: 0 });
     Object.assign(clone.style, px(targetRect(clone.videoWidth ? clone : src)), { borderRadius: '12px' });
   }
+
+  // zoom: a transform on top of the open image's own box, so the open, close and slide animations stay as they are
+  const boxOf = () => targetRect(open.clone.videoWidth ? open.clone : open.src);
+  // keep the zoomed image covering the screen (or centred, when it's narrower than the screen in that direction)
+  function clampPan(size, start, t, view) {
+    if (size <= view - MARGIN * 2) return (view - size) / 2 - start;
+    return Math.min(MARGIN - start, Math.max(view - MARGIN - size - start, t));
+  }
+  function applyZoom() {
+    const { clone, z } = open, b = boxOf();
+    open.tx = z === 1 ? 0 : clampPan(b.width * z, b.left, open.tx, innerWidth);
+    open.ty = z === 1 ? 0 : clampPan(b.height * z, b.top, open.ty, innerHeight);
+    clone.style.transform = z === 1 ? '' : `translate(${open.tx}px,${open.ty}px) scale(${z})`;
+    if (z > 1) fullRes();
+  }
+  // zoom to z, keeping the point under (x, y) where it is
+  function zoomAt(z, x, y) {
+    const b = boxOf(), old = open.z;
+    z = Math.min(MAX_ZOOM, Math.max(1, z));
+    if (z < 1.02) z = 1;
+    open.tx = x - b.left - (x - b.left - open.tx) * (z / old);
+    open.ty = y - b.top - (y - b.top - open.ty) * (z / old);
+    open.z = z;
+    applyZoom();
+  }
+  // the full size original from Framer's image server, once zooming in
+  function fullRes() {
+    const { clone, src } = open;
+    if (clone.dataset.full || !(clone instanceof HTMLImageElement)) return;
+    clone.dataset.full = '1';
+    let url;
+    try { url = new URL(src.currentSrc || src.src); } catch (e) { return; }
+    if (!url.hostname.endsWith('framerusercontent.com')) return;
+    url.searchParams.delete('scale-down-to');
+    const big = new Image();
+    big.onload = () => { if (open && open.clone === clone) clone.src = url.href; };
+    big.src = url.href;
+  }
+  // the open media's current spot on screen, zoom included, as its plain position (before it flies back or slides away)
+  function flatten(el) {
+    const r = px(el.getBoundingClientRect());
+    el.getAnimations().forEach(a => a.cancel());
+    Object.assign(el.style, { transform: '' }, r);
+    return r;
+  }
+  // a pinch arrives as ctrl + wheel (Chrome, Firefox) or as gesture events (Safari); two fingers pan once zoomed in;
+  // a plain scroll while not zoomed closes, as before
+  let gesture = null, lastZoom = 0;
+  function onWheel(e) {
+    if (!open) return;
+    const image = open.clone instanceof HTMLImageElement;
+    if (e.ctrlKey) {   // a pinch: never the browser's own page zoom while the lightbox is open
+      e.preventDefault();
+      if (gesture || !image) return;
+      lastZoom = performance.now();
+      zoomAt(open.z * Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
+    } else if (open.z > 1) {
+      e.preventDefault();
+      lastZoom = performance.now();
+      open.tx -= e.deltaX; open.ty -= e.deltaY;
+      applyZoom();
+    } else if (performance.now() - lastZoom < 400) e.preventDefault();   // the tail of a pinch back out: don't close
+    else close();
+  }
+  addEventListener('gesturestart', e => {
+    if (!open || !(open.clone instanceof HTMLImageElement)) return;
+    e.preventDefault(); gesture = { z: open.z };
+  });
+  addEventListener('gesturechange', e => {
+    if (!open || !gesture) return;
+    e.preventDefault(); lastZoom = performance.now();
+    zoomAt(gesture.z * e.scale, e.clientX, e.clientY);
+  });
+  addEventListener('gestureend', e => { if (gesture) { e.preventDefault(); gesture = null; } });
+
 
   function close() {
     if (!open) return;
@@ -399,9 +479,9 @@
     const r = src.isConnected ? src.getBoundingClientRect() : null;
     const to = r && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth ? r : null;
     const time = REDUCED ? 0 : M.close;
-    const current = px(clone.getBoundingClientRect());
-    clone.getAnimations().forEach(a => a.cancel());
-    Object.assign(clone.style, current, { borderRadius: '12px' });
+    removeEventListener('wheel', onWheel);
+    const current = flatten(clone);
+    clone.style.borderRadius = '12px';
     const done = () => {
       // hand the video's playhead back, so the page clip carries on from the same frame
       if (clone instanceof HTMLVideoElement && src.isConnected) try { src.currentTime = clone.currentTime; } catch (e) {}
@@ -458,7 +538,11 @@
       if (b && !b.disabled) step(b === prevBtn ? -1 : 1);
       return;
     }
-    if (open) { e.preventDefault(); e.stopPropagation(); close(); return; }
+    if (open) {
+      e.preventDefault(); e.stopPropagation();
+      if (!(e.target === open.clone && open.clone instanceof HTMLImageElement)) close();   // the open image itself: nothing
+      return;
+    }
     const m = mediaAt(e);
     if (!m) return;
     e.preventDefault();
@@ -483,7 +567,6 @@
     else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
   });
-  addEventListener('wheel', () => close(), { passive: true });
   // only a real scroll closes it: the page nudges itself by a few px while images further down load
   addEventListener('scroll', () => { if (open && Math.abs(scrollY - open.y) > 40) close(); }, { passive: true });
   addEventListener('resize', fit);
