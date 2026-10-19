@@ -18,10 +18,10 @@
   // window.__lbMotion (set by the local preview's ?motion= switch) can override any of these
   const M = Object.assign({
     ease: 'cubic-bezier(.32,.72,0,1)',   // a smooth glide that lands softly
-    open: 560,          // zoom from the page to full screen
-    close: 460,         // and back
+    open: 460,          // zoom from the page to full screen
+    close: 400,         // and back
     fadeOut: 320,       // close when the item is off screen: fade and shrink in place
-    bgIn: 640, bgOut: 460,   // the white background, a touch slower than the image
+    bgIn: 540, bgOut: 400,   // the white background, a touch slower than the image
     slide: 380, shift: 24,   // arrows: the cross-slide between items, and how far they drift (px)
     controls: 350,      // the counter, arrows and Close fading in and out
   }, window.__lbMotion || {});
