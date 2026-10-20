@@ -29,7 +29,8 @@
       { company: 'Joompay', role: 'Founding Designer', years: '2020–2022' },
       { company: 'Redmadrobot', role: 'Product Designer', years: '2019–2020' },
     ],
-    // the bio's last line: "Reach out by email or LinkedIn." (either left empty drops out of the sentence)
+    // the bio's last line: "Fancy a chat over a flat white? Drop me an email or find me on LinkedIn." (either left empty
+    // drops out of the sentence)
     email: 'hello@arthurabrarov.com',
     linkedin: 'https://www.linkedin.com/in/arthur-abrarov',
   };
@@ -195,17 +196,18 @@
     if (CONTENT.role) who.append(el('p', 'ab-body', CONTENT.role));
     const bio = el('div', 'ab-bio');
     CONTENT.bio.forEach(t => bio.append(el('p', 'ab-body', t)));
-    // the bio's last paragraph: "Reach out by email or LinkedIn."
+    // the bio's last paragraph: "Fancy a chat over a flat white? Drop me an email or find me on LinkedIn."
     const ways = [];
     if (CONTENT.email) {
-      const a = el('a', 'ab-link', 'email'); a.href = 'mailto:' + CONTENT.email; ways.push(a);
+      const a = el('a', 'ab-link', 'email'); a.href = 'mailto:' + CONTENT.email; ways.push(['Drop me an ', a]);
     }
     if (CONTENT.linkedin) {
-      const a = el('a', 'ab-link', 'LinkedIn'); a.href = CONTENT.linkedin; a.target = '_blank'; a.rel = 'noopener'; ways.push(a);
+      const a = el('a', 'ab-link', 'LinkedIn'); a.href = CONTENT.linkedin; a.target = '_blank'; a.rel = 'noopener';
+      ways.push([ways.length ? 'find me on ' : 'Find me on ', a]);
     }
-    const reach = el('p', 'ab-body');
     if (ways.length) {
-      reach.append(CONTENT.email ? 'Reach out by ' : 'Reach out on ', ...ways.flatMap((a, i) => i ? [' or ', a] : [a]), '.');
+      const reach = el('p', 'ab-body');
+      reach.append('Fancy a chat over a flat white? ', ...ways.flatMap((w, i) => i ? [' or ', ...w] : w), '.');
       bio.append(reach);
     }
     who.append(bio);
