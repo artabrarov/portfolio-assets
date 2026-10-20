@@ -2,8 +2,8 @@
     Loaded on the live site from GitHub Pages (code/about.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
     The Hero's About button (a Secondary button labelled "About", linked to #about) opens a drawer: a white card that
-    slides in from the left, 16px in from the screen's edges, over the page dimmed with its own grey. In it: Close, a
-    photo, a short bio with ways to get in touch, and the companies I've worked at.
+    slides in from the left, 16px in from the screen's edges, on the page's grey, with Close where the lightbox has it
+    (top right). In it: a photo, a short bio with ways to get in touch, and the companies I've worked at.
     Close, a click on the grey, Esc, or on phones and tablets a swipe to the left closes it. Opening /#about (or any page with #about) opens it straight away.
     Keyboard: focus moves into the sheet, Tab stays inside it, and focus returns to the About button on close.
     The sheet is drawn from the site's Framer styles: the cards' White colour style and corners, the Hero's text styles,
@@ -41,6 +41,10 @@
   const HASH = '#about';
 
   const INSET = 16;                        // px between the drawer and the screen's edges
+  const PHONE = matchMedia('(max-width: 599px)').matches;
+  const MARGIN = PHONE ? 16 : 32;          // px: Close sits this far from the screen's top and right, as in the lightbox
+  // px above the drawer: on phones it's full width, so it starts below Close (32px tall) and a 16px gap
+  const TOP = PHONE ? MARGIN + 32 + 16 : INSET;
   // motion, in ms: the lightbox's soft glide
   const M = { ease: 'cubic-bezier(.32,.72,0,1)', open: 300, close: 250 };
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -59,19 +63,16 @@
 
   const css = document.createElement('style');
   css.textContent = `
-    /* behind the drawer: the page, dimmed with the page background colour style */
-    .ab-backdrop{position:fixed;inset:0;z-index:10001;background:color-mix(in srgb,${PAGE} 72%,transparent);opacity:0;}
-    /* the drawer: a card, as on the homepage (White, the cards' corners and padding), 16px in from the screen's top,
-       left and bottom edges; it scrolls on its own when it's taller than the screen */
-    .ab-sheet{position:fixed;z-index:10002;box-sizing:border-box;top:calc(${INSET}px + env(safe-area-inset-top,0px));
+    /* behind the drawer: the page background colour style, covering the page as the lightbox's white does */
+    .ab-backdrop{position:fixed;inset:0;z-index:10001;background:${PAGE};opacity:0;}
+    /* the drawer: a card, as on the homepage (White, the cards' corners and padding), 16px in from the screen's left
+       and bottom edges and from the top (below Close on phones); it scrolls on its own when it's taller than the screen */
+    .ab-sheet{position:fixed;z-index:10002;box-sizing:border-box;top:calc(${TOP}px + env(safe-area-inset-top,0px));
       bottom:calc(${INSET}px + env(safe-area-inset-bottom,0px));left:calc(${INSET}px + env(safe-area-inset-left,0px));
       width:min(560px,calc(100% - ${INSET * 2}px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
       overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
       background:${WHITE};border-radius:var(--ab-radius,24px);corner-shape:var(--ab-corner,round);padding:var(--ab-pad,32px);
       display:flex;flex-direction:column;gap:32px;will-change:transform;}
-    /* the top: Close on the right, 16px above the photo */
-    .ab-top{display:flex;flex-direction:column;gap:16px;}
-    .ab-bar{display:flex;justify-content:flex-end;}
     .ab-sheet:focus{outline:none;}
     .ab-sheet p{margin:0;}
     /* type copied from the Hero's Framer styles by syncType(); the values after the commas are fallbacks */
@@ -104,11 +105,14 @@
     /* Close: the site's Secondary button (32px pill, Stroke fill, button label type) */
     .ab-close{box-sizing:border-box;height:32px;margin:0;border:0;padding:6px 18px;border-radius:999px;display:inline-flex;
       align-items:center;background:${BUTTON};color:${DARK};text-decoration:none;white-space:nowrap;cursor:pointer;
-      transition:background-color .2s;
+      transition:background-color .2s,opacity ${M.close}ms ease;
       font-family:var(--ab-btn-family,${SEMI});font-weight:var(--ab-btn-weight,600);font-size:var(--ab-btn-size,13px);
       line-height:var(--ab-btn-lh,20px);letter-spacing:var(--ab-btn-ls,-0.1px);}
     .ab-close:hover{background:${BUTTON_HOVER};}
     .ab-close:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
+    .ab-close{position:fixed;top:calc(${MARGIN}px + env(safe-area-inset-top,0px));right:calc(${MARGIN}px + env(safe-area-inset-right,0px));
+      z-index:10003;opacity:0;}
+    .ab-close.ab-show{opacity:1;}
     /* opened with the mouse or a link: no rings until Tab is pressed (!important and more specific than the lightbox's
        site-wide ring, which is !important too) */
     .ab-close.ab-quiet:focus-visible,.ab-link.ab-quiet:focus-visible{outline:none !important;}
@@ -243,9 +247,7 @@
 
     const close = el('button', 'ab-close', 'Close');
     close.type = 'button';
-    const bar = el('div', 'ab-bar'), top = el('div', 'ab-top');
-    bar.append(close); top.append(bar, head);
-    sheet.append(top, list);
+    sheet.append(head, list);
     return { backdrop, sheet, close };
   }
 
@@ -255,7 +257,7 @@
     if (open) return;
     syncStyles();
     const ui = build();
-    document.body.append(ui.backdrop, ui.sheet);
+    document.body.append(ui.backdrop, ui.sheet, ui.close);
     document.documentElement.classList.add('ab-open');
     open = { ...ui, from };
     ui.close.classList.toggle('ab-quiet', viaPointer);
@@ -264,6 +266,7 @@
     ui.backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: REDUCED ? 150 : M.open, easing: 'ease', fill: 'forwards' });
     if (REDUCED) ui.sheet.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: 'ease' });
     else ui.sheet.animate([{ translate: `${offscreen(ui.sheet)}px 0` }, { translate: '0 0' }], { duration: M.open, easing: M.ease });
+    requestAnimationFrame(() => ui.close.classList.add('ab-show'));
     swipeToClose(ui);
   }
 
@@ -310,12 +313,13 @@
     const { backdrop, sheet, close, from } = open;
     open = null;
     document.documentElement.classList.remove('ab-open');
+    close.classList.remove('ab-show');
     if (location.hash === HASH) history.replaceState(history.state, '', location.pathname + location.search);
     // keyboard use: focus goes back to the About button; opened with the mouse: just let go of it
     if (from && from.isConnected && !close.classList.contains('ab-quiet')) from.focus({ preventScroll: true });
     else close.blur();
     const t = REDUCED ? 0 : M.close;
-    const done = () => { backdrop.remove(); sheet.remove(); };
+    const done = () => { backdrop.remove(); sheet.remove(); close.remove(); };
     // back out to the left, from where it is (after a swipe, from where the finger let go). After a quick swipe the
     // slide starts at the finger's speed: the easing starts at 2.25× its average (.72 / .32), so the time follows from that
     sheet.style.translate = '';
@@ -335,7 +339,7 @@
     if (open) {
       e.stopPropagation();
       if (e.target === open.close) { e.preventDefault(); closeSheet(); return; }
-      // the dimmed page around the drawer closes; links inside it go where they point
+      // the grey around the drawer closes; links inside it go where they point
       if (e.target === open.backdrop) { e.preventDefault(); closeSheet(); }
       return;
     }
