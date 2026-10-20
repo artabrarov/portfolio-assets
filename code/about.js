@@ -3,7 +3,7 @@
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
     The Hero's About button (a Secondary button labelled "About", linked to #about) opens a white sheet in the middle of
     the screen, on the page's grey: a short bio, the companies I've worked at, and ways to get in touch.
-    Close, a click on the grey, or Esc closes it. Opening /#about (or any page with #about) opens it straight away.
+    Close, a click on the grey, Esc, or on phones and tablets a swipe down closes it. Opening /#about (or any page with #about) opens it straight away.
     Keyboard: focus moves into the sheet, Tab stays inside it, and focus returns to the About button on close.
     The sheet is drawn from the site's Framer styles: the cards' White colour style and corners, the Hero's text styles,
     the Secondary button's look and the company logos from the homepage cards, so tweaks in Framer reach it. */
@@ -268,6 +268,40 @@
     ui.sheet.animate([{ opacity: 0, transform: `translateY(${M.rise}px) scale(.98)` }, { opacity: 1, transform: 'none' }],
       { duration: t, easing: M.ease, fill: 'backwards' });
     requestAnimationFrame(() => ui.close.classList.add('ab-show'));
+    swipeToClose(ui);
+  }
+
+  // phones and tablets, as in the lightbox: swipe the sheet down to close it. Only from the top of the sheet's scroll,
+  // so a swipe down further in still scrolls back up. The sheet follows the finger; past 100px it closes from there,
+  // otherwise it springs back
+  function swipeToClose({ backdrop, sheet }) {
+    let t = null;
+    backdrop.addEventListener('touchstart', e => {
+      t = e.touches.length === 1 ? { y: e.touches[0].clientY, x: e.touches[0].clientX, top: backdrop.scrollTop, dy: 0, on: false } : null;
+    }, { passive: true });
+    backdrop.addEventListener('touchmove', e => {
+      if (!t || e.touches.length !== 1) return;
+      const dy = e.touches[0].clientY - t.y, dx = e.touches[0].clientX - t.x;
+      if (!t.on) {
+        if (Math.abs(dy) < 8 && Math.abs(dx) < 8) return;
+        // a drag down that starts at the top of the scroll, more down than sideways: the sheet's; anything else scrolls
+        if (t.top > 0 || dy <= 0 || Math.abs(dx) > Math.abs(dy)) { t = null; return; }
+        t.on = true; t.y = e.touches[0].clientY;
+      }
+      e.preventDefault();   // no scroll bounce underneath while the sheet follows the finger
+      t.dy = Math.max(0, e.touches[0].clientY - t.y);
+      sheet.style.translate = `0 ${t.dy}px`;
+    }, { passive: false });
+    const end = () => {
+      if (!t || !t.on) { t = null; return; }
+      const { dy } = t;
+      t = null;
+      if (dy > 100) { closeSheet(); return; }   // closes from where the finger let go
+      sheet.style.translate = '';
+      sheet.animate([{ translate: `0 ${dy}px` }, { translate: '0 0' }], { duration: REDUCED ? 1 : 150, easing: M.ease });
+    };
+    backdrop.addEventListener('touchend', end, { passive: true });
+    backdrop.addEventListener('touchcancel', end, { passive: true });
   }
 
   function closeSheet() {
