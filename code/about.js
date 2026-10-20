@@ -32,9 +32,9 @@
       { company: 'Redmadrobot', role: 'Product Designer', years: '2019–2020', page: '/redmadrobot',
         logo: 'https://framerusercontent.com/images/WElo15BObggpnaE0YxFfHbUVlAc.png?width=320&height=320' },
     ],
-    // the buttons at the bottom; leave email empty to hide it
-    email: '',
-    links: [],                             // e.g. { label: 'LinkedIn', href: 'https://www.linkedin.com/in/arthur-abrarov' }
+    // the line at the bottom: "Reach out by email or LinkedIn." (either left empty drops out of the sentence)
+    email: 'hello@arthurabrarov.com',
+    linkedin: 'https://www.linkedin.com/in/arthur-abrarov',
   };
   const TRIGGER = 'About';                 // the label of the Hero button that opens the sheet (or any link to #about)
   const HASH = '#about';
@@ -97,15 +97,17 @@
     .ab-who .ab-body{line-height:20px;}
     .ab-who .ab-company{color:${DARK};}   /* the company: body type (Medium), in the dark text colour */
     .ab-years{align-self:start;line-height:20px;font-variant-numeric:tabular-nums;white-space:nowrap;}   /* on the company name's line */
-    /* buttons: the site's Secondary button (32px pill, Stroke fill, button label type) */
-    .ab-actions{display:flex;flex-wrap:wrap;gap:8px;}
-    .ab-btn,.ab-close{box-sizing:border-box;height:32px;margin:0;border:0;padding:6px 18px;border-radius:999px;display:inline-flex;
+    /* the contact links: dark text, grey on hover */
+    .ab-link{color:${DARK};text-decoration:none;transition:color .2s;}
+    .ab-link:hover{color:${MUTED};}
+    /* Close: the site's Secondary button (32px pill, Stroke fill, button label type) */
+    .ab-close{box-sizing:border-box;height:32px;margin:0;border:0;padding:6px 18px;border-radius:999px;display:inline-flex;
       align-items:center;background:${STROKE};color:${DARK};text-decoration:none;white-space:nowrap;cursor:pointer;
       transition:background-color .2s,opacity ${M.close}ms ease;
       font-family:var(--ab-btn-family,${SEMI});font-weight:var(--ab-btn-weight,600);font-size:var(--ab-btn-size,13px);
       line-height:var(--ab-btn-lh,20px);letter-spacing:var(--ab-btn-ls,-0.1px);}
-    .ab-btn:hover,.ab-close:hover{background:${FILL_HOVER};}
-    .ab-btn:focus-visible,.ab-close:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
+    .ab-close:hover{background:${FILL_HOVER};}
+    .ab-close:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
     .ab-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;}
     .ab-close.ab-show{opacity:1;}
     .ab-quiet:focus-visible{outline:none;}   /* opened with the mouse: no rings until Tab is pressed */
@@ -229,18 +231,19 @@
     });
     work.append(list);
 
-    const actions = el('div', 'ab-actions');
+    // the last line: "Reach out by email or LinkedIn."
+    const ways = [];
     if (CONTENT.email) {
-      const a = el('a', 'ab-btn', 'Email'); a.href = 'mailto:' + CONTENT.email; actions.append(a);
+      const a = el('a', 'ab-link', 'email'); a.href = 'mailto:' + CONTENT.email; ways.push(a);
     }
-    CONTENT.links.forEach(l => {
-      const a = el('a', 'ab-btn', l.label);
-      a.href = l.href; a.target = '_blank'; a.rel = 'noopener';
-      actions.append(a);
-    });
+    if (CONTENT.linkedin) {
+      const a = el('a', 'ab-link', 'LinkedIn'); a.href = CONTENT.linkedin; a.target = '_blank'; a.rel = 'noopener'; ways.push(a);
+    }
+    const reach = el('p', 'ab-body');
+    if (ways.length) reach.append(CONTENT.email ? 'Reach out by ' : 'Reach out on ', ...ways.flatMap((a, i) => i ? [' or ', a] : [a]), '.');
 
     sheet.append(head, work);
-    if (actions.childElementCount) sheet.append(actions);
+    if (ways.length) sheet.append(reach);
     wrap.append(sheet);
     backdrop.append(wrap);
 
@@ -318,7 +321,7 @@
   });
 
   // a link to the sheet from elsewhere (/#about): open once the page has drawn
-  const fromHash = () => { if (location.hash === HASH && !open) openSheet(); };
+  const fromHash = () => { if (location.hash === HASH && !open) openSheet(null, true); };   // quiet: no focus ring until Tab
   if (document.readyState === 'complete') requestAnimationFrame(fromHash);
   else addEventListener('load', () => requestAnimationFrame(fromHash), { once: true });
   addEventListener('hashchange', fromHash);
