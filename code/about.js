@@ -109,7 +109,9 @@
     .ab-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;}
     .ab-close.ab-show{opacity:1;}
     .ab-quiet:focus-visible{outline:none;}   /* opened with the mouse: no rings until Tab is pressed */
-    html.ab-open,html.ab-open body{overflow:hidden !important;}
+    /* the page stays put behind the sheet: lock the page's own scroll (html) only. Locking body too would make it a
+       scroll box of its own, and Framer's sticky Hero would jump to its top. The gutter keeps the scrollbar's space */
+    html.ab-open{overflow:hidden !important;scrollbar-gutter:stable;}
   `;
   document.head.appendChild(css);
 
