@@ -68,6 +68,8 @@
       letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);}
     .lb-count,.lb-close{padding:6px 18px;}
     .lb-nav{position:fixed;top:${MARGIN}px;left:50%;translate:-50% 0;z-index:10003;display:flex;gap:8px;opacity:0;transition:opacity ${M.controls}ms ease;}
+    /* phones: ← counter → at the bottom, within reach of a thumb (above the home indicator) */
+    ${PHONE ? `.lb-nav{top:auto;bottom:calc(${MARGIN}px + env(safe-area-inset-bottom,0px));}` : ''}
     /* top left: the logo of the company the current item belongs to */
     .lb-logo{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;width:32px;height:32px;overflow:hidden;opacity:0;
       pointer-events:none;transition:opacity ${M.controls}ms ease;}
@@ -156,8 +158,19 @@
   }
 
   // where the open image sits: as large as fits between the controls, centred
+  // the space the navigation takes at the bottom on phones (with the home indicator's safe area)
+  let safeProbe = null;
+  function bottomRoom() {
+    if (!PHONE || allMedia().length < 2) return MARGIN;
+    if (!safeProbe) {
+      safeProbe = document.createElement('div');
+      safeProbe.style.cssText = 'position:fixed;left:0;bottom:0;width:0;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';
+      document.body.append(safeProbe);
+    }
+    return MARGIN + 32 + 16 + safeProbe.offsetHeight;
+  }
   function targetRect(el) {
-    const ratio = ratioOf(el), room = innerHeight - TOP - MARGIN;
+    const ratio = ratioOf(el), room = innerHeight - TOP - bottomRoom();
     let w = innerWidth - MARGIN * 2, h = w / ratio;
     if (h > room) { h = room; w = h * ratio; }
     return { left: (innerWidth - w) / 2, top: TOP + (room - h) / 2, width: w, height: h };
@@ -365,12 +378,13 @@
       if (n.dataset && map[n.dataset.framerName]) return map[n.dataset.framerName];
     return '';
   }
-  // 12px right of the logo (or at the margin without one); hidden where it would run into the counter (narrow screens)
+  // 12px right of the logo (or at the margin without one); hidden where it would run into what's next to it
   function placeSection(d) {
     const left = logo && logo.dataset.src ? MARGIN + 32 + 12 : MARGIN;
     d.style.left = left + 'px';
-    const r = nav.isConnected && allMedia().length > 1 ? nav.getBoundingClientRect() : null;
-    d.style.visibility = r && left + d.offsetWidth > r.left - 12 ? 'hidden' : '';
+    // the next thing along the top row: the counter on computers, Close on phones (their counter is at the bottom)
+    const r = PHONE ? closeBtn.getBoundingClientRect() : nav.isConnected && allMedia().length > 1 ? nav.getBoundingClientRect() : null;
+    d.style.visibility = r && r.width && left + d.offsetWidth > r.left - 12 ? 'hidden' : '';
   }
   function showSection(el, dir = 0) {
     const text = sectionOf(el);
