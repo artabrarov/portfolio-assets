@@ -2,7 +2,7 @@
     Loaded on the live site from GitHub Pages (code/lightbox.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
     On computers (not phones or tablets), click a large image or video to open it full screen, zooming from where it sits;
-    the left and right arrow keys move through the page's images and videos. Pinch on a trackpad to zoom into an open
+    the left and right arrow keys (or a two-finger swipe sideways) move through the page's images and videos. Pinch on a trackpad to zoom into an open
     image or video, and two fingers then pan. Clicking the background, Close, Esc or scrolling closes it.
     Keyboard: Tab reaches each image and video, Enter or Space opens it, and focus returns to it on close.
     Media stays in Framer: images open in a bigger version from Framer's image server, videos keep playing from where they were.
@@ -450,7 +450,8 @@
   }
   // a pinch arrives as ctrl + wheel (Chrome, Firefox) or as gesture events (Safari); two fingers pan once zoomed in;
   // a plain scroll while not zoomed closes, as before
-  let gesture = null, lastZoom = 0;
+  let gesture = null, lastZoom = 0, swipe = null;
+  const SWIPE = 40;   // px of sideways scroll that make a swipe
   function onWheel(e) {
     if (!open) return;
     if (e.ctrlKey) {   // a pinch: never the browser's own page zoom while the lightbox is open
@@ -464,7 +465,23 @@
       open.tx -= e.deltaX; open.ty -= e.deltaY;
       applyZoom();
     } else if (performance.now() - lastZoom < 400) e.preventDefault();   // the tail of a pinch back out: don't close
-    else close();
+    else {
+      // a two-finger swipe sideways moves to the next or previous item, once per swipe; a scroll up or down closes,
+      // as before. After a swipe the trackpad keeps sending its coasting (momentum) for a second or so, and a new
+      // swipe often starts before that ends: coasting only slows down, so a sharp rise in speed is the next swipe
+      const now = performance.now(), ax = Math.abs(e.deltaX);
+      const fresh = () => ({ x: 0, y: 0, done: false, low: Infinity, at: 0 });
+      if (!swipe || now - swipe.t > 250) swipe = fresh();
+      else if (swipe.done) {
+        swipe.low = Math.min(swipe.low, ax);
+        if (now - swipe.at > 150 && ax > swipe.low * 2 && ax > swipe.low + 6) swipe = fresh();
+      }
+      swipe.t = now; swipe.x += e.deltaX; swipe.y += e.deltaY;
+      if (Math.abs(swipe.x) > Math.abs(swipe.y)) {
+        e.preventDefault();   // also keeps the browser from going back a page
+        if (!swipe.done && Math.abs(swipe.x) > SWIPE) { swipe.done = true; swipe.at = now; step(swipe.x > 0 ? 1 : -1); }
+      } else if (!swipe.done) close();   // a swipe's coasting can drift a little vertical: don't close on that
+    }
   }
   addEventListener('gesturestart', e => {
     if (!open) return;
