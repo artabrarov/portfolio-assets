@@ -56,7 +56,8 @@
   // (Hover colour style) and a soft shadow
   const BUTTON = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)';
   const BUTTON_HOVER = 'var(--token-161d896a-76d8-4d9e-baab-5089a763c675,#f5f4f0)';
-  const BUTTON_EDGE = 'inset 0 0 0 1px var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0), 0 1px 8px var(--token-8f28962e-7f45-4326-857f-59f3a939af34,rgba(114,101,85,.06))';
+  // its line and shadow are copied from the page's button when the sheet opens (--site-btn-*); these are the fallbacks
+  const BUTTON_EDGE = 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)), var(--site-btn-shadow,0 1px 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))';
   const MEDIUM = '"Open Runde Medium","Open Runde",sans-serif';   // fallbacks before the page's styles are read
   const SEMI = '"Open Runde Semibold","Open Runde",sans-serif';
 
@@ -75,7 +76,7 @@
     .ab-sheet:focus{outline:none;}
     .ab-sheet p{margin:0;}
     /* type copied from the Hero's Framer styles by syncType(); the values after the commas are fallbacks */
-    .ab-body{font-family:var(--ab-body-family,${MEDIUM});font-weight:var(--ab-body-weight,500);font-size:var(--ab-body-size,15px);
+    .ab-body{font-family:var(--ab-body-family,${MEDIUM});font-weight:var(--ab-body-weight,500);font-variation-settings:var(--ab-body-wght,normal);font-size:var(--ab-body-size,15px);
       line-height:var(--ab-body-lh,23px);letter-spacing:var(--ab-body-ls,-0.1px);color:${MUTED};}
     .ab-head{display:flex;flex-direction:column;gap:24px;}
     .ab-head .ab-avatar{width:32px;height:32px;border-radius:999px;overflow:hidden;}
@@ -104,7 +105,7 @@
     .ab-close{box-sizing:border-box;height:32px;margin:0;border:0;padding:6px 18px;border-radius:999px;display:inline-flex;
       align-items:center;background:${BUTTON};box-shadow:${BUTTON_EDGE};color:${DARK};text-decoration:none;white-space:nowrap;cursor:pointer;
       transition:background-color .2s,opacity ${M.close}ms ease;
-      font-family:var(--ab-btn-family,${SEMI});font-weight:var(--ab-btn-weight,600);font-size:var(--ab-btn-size,13px);
+      font-family:var(--ab-btn-family,${SEMI});font-weight:var(--ab-btn-weight,600);font-variation-settings:var(--ab-btn-wght,normal);font-size:var(--ab-btn-size,13px);
       line-height:var(--ab-btn-lh,20px);letter-spacing:var(--ab-btn-ls,-0.1px);}
     .ab-close:hover{background:${BUTTON_HOVER};}
     .ab-close:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
@@ -138,13 +139,20 @@
     const copy = (prefix, node) => {
       if (!node) return;
       const t = getComputedStyle(node);
-      set(`--ab-${prefix}-family`, t.fontFamily); set(`--ab-${prefix}-weight`, t.fontWeight);
+      set(`--ab-${prefix}-family`, t.fontFamily); set(`--ab-${prefix}-weight`, t.fontWeight); set(`--ab-${prefix}-wght`, t.fontVariationSettings);
       set(`--ab-${prefix}-size`, t.fontSize); set(`--ab-${prefix}-lh`, t.lineHeight); set(`--ab-${prefix}-ls`, t.letterSpacing);
     };
     const hero = visible(document.querySelectorAll('[data-framer-name="Hero"]'));
     const paras = hero ? [...hero.querySelectorAll('p')].filter(p => p.offsetWidth && !p.closest('[data-framer-name="Button"]')) : [];
     copy('body', paras.find(p => p.textContent.trim().length > 40));                     // the bio
     copy('btn', visible(document.querySelectorAll('[data-framer-name="Button"] p')));
+    // the buttons' line and shadow, from the page's Primary button (not its fill, which may be mid-hover)
+    const primary = [...document.querySelectorAll('[data-framer-name="Primary"]')].find(e => e.offsetWidth > 0);
+    if (primary) {
+      const s = getComputedStyle(primary), a = getComputedStyle(primary, '::after');   // Framer draws the line on ::after
+      if (parseFloat(a.borderTopWidth)) root.setProperty('--site-btn-line', a.borderTopColor);
+      root.setProperty('--site-btn-shadow', s.boxShadow === 'none' ? '0 0 #0000' : s.boxShadow);
+    }
     // the cards' corners and padding: the first wide frame in the White colour style
     const card = [...document.querySelectorAll('[data-framer-name]')].find(c => c.offsetWidth >= Math.min(500, innerWidth * .8) &&
       getComputedStyle(c).backgroundColor === getComputedStyle(probe).backgroundColor);

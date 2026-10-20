@@ -64,8 +64,9 @@
       // style and a soft shadow
       button: 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)',
       buttonHover: 'var(--token-161d896a-76d8-4d9e-baab-5089a763c675,#f5f4f0)',
-      buttonLine: 'inset 0 0 0 1px var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)',   // a disabled button: the line without the shadow
-      buttonEdge: 'inset 0 0 0 1px var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0), 0 1px 8px var(--token-8f28962e-7f45-4326-857f-59f3a939af34,rgba(114,101,85,.06))',
+      // the line and shadow are copied from the page's button (--site-btn-*); these are the fallbacks
+      buttonLine: 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0))',   // a disabled button: the line without the shadow
+      buttonEdge: 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)), var(--site-btn-shadow,0 1px 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))',
     };
     const FAMILY = '"Instrument Sans Variable","Instrument Sans","Instrument Sans Placeholder",sans-serif';
     const font = (role, size, lh, wght) => `font-family:var(--fx-${role}-family,${FAMILY});font-size:var(--fx-${role}-size,${size});` +
@@ -170,6 +171,13 @@
       copy('body', [...hero.querySelectorAll('p')].find(p => !p.closest('[data-framer-name="Footer"],[data-framer-name="Button"],[class^="fx-"]')));
       copy('small', link);
       copy('strong', hero.querySelector('[data-framer-name="Button"] p'));
+      // the buttons' line and shadow, from the page's Primary button (not its fill, which may be mid-hover)
+      const primary = [...document.querySelectorAll('[data-framer-name="Primary"]')].find(e => e.offsetWidth > 0);
+      if (primary) {
+        const s = getComputedStyle(primary), a = getComputedStyle(primary, '::after');   // Framer draws the line on ::after
+        if (parseFloat(a.borderTopWidth)) root.setProperty('--site-btn-line', a.borderTopColor);
+        root.setProperty('--site-btn-shadow', s.boxShadow === 'none' ? '0 0 #0000' : s.boxShadow);
+      }
       if (link) {
         const s = getComputedStyle(link), v = p => s.getPropertyValue(p).trim();
         const deco = v('--framer-link-text-decoration'), hoverDeco = v('--framer-link-hover-text-decoration') || deco;
