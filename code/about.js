@@ -22,7 +22,7 @@
     bio: [
       "I'm a product designer based in London. I love fast-paced teams full of people I can learn from, where we work hard and have a lot of fun along the way.",
       "Currently, I'm leading Apron Card, wearing both the design and the product hat. I also help look after our design system and mobile app, so things feel consistent across the product.",
-      "Before that, I helped launch and scale Joompay, a consumer banking app, and learned the ropes of design at Redmadrobot. My degree is in business and economics, and I hold a UK Global Talent visa.",
+      "Before that, I helped launch and scale Joompay, a consumer banking app, and learned the ropes of design at Redmadrobot. My degree is in international business, and I hold a UK Global Talent visa.",
     ],
     // company, role, years; page: the case study whose homepage card logo is reused; logo: fallback when no card is on the page
     work: [
