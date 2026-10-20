@@ -2,10 +2,10 @@
     Loaded on the live site from GitHub Pages (code/about.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
     The Hero's About button (a Secondary button labelled "About", linked to #about) opens a drawer: a white card that
-    slides in from the left, 16px in from the screen's edges, pushing the page (dimmed and blurred) to the right at its
-    own size, with Close where the lightbox has it
-    (top right). In it: a photo, a short bio with ways to get in touch, and the companies I've worked at.
-    Close, a click on the grey, Esc, or on phones and tablets a swipe to the left closes it. Opening /#about (or any page with #about) opens it straight away.
+    slides in from the left, 16px in from the screen's edges, pushing the page to the right at its own size, with Close
+    where the lightbox has it (top right). In it: a photo, a short bio with ways to get in touch, and the companies I've
+    worked at. Close, a click on the page, Esc, or on phones and tablets a swipe to the left closes it. Opening /#about
+    (or any page with #about) opens it straight away.
     Keyboard: focus moves into the sheet, Tab stays inside it, and focus returns to the About button on close.
     The sheet is drawn from the site's Framer styles: the cards' White colour style and corners, the Hero's text styles,
     the Secondary button's look and the company logos from the homepage cards, so tweaks in Framer reach it. */
@@ -54,7 +54,6 @@
   const WHITE = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)';   // the cards
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#2e261c)';    // dark text
   const MUTED = 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2,#726555)';   // grey text
-  const DIM = 'rgba(0,0,0,.3)', BLUR = 'blur(8px)';   // behind the drawer
   const IMAGE = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#eeece6)';   // the Image Frame's fill, behind the photo
   // the Secondary button, as in the emoji game: the Hover colour style at rest, Stroke on hover
   const BUTTON = 'var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)';
@@ -64,8 +63,8 @@
 
   const css = document.createElement('style');
   css.textContent = `
-    /* behind the drawer: the page dimmed with 30% black and softly blurred */
-    .ab-backdrop{position:fixed;inset:0;z-index:10001;background:${DIM};backdrop-filter:${BLUR};-webkit-backdrop-filter:${BLUR};opacity:0;}
+    /* over the pushed page: clear, it only catches the click or tap that closes the drawer */
+    .ab-backdrop{position:fixed;inset:0;z-index:10001;}
     /* the drawer: a card, as on the homepage (White, the cards' corners, padding and shadow), 16px in from the screen's left
        and bottom edges and from the top (below Close on phones); it scrolls on its own when it's taller than the screen */
     .ab-sheet{position:fixed;z-index:10002;box-sizing:border-box;top:calc(${TOP}px + env(safe-area-inset-top,0px));
@@ -269,7 +268,6 @@
     ui.close.classList.toggle('ab-quiet', viaPointer);
     ui.sheet.querySelectorAll('a').forEach(a => a.classList.toggle('ab-quiet', viaPointer));
     ui.close.focus({ preventScroll: true });
-    ui.backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: REDUCED ? 150 : M.open, easing: 'ease', fill: 'forwards' });
     if (REDUCED) ui.sheet.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: 'ease' });
     else ui.sheet.animate([{ translate: `${offscreen(ui.sheet)}px 0` }, { translate: '0 0' }], { duration: M.open, easing: M.ease });
     if (ui.page) {
@@ -358,7 +356,7 @@
     if (open) {
       e.stopPropagation();
       if (e.target === open.close) { e.preventDefault(); closeSheet(); return; }
-      // the grey around the drawer closes; links inside it go where they point
+      // a click on the pushed page closes it; links inside the drawer go where they point
       if (e.target === open.backdrop) { e.preventDefault(); closeSheet(); }
       return;
     }
