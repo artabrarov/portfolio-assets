@@ -1,9 +1,10 @@
 /*  About sheet for arthurabrarov.com
     Loaded on the live site from GitHub Pages (code/about.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
-    The Hero's About button (a Secondary button labelled "About", linked to #about) opens a white sheet in the middle of
-    the screen, on the page's grey: a short bio, the companies I've worked at, and ways to get in touch.
-    Close, a click on the grey, Esc, or on phones and tablets a swipe down closes it. Opening /#about (or any page with #about) opens it straight away.
+    The Hero's About button (a Secondary button labelled "About", linked to #about) opens a drawer: a white card that
+    slides in from the left, 16px in from the screen's edges, over the page dimmed with its own grey. In it: Close, a
+    photo, a short bio with ways to get in touch, and the companies I've worked at.
+    Close, a click on the grey, Esc, or on phones and tablets a swipe to the left closes it. Opening /#about (or any page with #about) opens it straight away.
     Keyboard: focus moves into the sheet, Tab stays inside it, and focus returns to the About button on close.
     The sheet is drawn from the site's Framer styles: the cards' White colour style and corners, the Hero's text styles,
     the Secondary button's look and the company logos from the homepage cards, so tweaks in Framer reach it. */
@@ -39,11 +40,9 @@
   const TRIGGER = 'About';                 // the label of the Hero button that opens the sheet (or any link to #about)
   const HASH = '#about';
 
-  const PHONE = matchMedia('(max-width: 599px)').matches;
-  const MARGIN = PHONE ? 16 : 32;          // px: Close sits this far from the screen edges, as in the lightbox
-  const TOP = MARGIN + 32 + 16;            // px above the sheet: Close (32px tall) and a 16px gap
+  const INSET = 16;                        // px between the drawer and the screen's edges
   // motion, in ms: the lightbox's soft glide
-  const M = { ease: 'cubic-bezier(.32,.72,0,1)', open: 300, close: 250, rise: 16 };
+  const M = { ease: 'cubic-bezier(.32,.72,0,1)', open: 300, close: 250 };
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // the site's Framer colour styles (fallbacks after the commas)
@@ -60,16 +59,19 @@
 
   const css = document.createElement('style');
   css.textContent = `
-    .ab-backdrop{position:fixed;inset:0;z-index:10001;background:${PAGE};opacity:0;overflow-y:auto;overscroll-behavior:contain;
-      -webkit-overflow-scrolling:touch;}
-    .ab-backdrop.ab-show{opacity:1;}
-    .ab-wrap{min-height:100%;box-sizing:border-box;display:flex;justify-content:center;align-items:flex-start;
-      padding:${TOP}px ${MARGIN}px calc(${MARGIN}px + env(safe-area-inset-bottom,0px));}
-    ${PHONE ? '' : `.ab-wrap{align-items:center;padding-top:${TOP}px;padding-bottom:${TOP}px;}`}
-    /* the sheet: a card, as on the homepage (White, the cards' corners and padding) */
-    .ab-sheet{box-sizing:border-box;width:100%;max-width:560px;background:${WHITE};border-radius:var(--ab-radius,24px);
-      corner-shape:var(--ab-corner,round);padding:var(--ab-pad,32px);display:flex;flex-direction:column;gap:32px;
-      will-change:transform,opacity;}
+    /* behind the drawer: the page, dimmed with the page background colour style */
+    .ab-backdrop{position:fixed;inset:0;z-index:10001;background:color-mix(in srgb,${PAGE} 72%,transparent);opacity:0;}
+    /* the drawer: a card, as on the homepage (White, the cards' corners and padding), 16px in from the screen's top,
+       left and bottom edges; it scrolls on its own when it's taller than the screen */
+    .ab-sheet{position:fixed;z-index:10002;box-sizing:border-box;top:calc(${INSET}px + env(safe-area-inset-top,0px));
+      bottom:calc(${INSET}px + env(safe-area-inset-bottom,0px));left:calc(${INSET}px + env(safe-area-inset-left,0px));
+      width:min(560px,calc(100% - ${INSET * 2}px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
+      overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+      background:${WHITE};border-radius:var(--ab-radius,24px);corner-shape:var(--ab-corner,round);padding:var(--ab-pad,32px);
+      display:flex;flex-direction:column;gap:32px;will-change:transform;}
+    /* the top: Close on the right, 16px above the photo */
+    .ab-top{display:flex;flex-direction:column;gap:16px;}
+    .ab-bar{display:flex;justify-content:flex-end;}
     .ab-sheet:focus{outline:none;}
     .ab-sheet p{margin:0;}
     /* type copied from the Hero's Framer styles by syncType(); the values after the commas are fallbacks */
@@ -102,17 +104,15 @@
     /* Close: the site's Secondary button (32px pill, Stroke fill, button label type) */
     .ab-close{box-sizing:border-box;height:32px;margin:0;border:0;padding:6px 18px;border-radius:999px;display:inline-flex;
       align-items:center;background:${BUTTON};color:${DARK};text-decoration:none;white-space:nowrap;cursor:pointer;
-      transition:background-color .2s,opacity ${M.close}ms ease;
+      transition:background-color .2s;
       font-family:var(--ab-btn-family,${SEMI});font-weight:var(--ab-btn-weight,600);font-size:var(--ab-btn-size,13px);
       line-height:var(--ab-btn-lh,20px);letter-spacing:var(--ab-btn-ls,-0.1px);}
     .ab-close:hover{background:${BUTTON_HOVER};}
     .ab-close:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
-    .ab-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;}
-    .ab-close.ab-show{opacity:1;}
     /* opened with the mouse or a link: no rings until Tab is pressed (!important and more specific than the lightbox's
        site-wide ring, which is !important too) */
     .ab-close.ab-quiet:focus-visible,.ab-link.ab-quiet:focus-visible{outline:none !important;}
-    /* the page stays put behind the sheet: lock the page's own scroll (html) only. Locking body too would make it a
+    /* the page stays put behind the drawer: lock the page's own scroll (html) only. Locking body too would make it a
        scroll box of its own, and Framer's sticky Hero would jump to its top. The gutter keeps the scrollbar's space */
     html.ab-open{overflow:hidden !important;scrollbar-gutter:stable;}
   `;
@@ -191,7 +191,6 @@
 
   function build() {
     const backdrop = el('div', 'ab-backdrop');
-    const wrap = el('div', 'ab-wrap');
     const sheet = el('section', 'ab-sheet');
     sheet.setAttribute('role', 'dialog');
     sheet.setAttribute('aria-modal', 'true');
@@ -242,13 +241,12 @@
       li.append(row); list.append(li);
     });
 
-    sheet.append(head, list);
-    wrap.append(sheet);
-    backdrop.append(wrap);
-
     const close = el('button', 'ab-close', 'Close');
     close.type = 'button';
-    return { backdrop, wrap, sheet, close };
+    const bar = el('div', 'ab-bar'), top = el('div', 'ab-top');
+    bar.append(close); top.append(bar, head);
+    sheet.append(top, list);
+    return { backdrop, sheet, close };
   }
 
   let open = null;   // { backdrop, sheet, close, from }
@@ -257,54 +255,54 @@
     if (open) return;
     syncStyles();
     const ui = build();
-    document.body.append(ui.backdrop, ui.close);
+    document.body.append(ui.backdrop, ui.sheet);
     document.documentElement.classList.add('ab-open');
     open = { ...ui, from };
     ui.close.classList.toggle('ab-quiet', viaPointer);
     ui.sheet.querySelectorAll('a').forEach(a => a.classList.toggle('ab-quiet', viaPointer));
     ui.close.focus({ preventScroll: true });
-    const t = REDUCED ? 0 : M.open;
-    ui.backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: REDUCED ? 150 : t, easing: 'ease', fill: 'forwards' });
-    ui.sheet.animate([{ opacity: 0, transform: `translateY(${M.rise}px) scale(.98)` }, { opacity: 1, transform: 'none' }],
-      { duration: t, easing: M.ease, fill: 'backwards' });
-    requestAnimationFrame(() => ui.close.classList.add('ab-show'));
+    ui.backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: REDUCED ? 150 : M.open, easing: 'ease', fill: 'forwards' });
+    if (REDUCED) ui.sheet.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: 'ease' });
+    else ui.sheet.animate([{ translate: `${offscreen(ui.sheet)}px 0` }, { translate: '0 0' }], { duration: M.open, easing: M.ease });
     swipeToClose(ui);
   }
 
-  // phones and tablets, as in the lightbox: swipe the sheet down to close it. Only from the top of the sheet's scroll,
-  // so a swipe down further in still scrolls back up. The sheet follows the finger; past 100px it closes from there,
-  // otherwise it springs back
-  function swipeToClose({ backdrop, sheet }) {
+  // how far left the drawer goes to be off screen: its width and the inset (px, negative)
+  const offscreen = sheet => -(sheet.getBoundingClientRect().right + 8);
+
+  // phones and tablets: swipe the drawer back to the left to close it, as it came in. It follows the finger; past
+  // 100px or with a flick it slides out from there at the finger's speed, otherwise it springs back. Up and down scroll
+  function swipeToClose({ sheet }) {
     let t = null;
-    backdrop.addEventListener('touchstart', e => {
-      t = e.touches.length === 1 ? { y: e.touches[0].clientY, x: e.touches[0].clientX, top: backdrop.scrollTop, dy: 0, on: false } : null;
+    sheet.addEventListener('touchstart', e => {
+      t = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, dx: 0, on: false } : null;
     }, { passive: true });
-    backdrop.addEventListener('touchmove', e => {
+    sheet.addEventListener('touchmove', e => {
       if (!t || e.touches.length !== 1) return;
-      const dy = e.touches[0].clientY - t.y, dx = e.touches[0].clientX - t.x;
+      const dx = e.touches[0].clientX - t.x, dy = e.touches[0].clientY - t.y;
       if (!t.on) {
-        if (Math.abs(dy) < 8 && Math.abs(dx) < 8) return;
-        // a drag down that starts at the top of the scroll, more down than sideways: the sheet's; anything else scrolls
-        if (t.top > 0 || dy <= 0 || Math.abs(dx) > Math.abs(dy)) { t = null; return; }
-        t.on = true; t.y = e.touches[0].clientY;
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        // a drag to the left, more sideways than up or down: the drawer's; anything else scrolls
+        if (dx >= 0 || Math.abs(dy) > Math.abs(dx)) { t = null; return; }
+        t.on = true; t.x = e.touches[0].clientX;
       }
-      e.preventDefault();   // no scroll bounce underneath while the sheet follows the finger
-      const down = Math.max(0, e.touches[0].clientY - t.y), now = performance.now();
-      // the finger's speed (px/ms), smoothed over the last few moves, so the close can carry on at it
-      if (t.at) t.v = 0.6 * ((down - t.dy) / Math.max(1, now - t.at)) + 0.4 * (t.v || 0);
-      t.dy = down; t.at = now;
-      sheet.style.translate = `0 ${down}px`;
+      e.preventDefault();   // the drawer doesn't scroll while it follows the finger
+      const left = Math.min(0, e.touches[0].clientX - t.x), now = performance.now();
+      // the finger's speed (px/ms, negative to the left), smoothed over the last few moves
+      if (t.at) t.v = 0.6 * ((left - t.dx) / Math.max(1, now - t.at)) + 0.4 * (t.v || 0);
+      t.dx = left; t.at = now;
+      sheet.style.translate = `${left}px 0`;
     }, { passive: false });
     const end = () => {
       if (!t || !t.on) { t = null; return; }
-      const { dy, v = 0 } = t;
+      const { dx, v = 0 } = t;
       t = null;
-      if (dy > 100) { closeSheet({ dy, v }); return; }   // carries on down from where the finger let go
+      if (dx < -100 || (dx < -30 && v < -0.5)) { closeSheet({ dx, v }); return; }
       sheet.style.translate = '';
-      sheet.animate([{ translate: `0 ${dy}px` }, { translate: '0 0' }], { duration: REDUCED ? 1 : 150, easing: M.ease });
+      sheet.animate([{ translate: `${dx}px 0` }, { translate: '0 0' }], { duration: REDUCED ? 1 : 150, easing: M.ease });
     };
-    backdrop.addEventListener('touchend', end, { passive: true });
-    backdrop.addEventListener('touchcancel', end, { passive: true });
+    sheet.addEventListener('touchend', end, { passive: true });
+    sheet.addEventListener('touchcancel', end, { passive: true });
   }
 
   function closeSheet(swipe = null) {
@@ -312,24 +310,19 @@
     const { backdrop, sheet, close, from } = open;
     open = null;
     document.documentElement.classList.remove('ab-open');
-    close.classList.remove('ab-show');
     if (location.hash === HASH) history.replaceState(history.state, '', location.pathname + location.search);
     // keyboard use: focus goes back to the About button; opened with the mouse: just let go of it
     if (from && from.isConnected && !close.classList.contains('ab-quiet')) from.focus({ preventScroll: true });
     else close.blur();
     const t = REDUCED ? 0 : M.close;
-    const done = () => { backdrop.remove(); close.remove(); };
-    if (swipe && !REDUCED) {
-      // after a swipe: the sheet keeps going down at the finger's speed and eases out as it fades, like a flick. The
-      // easing starts at 2.25× the average speed (.72 / .32), so this distance makes its first frames match the finger
-      const far = Math.min(innerHeight, Math.max(80, swipe.v * t / 2.25));
-      sheet.style.translate = '';
-      sheet.animate([{ translate: `0 ${swipe.dy}px` }, { translate: `0 ${swipe.dy + far}px` }], { duration: t, easing: M.ease, fill: 'forwards' });
-      sheet.animate([{ opacity: 1 }, { opacity: 0 }], { duration: t, easing: M.ease, fill: 'forwards' });   // fades as it moves, so it never rests visible
-    } else {
-      sheet.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${M.rise / 2}px) scale(.98)` }],
-        { duration: t || 1, easing: M.ease, fill: 'forwards' });
-    }
+    const done = () => { backdrop.remove(); sheet.remove(); };
+    // back out to the left, from where it is (after a swipe, from where the finger let go). After a quick swipe the
+    // slide starts at the finger's speed: the easing starts at 2.25× its average (.72 / .32), so the time follows from that
+    sheet.style.translate = '';
+    const from0 = swipe ? swipe.dx : 0, to = offscreen(sheet), dist = Math.abs(to - from0);
+    const time = swipe && swipe.v < 0 ? Math.min(t, Math.max(120, dist * 2.25 / -swipe.v)) : t;
+    if (REDUCED) sheet.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, easing: 'ease', fill: 'forwards' });
+    else sheet.animate([{ translate: `${from0}px 0` }, { translate: `${to}px 0` }], { duration: time, easing: M.ease, fill: 'forwards' });
     backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: REDUCED ? 150 : t, easing: 'ease', fill: 'forwards' })
       .finished.then(done, done);
   }
@@ -342,8 +335,8 @@
     if (open) {
       e.stopPropagation();
       if (e.target === open.close) { e.preventDefault(); closeSheet(); return; }
-      // the grey around the sheet closes; links inside the sheet go where they point
-      if (e.target === open.backdrop || e.target === open.wrap) { e.preventDefault(); closeSheet(); }
+      // the dimmed page around the drawer closes; links inside it go where they point
+      if (e.target === open.backdrop) { e.preventDefault(); closeSheet(); }
       return;
     }
     const t = triggerOf(e.target);
