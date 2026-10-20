@@ -60,8 +60,11 @@
       grey: 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2,rgb(104,104,112))',
       stroke: 'var(--token-c0c08a01-85af-48e1-a222-d1e74edf9e8e,#E3E3E3)',
       fill: 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)',
-      // the site's Secondary button (Contact): the Hover colour style at rest, Stroke on hover
-      secondary: 'var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#ebeae8)',
+      // the site's Primary button (About, View): White, the page background on hover, a 1px line in the Hover colour
+      // style and a soft shadow
+      button: 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)',
+      buttonHover: 'var(--token-161d896a-76d8-4d9e-baab-5089a763c675,#f5f4f0)',
+      buttonEdge: 'inset 0 0 0 1px var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0), 0 1px 8px var(--token-8f28962e-7f45-4326-857f-59f3a939af34,rgba(114,101,85,.06))',
     };
     const FAMILY = '"Instrument Sans Variable","Instrument Sans","Instrument Sans Placeholder",sans-serif';
     const font = (role, size, lh, wght) => `font-family:var(--fx-${role}-family,${FAMILY});font-size:var(--fx-${role}-size,${size});` +
@@ -126,15 +129,15 @@
       .fx-up-name{font-size:var(--fx-body-size,16px);line-height:var(--fx-body-lh,24px);}
       .fx-up-lvl{color:${C.grey};}
       .fx-up-info{color:${C.grey};font-size:var(--fx-small-size,14px);line-height:var(--fx-small-lh,20px);font-variant-numeric:tabular-nums;}
-      /* the shop's buttons look like the site's Secondary button: fill, hover, label style (button), 18px sides */
-      .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:32px;padding:0 18px;border-radius:999px;background:${C.secondary};
+      /* the shop's buttons look like the site's Primary button: fill, line, shadow, hover, label style (button), 18px sides */
+      .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:32px;padding:0 18px;border-radius:999px;background:${C.button};box-shadow:${C.buttonEdge};
         ${font('strong', '13px', '32px', 560)}line-height:32px;color:${C.dark};
         white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums;transition:background-color .2s,opacity .2s;}
-      .fx-buy:hover{background:${C.stroke};}
+      .fx-buy:hover{background:${C.buttonHover};}
       .fx-buy.fx-cant{opacity:.45;cursor:default;}
       .fx-buy.fx-max{cursor:default;opacity:.45;}
-      .fx-buy.fx-max:hover{background:${C.secondary};}
-      .fx-buy.fx-cant:hover{background:${C.secondary};}
+      .fx-buy.fx-max:hover{background:${C.button};}
+      .fx-buy.fx-cant:hover{background:${C.button};}
       .fx-up-bar{position:absolute;left:0;right:0;bottom:8px;height:2px;border-radius:2px;background:rgba(31,31,31,.12);
         transform-origin:0 50%;scale:0 1;}
       .fx-float{position:absolute;right:0;top:0;font-size:13px;line-height:20px;

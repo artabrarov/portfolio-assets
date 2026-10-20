@@ -1,12 +1,12 @@
 /*  About sheet for arthurabrarov.com
     Loaded on the live site from GitHub Pages (code/about.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
-    The Hero's About button (a Secondary button labelled "About", linked to #about) opens a white sheet in the middle of
+    The Hero's About button (a Primary button labelled "About", linked to #about) opens a white sheet in the middle of
     the screen, on the page's grey: a short bio, the companies I've worked at, and ways to get in touch.
     Close, a click on the grey, Esc, or on phones and tablets a swipe down closes it. Opening /#about (or any page with #about) opens it straight away.
     Keyboard: focus moves into the sheet, Tab stays inside it, and focus returns to the About button on close.
     The sheet is drawn from the site's Framer styles: the cards' White colour style and corners, the Hero's text styles,
-    and the Secondary button's look, so tweaks in Framer reach it. */
+    and the Primary button's look, so tweaks in Framer reach it. */
 (() => {
   if (window.__about) return;              // run once, even with Framer's page transitions
   window.__about = true;
@@ -52,9 +52,11 @@
   // the line between the bio and the companies: the colour style behind the homepage images (#eeece6)
   const LINE = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#eeece6)';
   const IMAGE = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#eeece6)';   // the Image Frame's fill, behind the photo
-  // the Secondary button, as in the emoji game: the Hover colour style at rest, Stroke on hover
-  const BUTTON = 'var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)';
-  const BUTTON_HOVER = 'var(--token-c0c08a01-85af-48e1-a222-d1e74edf9e8e,#e0ddd4)';
+  // the site's Primary button, as in the lightbox and the emoji game: White, the page background on hover, a 1px line
+  // (Hover colour style) and a soft shadow
+  const BUTTON = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)';
+  const BUTTON_HOVER = 'var(--token-161d896a-76d8-4d9e-baab-5089a763c675,#f5f4f0)';
+  const BUTTON_EDGE = 'inset 0 0 0 1px var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0), 0 1px 8px var(--token-8f28962e-7f45-4326-857f-59f3a939af34,rgba(114,101,85,.06))';
   const MEDIUM = '"Open Runde Medium","Open Runde",sans-serif';   // fallbacks before the page's styles are read
   const SEMI = '"Open Runde Semibold","Open Runde",sans-serif';
 
@@ -98,9 +100,9 @@
     /* the contact links: dark text, grey on hover */
     .ab-link{color:${DARK};text-decoration:none;transition:color .2s;}
     .ab-link:hover{color:${MUTED};}
-    /* Close: the site's Secondary button (32px pill, Stroke fill, button label type) */
+    /* Close: the site's Primary button (32px pill, White with a line and shadow, button label type) */
     .ab-close{box-sizing:border-box;height:32px;margin:0;border:0;padding:6px 18px;border-radius:999px;display:inline-flex;
-      align-items:center;background:${BUTTON};color:${DARK};text-decoration:none;white-space:nowrap;cursor:pointer;
+      align-items:center;background:${BUTTON};box-shadow:${BUTTON_EDGE};color:${DARK};text-decoration:none;white-space:nowrap;cursor:pointer;
       transition:background-color .2s,opacity ${M.close}ms ease;
       font-family:var(--ab-btn-family,${SEMI});font-weight:var(--ab-btn-weight,600);font-size:var(--ab-btn-size,13px);
       line-height:var(--ab-btn-lh,20px);letter-spacing:var(--ab-btn-ls,-0.1px);}

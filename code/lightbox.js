@@ -36,9 +36,11 @@
   const OVERLAY = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fff)';   // behind open media: the White colour style (the cards'), no effects
   const MAX_ZOOM = 4;                      // a pinch zooms open media up to 4×
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#1f1f1f)';   // the site's colour styles
-  const FILL = 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)';
+  // the buttons: the site's Primary button (White, a 1px line in the Hover colour style, a soft shadow)
+  const FILL = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)';
+  const EDGE = 'inset 0 0 0 1px var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0), 0 1px 8px var(--token-8f28962e-7f45-4326-857f-59f3a939af34,rgba(114,101,85,.06))';
   const TYPE = '"Instrument Sans Variable","Instrument Sans",sans-serif';   // fallback before the page's styles are read
-  const FILL_HOVER = 'var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e7)';   // the buttons' hover colour
+  const FILL_HOVER = 'var(--token-161d896a-76d8-4d9e-baab-5089a763c675,#f5f4f0)';   // the buttons' hover colour: the page background
 
   const css = document.createElement('style');
   css.textContent = `
@@ -61,9 +63,10 @@
     .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;
       transform-origin:0 0;}
     .lb-media.lb-media{cursor:default;}   /* open media is for looking (and pinching); the white around it closes */
-    /* top left: ← counter →, top right: Close. All look like the site's buttons: 32px tall, grey fill, dark text */
+    /* top left: ← counter →, top right: Close. All look like the site's Primary button: 32px tall, White with a line and
+       a soft shadow, dark text */
     .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:32px;margin:0;border:0;
-      border-radius:999px;background:${FILL};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color .2s;
+      border-radius:999px;background:${FILL};box-shadow:${EDGE};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color .2s;
       /* type copied from the page's Framer styles by syncType(); the values after the commas are fallbacks */
       font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);
       letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);}
