@@ -2,7 +2,8 @@
     Loaded on the live site from GitHub Pages (code/about.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
     The Hero's About button (a Secondary button labelled "About", linked to #about) opens a drawer: a white card that
-    slides in from the left, 16px in from the screen's edges, over the page dimmed and blurred, with Close where the lightbox has it
+    slides in from the left, 16px in from the screen's edges, pushing the page (dimmed and blurred) to the right at its
+    own size, with Close where the lightbox has it
     (top right). In it: a photo, a short bio with ways to get in touch, and the companies I've worked at.
     Close, a click on the grey, Esc, or on phones and tablets a swipe to the left closes it. Opening /#about (or any page with #about) opens it straight away.
     Keyboard: focus moves into the sheet, Tab stays inside it, and focus returns to the About button on close.
@@ -261,6 +262,9 @@
     const ui = build();
     document.body.append(ui.backdrop, ui.sheet, ui.close);
     document.documentElement.classList.add('ab-open');
+    // the page moves right by the drawer's width and inset, keeping its size; what goes past the right edge is cut off
+    ui.page = document.getElementById('main');
+    ui.push = ui.sheet.getBoundingClientRect().right;
     open = { ...ui, from };
     ui.close.classList.toggle('ab-quiet', viaPointer);
     ui.sheet.querySelectorAll('a').forEach(a => a.classList.toggle('ab-quiet', viaPointer));
@@ -268,6 +272,10 @@
     ui.backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: REDUCED ? 150 : M.open, easing: 'ease', fill: 'forwards' });
     if (REDUCED) ui.sheet.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 150, easing: 'ease' });
     else ui.sheet.animate([{ translate: `${offscreen(ui.sheet)}px 0` }, { translate: '0 0' }], { duration: M.open, easing: M.ease });
+    if (ui.page) {
+      ui.page.style.translate = `${ui.push}px 0`;
+      if (!REDUCED) ui.page.animate([{ translate: '0 0' }, { translate: `${ui.push}px 0` }], { duration: M.open, easing: M.ease });
+    }
     requestAnimationFrame(() => ui.close.classList.add('ab-show'));
     swipeToClose(ui);
   }
@@ -277,7 +285,7 @@
 
   // phones and tablets: swipe the drawer back to the left to close it, as it came in. It follows the finger; past
   // 100px or with a flick it slides out from there at the finger's speed, otherwise it springs back. Up and down scroll
-  function swipeToClose({ sheet }) {
+  function swipeToClose({ sheet, page, push }) {
     let t = null;
     sheet.addEventListener('touchstart', e => {
       t = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, dx: 0, on: false } : null;
@@ -297,6 +305,7 @@
       if (t.at) t.v = 0.6 * ((left - t.dx) / Math.max(1, now - t.at)) + 0.4 * (t.v || 0);
       t.dx = left; t.at = now;
       sheet.style.translate = `${left}px 0`;
+      if (page) page.style.translate = `${push + left}px 0`;   // the page follows the drawer
     }, { passive: false });
     const end = () => {
       if (!t || !t.on) { t = null; return; }
@@ -305,6 +314,10 @@
       if (dx < -100 || (dx < -30 && v < -0.5)) { closeSheet({ dx, v }); return; }
       sheet.style.translate = '';
       sheet.animate([{ translate: `${dx}px 0` }, { translate: '0 0' }], { duration: REDUCED ? 1 : 150, easing: M.ease });
+      if (page) {
+        page.style.translate = `${push}px 0`;
+        page.animate([{ translate: `${push + dx}px 0` }, { translate: `${push}px 0` }], { duration: REDUCED ? 1 : 150, easing: M.ease });
+      }
     };
     sheet.addEventListener('touchend', end, { passive: true });
     sheet.addEventListener('touchcancel', end, { passive: true });
@@ -312,7 +325,7 @@
 
   function closeSheet(swipe = null) {
     if (!open) return;
-    const { backdrop, sheet, close, from } = open;
+    const { backdrop, sheet, close, from, page, push } = open;
     open = null;
     document.documentElement.classList.remove('ab-open');
     close.classList.remove('ab-show');
@@ -329,6 +342,10 @@
     const time = swipe && swipe.v < 0 ? Math.min(t, Math.max(120, dist * 2.25 / -swipe.v)) : t;
     if (REDUCED) sheet.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, easing: 'ease', fill: 'forwards' });
     else sheet.animate([{ translate: `${from0}px 0` }, { translate: `${to}px 0` }], { duration: time, easing: M.ease, fill: 'forwards' });
+    if (page) {   // the page slides back in step with the drawer
+      page.style.translate = '';
+      if (!REDUCED) page.animate([{ translate: `${push + from0}px 0` }, { translate: '0 0' }], { duration: time, easing: M.ease });
+    }
     backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: REDUCED ? 150 : t, easing: 'ease', fill: 'forwards' })
       .finished.then(done, done);
   }
