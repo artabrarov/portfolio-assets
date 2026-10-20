@@ -111,6 +111,7 @@
       .fx-back{all:unset;align-self:flex-start;cursor:pointer;color:var(--fx-link-color,${C.grey});
         ${font('small', '14px', '20px', 460)}
         text-decoration:underline;text-decoration-color:var(--fx-link-deco,transparent);text-underline-offset:var(--fx-link-offset,3px);transition:color .2s,text-decoration-color .2s;}
+      .fx-back:focus-visible{border-radius:4px;}   /* the site's focus ring (set in lightbox.js) rounds a little round the text */
       .fx-back:hover{color:var(--fx-link-hover-color,${C.dark});text-decoration-color:var(--fx-link-hover-deco,${C.stroke});}
       .fx-shop-foot{display:flex;gap:16px;margin-top:8px;}
       .fx-shop > .fx-up:first-child{margin-top:8px;}   /* spacing inside the shop, so it collapses with it */

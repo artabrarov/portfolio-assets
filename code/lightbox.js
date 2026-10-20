@@ -6,7 +6,8 @@
     image or video, and two fingers then pan. Clicking the background, Close, Esc or scrolling closes it.
     Keyboard: Tab reaches each image and video, Enter or Space opens it, and focus returns to it on close.
     Media stays in Framer: images open in a bigger version from Framer's image server, videos keep playing from where they were.
-    Also here, as it runs on every page: clicking Home on a case study lands on that project's card on Home, not at the top. */
+    Also here, as it runs on every page: clicking Home on a case study lands on that project's card on Home, not at the top,
+    and one keyboard focus ring for the whole site. */
 (() => {
   if (window.__lightbox) return;           // run once, even with Framer's page transitions
   window.__lightbox = true;
@@ -40,8 +41,19 @@
   const css = document.createElement('style');
   css.textContent = `
     .lb-zoomable{cursor:zoom-in !important;}   /* !important: Framer's Video component sets cursor:auto inline */
-    /* the ring sits inside the edge: Framer's card frames clip anything drawn outside */
-    [data-lb-key]:focus-visible{outline:3px solid #1f1f1f !important;outline-offset:-3px;}
+    /* fallback for media whose rounded frame isn't found: the ring inside the edge, where the frame can't clip it */
+    [data-lb-key]:focus-visible{outline:2px solid ${DARK} !important;outline-offset:-2px;}
+    /* the whole site's keyboard focus ring, as the lightbox's buttons: 2px in the dark text colour, 2px off the edge,
+       following the element's corners (pills stay pills; plain text links get a slight rounding). Keyboard only */
+    :where(a, button, [role="button"]):not([class*="lb-"]):not([data-lb-key]):focus-visible{
+      outline:2px solid ${DARK} !important;outline-offset:2px !important;}
+    :where(a:not([class*="lb-"])):focus-visible{border-radius:4px;}
+    a.framer-text:focus-visible{--framer-link-text-background-radius:4px;--framer-link-hover-text-background-radius:4px;}   /* Framer's text links take their corner from these */
+    a.aa-ring-tile:focus-visible{border-radius:12px;}   /* a logo tile (≈10px corners, drawn in its image): the ring's corners, 2px further out */
+    .aa-ring-room{overflow:visible !important;}         /* a frame that would cut the ring off, while the ring shows */
+    /* an image or video: the same ring, drawn round its rounded frame (focus stays on the media) */
+    .aa-ring-frame.aa-ring-frame{outline:2px solid ${DARK} !important;outline-offset:2px !important;}
+    [data-lb-key].aa-ring-moved:focus-visible{outline:none !important;}
     .lb-media:focus{outline:none;}
     .lb-backdrop{position:fixed;inset:0;z-index:10001;background:${OVERLAY};opacity:0;cursor:zoom-out;}
     .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;
@@ -570,6 +582,42 @@
   // only a real scroll closes it: the page nudges itself by a few px while images further down load
   addEventListener('scroll', () => { if (open && Math.abs(scrollY - open.y) > 40) close(); }, { passive: true });
   addEventListener('resize', fit);
+
+  // the focus ring sits 4px outside (2px offset + 2px ring); Framer rows that clip their content cut it off when a button
+  // or logo sits at their edge (Home's logos and View buttons). While a ring shows, those frames stop clipping. And a
+  // small image-only link (a logo tile) gets ring corners that match the tile's
+  const RING = 4;
+  let ringed = [];
+  const clearRing = () => {
+    ringed.forEach(([n, c]) => n.classList.remove(c)); ringed = [];
+  };
+  const mark = (n, c) => { n.classList.add(c); ringed.push([n, c]); };
+  function makeRoom(target) {
+    const r = target.getBoundingClientRect();
+    for (let n = target.parentElement; n && n !== document.body; n = n.parentElement) {
+      if (getComputedStyle(n).overflow === 'visible') continue;
+      const q = n.getBoundingClientRect();
+      if (r.top - q.top < RING || r.left - q.left < RING || q.right - r.right < RING || q.bottom - r.bottom < RING) mark(n, 'aa-ring-room');
+    }
+  }
+  document.addEventListener('focusin', e => {
+    const el = e.target;
+    clearRing();
+    if (!(el instanceof Element) || !el.matches(':focus-visible')) return;   // keyboard focus only, as the ring
+    if (el.matches('[data-lb-key]')) {
+      // the rounded frame that gives the media its corners (the media itself, or a wrapper of the same size)
+      const box = [...sameBox(el)].find(n => getComputedStyle(n).borderRadius !== '0px');
+      if (!box) return;
+      mark(box, 'aa-ring-frame');
+      if (box !== el) mark(el, 'aa-ring-moved');
+      makeRoom(box);
+      return;
+    }
+    if (!el.matches('a, button, [role="button"]') || el.matches('[class*="lb-"]')) return;
+    if (el.matches('a') && el.offsetWidth <= 48 && el.offsetHeight <= 48 && el.querySelector('img')) mark(el, 'aa-ring-tile');
+    makeRoom(el);
+  });
+  document.addEventListener('focusout', clearRing);
 
   // back to Home from a case study: land on that project's card instead of the top. Framer swaps pages in place, so
   // remember where the click came from, and once Home is on screen scroll to the card whose View links there.
