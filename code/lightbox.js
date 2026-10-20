@@ -33,8 +33,7 @@
   }, window.__lbMotion || {});
   const EASE = M.ease;
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // behind open media: the page dimmed with 30% black and softly blurred (the same as behind the About drawer)
-  const DIM = 'rgba(0,0,0,.3)', BLUR = 'blur(8px)';
+  const OVERLAY = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fff)';   // behind open media: the White colour style (the cards'), no effects
   const MAX_ZOOM = 4;                      // a pinch zooms open media up to 4×
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#1f1f1f)';   // the site's colour styles
   const FILL = 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)';
@@ -58,8 +57,7 @@
     .aa-ring-frame.aa-ring-frame{outline:2px solid ${DARK} !important;outline-offset:2px !important;}
     [data-lb-key].aa-ring-moved:focus-visible{outline:none !important;}
     .lb-media:focus{outline:none;}
-    .lb-backdrop{position:fixed;inset:0;z-index:10001;background:${DIM};backdrop-filter:${BLUR};-webkit-backdrop-filter:${BLUR};
-      opacity:0;cursor:zoom-out;}
+    .lb-backdrop{position:fixed;inset:0;z-index:10001;background:${OVERLAY};opacity:0;cursor:zoom-out;}
     .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;
       transform-origin:0 0;}
     .lb-media.lb-media{cursor:default;}   /* open media is for looking (and pinching); the white around it closes */

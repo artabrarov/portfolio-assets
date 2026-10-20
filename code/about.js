@@ -53,7 +53,7 @@
   const WHITE = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)';   // the cards
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#2e261c)';    // dark text
   const MUTED = 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2,#726555)';   // grey text
-  const DIM = 'rgba(0,0,0,.3)', BLUR = 'blur(8px)';   // behind the drawer, as behind the lightbox
+  const DIM = 'rgba(0,0,0,.3)', BLUR = 'blur(8px)';   // behind the drawer
   const IMAGE = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#eeece6)';   // the Image Frame's fill, behind the photo
   // the Secondary button, as in the emoji game: the Hover colour style at rest, Stroke on hover
   const BUTTON = 'var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)';
@@ -63,7 +63,7 @@
 
   const css = document.createElement('style');
   css.textContent = `
-    /* behind the drawer: the page dimmed with 30% black and softly blurred (the same as behind the lightbox) */
+    /* behind the drawer: the page dimmed with 30% black and softly blurred */
     .ab-backdrop{position:fixed;inset:0;z-index:10001;background:${DIM};backdrop-filter:${BLUR};-webkit-backdrop-filter:${BLUR};opacity:0;}
     /* the drawer: a card, as on the homepage (White, the cards' corners, padding and shadow), 16px in from the screen's left
        and bottom edges and from the top (below Close on phones); it scrolls on its own when it's taller than the screen */
