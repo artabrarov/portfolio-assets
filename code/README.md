@@ -26,7 +26,7 @@ Rebuild: `npx esbuild code/lightbox.js --minify --target=es2020 > code/lightbox.
 
 The game follows the site's Framer styles, so tweaks made in Framer reach the game without a code change:
 
-- **Colours** use the Framer colour styles through their `--token-…` CSS variables (dark text, grey text, stroke, button fill).
+- **Colours** use the Framer colour styles through their `--token-…` CSS variables (dark text, grey text, stroke, button fill). The shop's buttons match the site's Secondary button: the Hover colour style at rest, Stroke on hover, the button label text style.
 - **Text** copies the Framer text styles at runtime from the homepage elements that use them: body text from the bio in the `Hero` frame, small text and the link style from the `Footer` links, strong text from the `Button` label.
 
 Every value has a fallback in the CSS, so the game keeps its look if a style can't be read. If a Framer colour style is deleted and recreated, its token ID changes and the `C` constants in `emoji-game.js` need the new one.

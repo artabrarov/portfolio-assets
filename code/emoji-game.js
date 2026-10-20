@@ -60,6 +60,8 @@
       grey: 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2,rgb(104,104,112))',
       stroke: 'var(--token-c0c08a01-85af-48e1-a222-d1e74edf9e8e,#E3E3E3)',
       fill: 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)',
+      // the site's Secondary button (Contact): the Hover colour style at rest, Stroke on hover
+      secondary: 'var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#ebeae8)',
     };
     const FAMILY = '"Instrument Sans Variable","Instrument Sans","Instrument Sans Placeholder",sans-serif';
     const font = (role, size, lh, wght) => `font-family:var(--fx-${role}-family,${FAMILY});font-size:var(--fx-${role}-size,${size});` +
@@ -128,14 +130,15 @@
       .fx-up-name{font-size:var(--fx-body-size,16px);line-height:var(--fx-body-lh,24px);}
       .fx-up-lvl{color:${C.grey};}
       .fx-up-info{color:${C.grey};font-size:var(--fx-small-size,14px);line-height:var(--fx-small-lh,20px);font-variant-numeric:tabular-nums;}
-      .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:32px;padding:0 12px;border-radius:999px;background:${C.fill};
-        ${font('small', '14px', '32px', 460)}line-height:32px;color:${C.dark};
+      /* the shop's buttons look like the site's Secondary button: fill, hover, label style (button), 18px sides */
+      .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:32px;padding:0 18px;border-radius:999px;background:${C.secondary};
+        ${font('strong', '13px', '32px', 560)}line-height:32px;color:${C.dark};
         white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums;transition:background-color .2s,opacity .2s;}
-      .fx-buy:hover{background:#ebebeb;}
+      .fx-buy:hover{background:${C.stroke};}
       .fx-buy.fx-cant{opacity:.45;cursor:default;}
       .fx-buy.fx-max{cursor:default;opacity:.45;}
-      .fx-buy.fx-max:hover{background:${C.fill};}
-      .fx-buy.fx-cant:hover{background:${C.fill};}
+      .fx-buy.fx-max:hover{background:${C.secondary};}
+      .fx-buy.fx-cant:hover{background:${C.secondary};}
       .fx-up-bar{position:absolute;left:0;right:0;bottom:8px;height:2px;border-radius:2px;background:rgba(31,31,31,.12);
         transform-origin:0 50%;scale:0 1;}
       .fx-float{position:absolute;right:0;top:0;font-size:13px;line-height:20px;
