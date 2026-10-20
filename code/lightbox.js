@@ -1,9 +1,11 @@
 /*  Image lightbox for arthurabrarov.com
     Loaded on the live site from GitHub Pages (code/lightbox.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
-    On computers (not phones or tablets), click a large image or video to open it full screen, zooming from where it sits;
-    the left and right arrow keys (or a two-finger swipe sideways) move through the page's images and videos. Pinch on a trackpad to zoom into an open
-    image or video, and two fingers then pan. Clicking the background, Close, Esc or scrolling closes it.
+    Click (or tap) a large image or video to open it full screen, zooming from where it sits.
+    Computers: the left and right arrow keys, or a two-finger swipe sideways, move through the page's images and videos;
+    pinch on a trackpad to zoom in, and two fingers then pan. Clicking the background, Close, Esc or scrolling closes it.
+    Phones and tablets, as in Photos: swipe sideways to move, pinch to zoom and drag to look around, swipe down or tap
+    the background or Close to close.
     Keyboard: Tab reaches each image and video, Enter or Space opens it, and focus returns to it on close.
     Media stays in Framer: images open in a bigger version from Framer's image server, videos keep playing from where they were.
     Also here, as it runs on every page: one keyboard focus ring for the whole site. */
@@ -14,7 +16,8 @@
   const SKIP = ['/sites'];                 // pages (and their subpages) where media doesn't zoom: the /sites cards are links
   const MIN_SIZE = 80;                     // px: smaller images and videos (avatar, logos) don't zoom
   const RADIUS = '24px';                   // corner of media whose rounding comes from a mask (Framer's squircles)
-  const MARGIN = 32;                       // px between the open media and the screen edges; the buttons sit the same distance in
+  const PHONE = matchMedia('(max-width: 599px)').matches;
+  const MARGIN = PHONE ? 16 : 32;          // px between the open media and the screen edges; the buttons sit the same distance in
   const TOP = MARGIN + 32 + 16;            // px above the media: the buttons (32px tall) and a 16px gap
   // motion, in ms: soft, to match the site's calm type and colours (was 420 / 336 / 280 ms, 48px, on .2,.8,.2,1).
   // window.__lbMotion (set by the local preview's ?motion= switch) can override any of these
@@ -29,7 +32,6 @@
   }, window.__lbMotion || {});
   const EASE = M.ease;
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const MOUSE = matchMedia('(hover: hover) and (pointer: fine)');   // phones and tablets: off, media stays as it is
   const OVERLAY = '#fff';                  // behind open media: solid white, no effects
   const MAX_ZOOM = 4;                      // a pinch zooms open media up to 4×
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#1f1f1f)';   // the site's colour styles
@@ -90,7 +92,7 @@
   `;
   document.head.appendChild(css);
 
-  const onPage = () => MOUSE.matches && !SKIP.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
+  const onPage = () => !SKIP.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
   const isMedia = el => el instanceof HTMLImageElement || el instanceof HTMLVideoElement;
   const zoomable = el => isMedia(el) && onPage() && !el.closest('a, button, .fx-av, .fx-world, .lb-media') &&
     el.offsetWidth >= MIN_SIZE && el.offsetHeight >= MIN_SIZE;
@@ -351,6 +353,7 @@
     el.style.opacity = '0';
     open = { src: el, clone, backdrop, radius, y: scrollY, z: 1, tx: 0, ty: 0 };
     addEventListener('wheel', onWheel, { passive: false });
+    TOUCH.forEach(([t, f, o]) => addEventListener(t, f, o));
 
     const to = targetRect(video && clone.videoWidth ? clone : el);
     const time = REDUCED ? 0 : M.open;
@@ -367,9 +370,9 @@
   const allMedia = () => [...document.querySelectorAll('img, video')].filter(zoomable);
   // arrow keys: slide to the previous or next one; stops at either end
   function step(dir) {
-    if (!open) return;
+    if (!open) return false;
     const list = allMedia(), next = list[list.indexOf(open.src) + dir];
-    if (!next) return;
+    if (!next) return false;
     const { src: prev, clone: old } = open;
     // hand the playhead back to the page clip being left, and show it again
     if (old instanceof HTMLVideoElement) try { prev.currentTime = old.currentTime; } catch (e) {}
@@ -392,6 +395,7 @@
     showCount(next);
     showLogo(next, dir);
     preloadAround(next);
+    return true;
   }
 
   // places the open media at its full screen size, without animating (on resize, or once a video knows its shape)
@@ -445,7 +449,7 @@
   function flatten(el) {
     const r = px(el.getBoundingClientRect());
     el.getAnimations().forEach(a => a.cancel());
-    Object.assign(el.style, { transform: '' }, r);
+    Object.assign(el.style, { transform: '', translate: '' }, r);   // translate: a touch drag in progress
     return r;
   }
   // a pinch arrives as ctrl + wheel (Chrome, Firefox) or as gesture events (Safari); two fingers pan once zoomed in;
@@ -485,14 +489,62 @@
   }
   addEventListener('gesturestart', e => {
     if (!open) return;
-    e.preventDefault(); gesture = { z: open.z };
+    e.preventDefault();
+    if (!touch) gesture = { z: open.z };   // on a touch screen the touch events below do the zooming
   });
   addEventListener('gesturechange', e => {
     if (!open || !gesture) return;
     e.preventDefault(); lastZoom = performance.now();
     zoomAt(gesture.z * e.scale, e.clientX, e.clientY);
   });
-  addEventListener('gestureend', e => { if (gesture) { e.preventDefault(); gesture = null; } });
+  addEventListener('gestureend', e => { if (open) e.preventDefault(); gesture = null; });
+
+  // touch (phones and tablets), as in Photos: swipe sideways to move, swipe down to close, pinch to zoom and drag to
+  // look around once zoomed in. The open media follows the finger. A tap still arrives as a click: the background and
+  // Close close, the media itself does nothing
+  let touch = null;
+  const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  function onTouchStart(e) {
+    if (!open) return;
+    const t = e.touches;
+    if (t.length === 2) touch = { pinch: true, d: dist(t[0], t[1]) || 1, z: open.z };
+    else if (t.length === 1) touch = { x: t[0].clientX, y: t[0].clientY, tx: open.tx, ty: open.ty, dx: 0, dy: 0, moved: false };
+  }
+  function onTouchMove(e) {
+    if (!open || !touch) return;
+    e.preventDefault();   // the page stays put underneath, and the browser doesn't zoom it
+    const t = e.touches;
+    if (touch.pinch) {
+      if (t.length === 2) zoomAt(touch.z * dist(t[0], t[1]) / touch.d, (t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2);
+      return;
+    }
+    const dx = t[0].clientX - touch.x, dy = t[0].clientY - touch.y;
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) touch.moved = true;
+    if (open.z > 1) { open.tx = touch.tx + dx; open.ty = touch.ty + dy; applyZoom(); return; }
+    // not zoomed: the media follows the finger, sideways, or down (towards closing)
+    touch.dx = dx; touch.dy = dy;
+    const side = Math.abs(dx) > Math.abs(dy);
+    open.clone.style.translate = side ? `${dx}px 0` : `0 ${Math.max(0, dy)}px`;
+  }
+  function onTouchEnd(e) {
+    if (!open || !touch) return;
+    if (e.touches.length) {   // one finger of a pinch lifted: carry on as a drag from here
+      if (touch.pinch && e.touches.length === 1) touch = { x: e.touches[0].clientX, y: e.touches[0].clientY, tx: open.tx, ty: open.ty, dx: 0, dy: 0, moved: true };
+      return;
+    }
+    const { dx = 0, dy = 0, moved, pinch } = touch;
+    touch = null;
+    if (pinch || open.z > 1 || !moved) return;
+    const clone = open.clone, side = Math.abs(dx) > Math.abs(dy);
+    if (side && Math.abs(dx) > 60 && step(dx < 0 ? 1 : -1)) return;
+    if (!side && dy > 100) { close(); return; }
+    // not far enough (or the first or last item): back into place
+    const from = clone.style.translate || '0 0';
+    clone.style.translate = '';
+    clone.animate([{ translate: from }, { translate: '0 0' }], { duration: REDUCED ? 1 : 250, easing: EASE });
+  }
+  const TOUCH = [['touchstart', onTouchStart, { passive: true }], ['touchmove', onTouchMove, { passive: false }],
+    ['touchend', onTouchEnd, { passive: true }], ['touchcancel', onTouchEnd, { passive: true }]];
 
 
   function close() {
@@ -508,6 +560,7 @@
     const to = r && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth ? r : null;
     const time = REDUCED ? 0 : M.close;
     removeEventListener('wheel', onWheel);
+    TOUCH.forEach(([t, f]) => removeEventListener(t, f)); touch = null;
     const current = flatten(clone);
     clone.style.borderRadius = '12px';
     const done = () => {
