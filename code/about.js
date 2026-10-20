@@ -6,7 +6,7 @@
     Close, a click on the grey, Esc, or on phones and tablets a swipe down closes it. Opening /#about (or any page with #about) opens it straight away.
     Keyboard: focus moves into the sheet, Tab stays inside it, and focus returns to the About button on close.
     The sheet is drawn from the site's Framer styles: the cards' White colour style and corners, the Hero's text styles,
-    the Secondary button's look and the company logos from the homepage cards, so tweaks in Framer reach it. */
+    and the Secondary button's look, so tweaks in Framer reach it. */
 (() => {
   if (window.__about) return;              // run once, even with Framer's page transitions
   window.__about = true;
@@ -23,14 +23,11 @@
       "Currently, I'm leading Apron Card, wearing both the design and the product hat. I also help look after our design system and mobile app, so things feel consistent across the product.",
       "Before that, I helped launch and scale Joompay, a consumer banking app, and learned the ropes of design at Redmadrobot. My degree is in international business, and I hold a UK Global Talent visa.",
     ],
-    // company, role, years; page: the case study whose homepage card logo is reused; logo: fallback when no card is on the page
+    // company, role, years
     work: [
-      { company: 'Apron', role: 'Product & Design', years: '2022–now', page: '/apron',
-        logo: 'https://framerusercontent.com/images/Ke8JjoV88iJbHqLizePXKKoduP8.png?width=320&height=320' },
-      { company: 'Joompay', role: 'Founding Designer', years: '2020–2022', page: '/joompay',
-        logo: 'https://framerusercontent.com/images/aZM8BSDIkiEWEokbJrCUVnqqR7E.png?width=320&height=320' },
-      { company: 'Redmadrobot', role: 'Product Designer', years: '2019–2020', page: '/redmadrobot',
-        logo: 'https://framerusercontent.com/images/WElo15BObggpnaE0YxFfHbUVlAc.png?width=320&height=320' },
+      { company: 'Apron', role: 'Product & Design', years: '2022–now' },
+      { company: 'Joompay', role: 'Founding Designer', years: '2020–2022' },
+      { company: 'Redmadrobot', role: 'Product Designer', years: '2019–2020' },
     ],
     // the bio's last line: "Reach out by email or LinkedIn." (either left empty drops out of the sentence)
     email: 'hello@arthurabrarov.com',
@@ -51,6 +48,8 @@
   const PAGE = 'var(--token-161d896a-76d8-4d9e-baab-5089a763c675,#f5f4f0)';    // the page background (Site Settings)
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#2e261c)';    // dark text
   const MUTED = 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2,#726555)';   // grey text
+  // the line between the bio and the companies: the colour style behind the homepage images (#eeece6)
+  const LINE = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#eeece6)';
   const IMAGE = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#eeece6)';   // the Image Frame's fill, behind the photo
   // the Secondary button, as in the emoji game: the Hover colour style at rest, Stroke on hover
   const BUTTON = 'var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)';
@@ -88,11 +87,10 @@
        text, as from the Hero's avatar to the name; 16 between paragraphs and between companies */
     .ab-intro,.ab-bio{display:flex;flex-direction:column;gap:16px;}
     .ab-bio .ab-body:first-child{color:${DARK};}   /* the opening paragraph, in the dark text colour */
-    /* the companies: the homepage cards' header (logo tile, name, line of text), one per row */
+    /* the companies, one per row: name over role, years on the right */
+    .ab-divider{height:1px;flex-shrink:0;background:${LINE};}   /* 32 above and below: the sheet's gap */
     .ab-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:16px;}
-    .ab-row{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;column-gap:16px;}
-    .ab-logo{width:32px;height:32px;overflow:hidden;border-radius:var(--ab-logo-radius,12px);corner-shape:var(--ab-logo-corner,round);}
-    .ab-logo img{display:block;width:100%;height:100%;object-fit:cover;}
+    .ab-row{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;}
     .ab-who{display:flex;flex-direction:column;min-width:0;}   /* name and role sit straight on top of each other */
     .ab-who .ab-company{color:${DARK};}   /* the company: body type (Medium), in the dark text colour */
     .ab-years{align-self:start;font-variant-numeric:tabular-nums;white-space:nowrap;}   /* on the company name's line */
@@ -129,7 +127,7 @@
     return null;
   };
 
-  // type, colours of corners and the logos come from the page, read each time the sheet opens
+  // type, corners and colours come from the page, read each time the sheet opens
   function syncStyles() {
     const root = document.documentElement.style, set = (k, v) => { if (v) root.setProperty(k, v); };
     const copy = (prefix, node) => {
@@ -162,28 +160,12 @@
       if (shape) set('--ab-frame-corner', shape);
       if (parseFloat(a.borderTopWidth)) set('--ab-frame-line', `${a.borderTopWidth} ${a.borderTopColor}`);
     }
-    const tile = logoOn(CONTENT.work[0].page);
-    if (tile) {
-      for (let n = tile; n && n !== document.body; n = n.parentElement) {
-        const s = getComputedStyle(n);
-        if (s.borderTopLeftRadius === '0px') continue;
-        set('--ab-logo-radius', s.borderTopLeftRadius);
-        const shape = s.getPropertyValue('corner-shape');
-        if (shape) set('--ab-logo-corner', shape);
-        break;
-      }
-    }
   }
   // an element in the White colour style, to compare the cards' computed fill with
   const probe = el('div');
   probe.style.cssText = `position:fixed;width:0;height:0;visibility:hidden;pointer-events:none;background:${WHITE}`;
   document.body.append(probe);
 
-  // a homepage card's logo: the small image in the link to the case study
-  const logoOn = page => visible([...document.querySelectorAll('a[href] img')].filter(i => {
-    const href = i.closest('a').getAttribute('href') || '';
-    return i.offsetWidth <= 48 && href.replace(/^\.|\/$/g, '').endsWith(page);
-  }));
   const avatarOf = () => {
     const hero = visible(document.querySelectorAll('[data-framer-name="Hero"]'));
     return hero && visible([...hero.querySelectorAll('img')].filter(i => i.offsetWidth <= 64));
@@ -232,17 +214,13 @@
     const list = el('ul', 'ab-list');
     CONTENT.work.forEach(w => {
       const li = el('li'), row = el('div', 'ab-row');
-      const logo = el('div', 'ab-logo'), img = el('img');
-      const onPage = logoOn(w.page);
-      img.alt = ''; img.src = onPage ? onPage.currentSrc || onPage.src : w.logo;
-      logo.append(img);
       const text = el('div', 'ab-who');
       text.append(el('span', 'ab-body ab-company', w.company), el('span', 'ab-body', w.role));
-      row.append(logo, text, el('span', 'ab-body ab-years', w.years));
+      row.append(text, el('span', 'ab-body ab-years', w.years));
       li.append(row); list.append(li);
     });
 
-    sheet.append(head, list);
+    sheet.append(head, el('div', 'ab-divider'), list);
     wrap.append(sheet);
     backdrop.append(wrap);
 
