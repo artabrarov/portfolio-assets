@@ -1,10 +1,10 @@
 /*  About sheet for arthurabrarov.com
     Loaded on the live site from GitHub Pages (code/about.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
-    The Hero's About button (a Secondary button labelled "About", linked to #about) opens a drawer: a white card that
-    slides in from the left, 16px in from the screen's edges, pushing the page to the right at its own size, with Close
-    where the lightbox has it (top right). In it: a photo, a short bio with ways to get in touch, and the companies I've
-    worked at. Close, a click on the page, Esc, or on phones and tablets a swipe to the left closes it. Opening /#about
+    The Hero's About button (a Secondary button labelled "About", linked to #about) opens a drawer: two white cards that
+    slide in from the left, 16px in from the screen's edges, pushing the page to the right at its own size, with Close
+    where the lightbox has it (top right). In them: a photo and a short bio with ways to get in touch, then the companies
+    I've worked at. Close, a click on the page, Esc, or on phones and tablets a swipe to the left closes it. Opening /#about
     (or any page with #about) opens it straight away.
     Keyboard: focus moves into the sheet, Tab stays inside it, and focus returns to the About button on close.
     The sheet is drawn from the site's Framer styles: the cards' White colour style and corners, the Hero's text styles,
@@ -65,15 +65,17 @@
   css.textContent = `
     /* over the pushed page: clear, it only catches the click or tap that closes the drawer */
     .ab-backdrop{position:fixed;inset:0;z-index:10001;}
-    /* the drawer: a card, as on the homepage (White, the cards' corners, padding and shadow), 16px in from the screen's left
-       and bottom edges and from the top (below Close on phones); it scrolls on its own when it's taller than the screen */
-    .ab-sheet{position:fixed;z-index:10002;box-sizing:border-box;top:calc(${TOP}px + env(safe-area-inset-top,0px));
-      bottom:calc(${INSET}px + env(safe-area-inset-bottom,0px));left:calc(${INSET}px + env(safe-area-inset-left,0px));
-      width:min(512px,calc(100% - ${INSET * 2}px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
-      overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
-      background:${WHITE};border-radius:var(--ab-radius,24px);corner-shape:var(--ab-corner,round);padding:var(--ab-pad,32px);
-      box-shadow:var(--ab-shadow,0 1px 12px rgba(114,101,85,.04));
-      display:flex;flex-direction:column;gap:32px;will-change:transform;}
+    /* the drawer: a column of cards 16px in from the screen's left and bottom edges and from the top (below Close on
+       phones); it scrolls on its own when it's taller than the screen, and the padding leaves room for the cards' shadow */
+    .ab-sheet{position:fixed;z-index:10002;box-sizing:border-box;top:0;bottom:0;left:0;
+      width:min(${512 + INSET * 2}px,100%);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+      padding:calc(${TOP}px + env(safe-area-inset-top,0px)) ${INSET}px calc(${INSET}px + env(safe-area-inset-bottom,0px))
+        calc(${INSET}px + env(safe-area-inset-left,0px));
+      display:flex;flex-direction:column;gap:16px;will-change:transform;scrollbar-width:none;}
+    .ab-sheet::-webkit-scrollbar{display:none;}   /* it scrolls without a scrollbar, so the cards keep their full width */
+    /* each surface: a card, as on the homepage (White, the cards' corners, padding and shadow), 16px apart as they are */
+    .ab-card{flex-shrink:0;box-sizing:border-box;background:${WHITE};border-radius:var(--ab-radius,24px);
+      corner-shape:var(--ab-corner,round);padding:var(--ab-pad,32px);box-shadow:var(--ab-shadow,0 1px 12px rgba(114,101,85,.04));}
     .ab-sheet:focus{outline:none;}
     .ab-sheet p{margin:0;}
     /* type copied from the Hero's Framer styles by syncType(); the values after the commas are fallbacks */
@@ -249,7 +251,10 @@
 
     const close = el('button', 'ab-close', 'Close');
     close.type = 'button';
-    sheet.append(head, list);
+    // two surfaces: the photo and bio, then the companies
+    const about = el('div', 'ab-card'), work = el('div', 'ab-card');
+    about.append(head); work.append(list);
+    sheet.append(about, work);
     return { backdrop, sheet, close };
   }
 
@@ -263,7 +268,7 @@
     document.documentElement.classList.add('ab-open');
     // the page moves right by the drawer's width and inset, keeping its size; what goes past the right edge is cut off
     ui.page = document.getElementById('main');
-    ui.push = ui.sheet.getBoundingClientRect().right;
+    ui.push = ui.sheet.querySelector('.ab-card').getBoundingClientRect().right;
     open = { ...ui, from };
     ui.close.classList.toggle('ab-quiet', viaPointer);
     ui.sheet.querySelectorAll('a').forEach(a => a.classList.toggle('ab-quiet', viaPointer));
@@ -357,7 +362,7 @@
       e.stopPropagation();
       if (e.target === open.close) { e.preventDefault(); closeSheet(); return; }
       // a click on the pushed page closes it; links inside the drawer go where they point
-      if (e.target === open.backdrop) { e.preventDefault(); closeSheet(); }
+      if (e.target === open.backdrop || e.target === open.sheet) { e.preventDefault(); closeSheet(); }   // the page, or the gaps around the cards
       return;
     }
     const t = triggerOf(e.target);
