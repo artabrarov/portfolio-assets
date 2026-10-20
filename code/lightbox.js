@@ -3,7 +3,7 @@
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
     On computers (not phones or tablets), click a large image or video to open it full screen, zooming from where it sits;
     the left and right arrow keys move through the page's images and videos. Pinch on a trackpad to zoom into an open
-    image, and two fingers then pan. Clicking the background, Close, Esc or scrolling closes it.
+    image or video, and two fingers then pan. Clicking the background, Close, Esc or scrolling closes it.
     Keyboard: Tab reaches each image and video, Enter or Space opens it, and focus returns to it on close.
     Media stays in Framer: images open in a bigger version from Framer's image server, videos keep playing from where they were. */
 (() => {
@@ -30,7 +30,7 @@
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const MOUSE = matchMedia('(hover: hover) and (pointer: fine)');   // phones and tablets: off, media stays as it is
   const OVERLAY = '#fff';                  // behind open media: solid white, no effects
-  const MAX_ZOOM = 4;                      // a pinch zooms an open image up to 4×
+  const MAX_ZOOM = 4;                      // a pinch zooms open media up to 4×
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#1f1f1f)';   // the site's colour styles
   const FILL = 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)';
   const TYPE = '"Instrument Sans Variable","Instrument Sans",sans-serif';   // fallback before the page's styles are read
@@ -45,7 +45,7 @@
     .lb-backdrop{position:fixed;inset:0;z-index:10001;background:${OVERLAY};opacity:0;cursor:zoom-out;}
     .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;
       transform-origin:0 0;}
-    img.lb-media{cursor:default;}   /* an open image is for looking (and pinching); the white around it closes */
+    .lb-media.lb-media{cursor:default;}   /* open media is for looking (and pinching); the white around it closes */
     /* top left: ← counter →, top right: Close. All look like the site's buttons: 32px tall, grey fill, dark text */
     .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:32px;margin:0;border:0;
       border-radius:999px;background:${FILL};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color .2s;
@@ -441,10 +441,9 @@
   let gesture = null, lastZoom = 0;
   function onWheel(e) {
     if (!open) return;
-    const image = open.clone instanceof HTMLImageElement;
     if (e.ctrlKey) {   // a pinch: never the browser's own page zoom while the lightbox is open
       e.preventDefault();
-      if (gesture || !image) return;
+      if (gesture) return;
       lastZoom = performance.now();
       zoomAt(open.z * Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
     } else if (open.z > 1) {
@@ -456,7 +455,7 @@
     else close();
   }
   addEventListener('gesturestart', e => {
-    if (!open || !(open.clone instanceof HTMLImageElement)) return;
+    if (!open) return;
     e.preventDefault(); gesture = { z: open.z };
   });
   addEventListener('gesturechange', e => {
@@ -540,7 +539,7 @@
     }
     if (open) {
       e.preventDefault(); e.stopPropagation();
-      if (!(e.target === open.clone && open.clone instanceof HTMLImageElement)) close();   // the open image itself: nothing
+      if (e.target !== open.clone) close();   // the open image or video itself: nothing
       return;
     }
     const m = mediaAt(e);
