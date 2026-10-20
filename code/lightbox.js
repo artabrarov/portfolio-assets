@@ -302,17 +302,25 @@
   // logo on a case study), skipping the game's avatar. Into another company's items, it slides like the images
   const LOGO_SHIFT = 8;   // px: the logo's slide, shorter than the images' (it's only 32px wide)
   let logo = null;        // the logo on screen
+  // the company logo nearest the item: a small image, or a small filled tile with text on it (Lab: an emoji on a tile)
+  const small = e => e.offsetWidth >= 16 && e.offsetWidth <= 48 && e.offsetHeight >= 16 && e.offsetHeight <= 48 &&
+    !e.closest('.fx-av, .fx-world, [class^="lb-"], [data-framer-name="Button"]');
+  const isTile = e => !(e instanceof HTMLImageElement) && Math.abs(e.offsetWidth - e.offsetHeight) <= 2 && !e.querySelector('img') &&
+    e.textContent.trim() && getComputedStyle(e).backgroundColor !== 'rgba(0, 0, 0, 0)';
   function logoOf(el) {
     for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
-      const c = [...n.querySelectorAll('img')].find(i => i !== el && i.offsetWidth > 0 && i.offsetWidth <= 48 &&
-        i.offsetHeight <= 48 && !i.closest('.fx-av, .fx-world, [class^="lb-"]'));
+      const c = [...n.querySelectorAll('img')].find(i => i !== el && small(i)) ||
+        [...n.querySelectorAll('div')].find(t => small(t) && isTile(t));
       if (c) return c;
     }
     return null;
   }
+  // what identifies a logo (the same logo stays put while browsing): an image's address, or a tile's fill and text
+  const logoKey = src => src instanceof HTMLImageElement ? src.currentSrc || src.src :
+    'tile:' + getComputedStyle(src).backgroundColor + ':' + src.textContent.trim();
   function makeLogo(src, url) {
     const link = src.closest('a[href]');
-    const d = document.createElement(link ? 'a' : 'div'), img = document.createElement('img');
+    const d = document.createElement(link ? 'a' : 'div');
     d.className = 'lb-logo'; d.dataset.src = url;
     if (link) {   // e.g. "./apron" → "Apron case study"
       d.href = link.href;
@@ -322,7 +330,9 @@
       if (closeBtn.classList.contains('lb-quiet')) d.classList.add('lb-quiet');   // same focus-ring state as the buttons
     } else d.setAttribute('aria-hidden', 'true');
     d.style.borderRadius = radiusOf(src);
-    img.alt = ''; img.src = url; d.append(img);
+    if (src instanceof HTMLImageElement) {
+      const img = document.createElement('img'); img.alt = ''; img.src = url; d.append(img);
+    } else d.style.backgroundColor = getComputedStyle(src).backgroundColor;   // a tile: its own fill
     // text laid over the logo's image in the same box (an emoji on a tile): copy it, scaled from the page's size
     let box = src;
     for (const n of sameBox(src)) box = n;
@@ -338,7 +348,7 @@
   }
   const fadeIn = d => { d.getBoundingClientRect(); d.classList.add('lb-show'); };   // reflow first, so the fade runs
   function showLogo(el, dir = 0) {
-    const src = logoOf(el), url = src ? src.currentSrc || src.src : '';
+    const src = logoOf(el), url = src ? logoKey(src) : '';
     if (!url) { if (logo) logo.classList.remove('lb-show'); return; }
     if (logo && logo.dataset.src === url) { fadeIn(logo); return; }
     const old = logo, shown = old && old.classList.contains('lb-show');
