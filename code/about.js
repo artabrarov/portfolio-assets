@@ -69,7 +69,7 @@
        and bottom edges and from the top (below Close on phones); it scrolls on its own when it's taller than the screen */
     .ab-sheet{position:fixed;z-index:10002;box-sizing:border-box;top:calc(${TOP}px + env(safe-area-inset-top,0px));
       bottom:calc(${INSET}px + env(safe-area-inset-bottom,0px));left:calc(${INSET}px + env(safe-area-inset-left,0px));
-      width:min(560px,calc(100% - ${INSET * 2}px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
+      width:min(512px,calc(100% - ${INSET * 2}px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
       overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
       background:${WHITE};border-radius:var(--ab-radius,24px);corner-shape:var(--ab-corner,round);padding:var(--ab-pad,32px);
       display:flex;flex-direction:column;gap:32px;will-change:transform;}
