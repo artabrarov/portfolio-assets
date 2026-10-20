@@ -6,8 +6,7 @@
     image or video, and two fingers then pan. Clicking the background, Close, Esc or scrolling closes it.
     Keyboard: Tab reaches each image and video, Enter or Space opens it, and focus returns to it on close.
     Media stays in Framer: images open in a bigger version from Framer's image server, videos keep playing from where they were.
-    Also here, as it runs on every page: clicking Home on a case study lands on that project's card on Home, not at the top,
-    and one keyboard focus ring for the whole site. */
+    Also here, as it runs on every page: one keyboard focus ring for the whole site. */
 (() => {
   if (window.__lightbox) return;           // run once, even with Framer's page transitions
   window.__lightbox = true;
@@ -618,57 +617,4 @@
     makeRoom(el);
   });
   document.addEventListener('focusout', clearRing);
-
-  // back to Home from a case study: land on that project's card instead of the top. Framer swaps pages in place, so
-  // remember where the click came from, and once Home is on screen scroll to the card whose View links there.
-  // Other ways onto Home (the browser's Back, a fresh visit) are left to Framer
-  const RETURN = 'aa-return';
-  const pathOf = href => { try { return new URL(href, location.origin + '/').pathname.replace(/\/$/, '') || '/'; } catch (e) { return ''; } };
-  document.addEventListener('click', e => {
-    const a = e.target instanceof Element && e.target.closest('a[href]');
-    if (!a) return;
-    const here = location.pathname.replace(/\/$/, '') || '/';
-    try {
-      if (pathOf(a.getAttribute('href')) === '/' && here !== '/') sessionStorage.setItem(RETURN, here);
-      else sessionStorage.removeItem(RETURN);
-    } catch (err) {}
-  }, true);
-  function cardFor(path) {
-    const view = [...document.querySelectorAll('a[href]')].find(a => a.offsetParent && pathOf(a.getAttribute('href')) === path &&
-      a.textContent.trim() === 'View');
-    // the card: the nearest frame around the View button with a fill of its own (the white card, not a frame inside it)
-    for (let n = view && view.parentElement; n && n !== document.body; n = n.parentElement)
-      if (n.offsetWidth >= 500 && getComputedStyle(n).backgroundColor !== 'rgba(0, 0, 0, 0)') return n;
-    return null;
-  }
-  function returnHome() {
-    let from = null;
-    try { from = sessionStorage.getItem(RETURN); sessionStorage.removeItem(RETURN); } catch (e) {}
-    if (!from) return;
-    let tries = 0, moved = false;
-    const stop = () => { moved = true; };   // the visitor scrolls first: leave them be
-    addEventListener('wheel', stop, { once: true, passive: true });
-    addEventListener('keydown', stop, { once: true });
-    // Framer resets the scroll as it shows the page, and lays the cards out over a few frames: settle on the card
-    const go = () => {
-      if (moved || location.pathname.replace(/\/$/, '') !== '') return;
-      const card = cardFor(from);
-      if (card) {
-        // its place in the layout, not where Framer's appear animation has it right now; 16px: the page's own top gap
-        let y = 0;
-        for (let n = card; n; n = n.offsetParent) y += n.offsetTop;
-        const top = Math.max(0, y - 16);
-        if (Math.abs(scrollY - top) > 2) scrollTo({ top, behavior: 'instant' });
-      }
-      if (++tries < 12) setTimeout(go, 50);
-      else { removeEventListener('wheel', stop); removeEventListener('keydown', stop); }
-    };
-    go();
-  }
-  let lastPath = location.pathname;
-  new MutationObserver(() => {
-    if (location.pathname === lastPath) return;
-    lastPath = location.pathname;
-    if ((lastPath.replace(/\/$/, '') || '/') === '/') returnHome();
-  }).observe(document.body, { childList: true, subtree: true });
 })();
