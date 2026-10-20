@@ -9,13 +9,13 @@
 
   /* ───────────── Emoji avatar + gravity playground ───────────── */
   function emojiDrop() {
-    // rarity tiers: chance, avatar tint, emoji pool (Common's tint is the Framer Fill colour style, as the buttons)
+    // rarity tiers: chance, emoji pool (the emoji shows on its own, with no background behind it)
     const TIERS = [
-      { name: 'Common',    p: 0.85,   tint: 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)', pool: ['😄','😎','🥳','😊','😁','😂','🤩','😍','🙂','😜'] },   // yellow faces
-      { name: 'Uncommon',  p: 0.12,   tint: '#e9f5ec', pool: ['🍀','🐸','🥑','🌵','🐢','🥝','🌿','🍏'] },           // green
-      { name: 'Rare',      p: 0.025,  tint: '#e7efff', pool: ['🐳','🦋','💧','🧊','🐬'] },                          // blue
-      { name: 'Epic',      p: 0.0045, tint: '#f1e7ff', pool: ['🔮','🍇','👾','💜','😈','☂️'] },                               // purple
-      { name: 'Legendary', p: 0.0005, tint: 'gold',    pool: ['🦄','🐉','🦖','👽','🪐','🧞','💍'] },   // mythical & cool
+      { name: 'Common',    p: 0.85, pool: ['😄','😎','🥳','😊','😁','😂','🤩','😍','🙂','😜'] },   // yellow faces
+      { name: 'Uncommon',  p: 0.12, pool: ['🍀','🐸','🥑','🌵','🐢','🥝','🌿','🍏'] },           // green
+      { name: 'Rare',      p: 0.025, pool: ['🐳','🦋','💧','🧊','🐬'] },                          // blue
+      { name: 'Epic',      p: 0.0045, pool: ['🔮','🍇','👾','💜','😈','☂️'] },                               // purple
+      { name: 'Legendary', p: 0.0005, pool: ['🦄','🐉','🦖','👽','🪐','🧞','💍'] },   // mythical & cool
     ];
     const tierOf = new Map();
     TIERS.forEach((t, i) => t.pool.forEach(e => tierOf.set(e, i)));
@@ -71,7 +71,6 @@
     const css = document.createElement('style');
     css.textContent = `
       .fx-av-emoji{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;line-height:1;
-        background:${C.fill};border-radius:50%;
         opacity:0;scale:.5;transition:opacity .2s ease,scale .3s cubic-bezier(.3,1.6,.5,1);
         pointer-events:none;user-select:none;}
       .fx-av{cursor:pointer;touch-action:none;}
@@ -85,10 +84,6 @@
         pointer-events:auto;cursor:grab;user-select:none;touch-action:none;will-change:transform;}
       .fx-body.fx-held{cursor:grabbing;}
       .fx-body.fx-new{pointer-events:none;}
-      .fx-av-emoji{transition:opacity .2s ease,scale .3s cubic-bezier(.3,1.6,.5,1),background-color .3s ease;}
-      .fx-av-emoji.fx-legend{background:linear-gradient(115deg,#f7e7b4,#fff6d8 40%,#f2d98a 60%,#f7e7b4);
-        background-size:250% 100%;animation:fx-shimmer 2.4s linear infinite;}
-      @keyframes fx-shimmer{from{background-position:100% 0}to{background-position:-150% 0}}
       .fx-rarity{position:absolute;left:44px;top:6px;${font('small', '14px', '20px', 460)}
         color:${C.grey};white-space:nowrap;pointer-events:none;opacity:0;translate:-4px 0;
         transition:opacity .3s ease,translate .3s ease;}
@@ -914,9 +909,6 @@
       else if (!scoreEl.isConnected) col.appendChild(scoreEl);   // Framer re-rendered the row
       const setFace = char => {
         face.textContent = char;
-        const tier = tierOf.get(char) ?? 0;
-        face.classList.toggle('fx-legend', tier === 4);
-        face.style.backgroundColor = tier === 4 ? '' : TIERS[tier].tint;
       };
       setFace(fromTier(0));                              // before a game starts the avatar only offers Commons
       avatarEl = av; faceEl = face; setFaceFn = setFace;
