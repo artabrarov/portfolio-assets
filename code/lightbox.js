@@ -32,7 +32,7 @@
   }, window.__lbMotion || {});
   const EASE = M.ease;
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const OVERLAY = '#fff';                  // behind open media: solid white, no effects
+  const OVERLAY = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fff)';   // behind open media: the White colour style (the cards'), no effects
   const MAX_ZOOM = 4;                      // a pinch zooms open media up to 4×
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#1f1f1f)';   // the site's colour styles
   const FILL = 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f4f4f4)';
