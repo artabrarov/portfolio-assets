@@ -451,33 +451,44 @@
   // every zoomable image and video on the page, top to bottom (zoomable skips Framer's hidden copies for other breakpoints)
   const allMedia = () => [...document.querySelectorAll('img, video')].filter(zoomable);
   // arrow keys: slide to the previous or next one; stops at either end
-  function step(dir) {
-    if (!open) return false;
-    const list = allMedia(), next = list[list.indexOf(open.src) + dir];
-    if (!next) return false;
-    const { src: prev, clone: old } = open;
-    // hand the playhead back to the page clip being left, and show it again
-    if (old instanceof HTMLVideoElement) try { prev.currentTime = old.currentTime; } catch (e) {}
-    prev.style.opacity = '';
-    // the page stays still while browsing: closing flies back if this one is on screen, and fades out otherwise
+  // the item dir steps away (±1), if there is one
+  const neighbour = dir => open && allMedia()[allMedia().indexOf(open.src) + dir];
+  // the full screen copy of an item, in place and on the page (a video's copy may already be buffering)
+  function takeClone(next) {
     let clone = ready.get(next);
     if (clone) { ready.delete(next); if (next.currentTime) try { clone.currentTime = next.currentTime; } catch (e) {} clone.autoplay = true; clone.play().catch(() => {}); }
     else clone = makeClone(next);
     Object.assign(clone.style, px(targetRect(next)), { borderRadius: '12px' });
     document.body.append(clone);
+    return clone;
+  }
+  // the lightbox moves on to next, shown by clone (the previous copy is the caller's to animate away and remove)
+  function adopt(next, clone, dir) {
+    const { src: prev, clone: old } = open;
+    // hand the playhead back to the page clip being left, and show it again
+    if (old instanceof HTMLVideoElement) try { prev.currentTime = old.currentTime; } catch (e) {}
+    prev.style.opacity = '';
+    // the page stays still while browsing: closing flies back if this one is on screen, and fades out otherwise
     next.style.opacity = '0';
     open = { ...open, src: next, clone, radius: radiusOf(next), z: 1, tx: 0, ty: 0 };
+    sharpen(next, clone);
+    showCount(next);
+    showLogo(next, dir);
+    showSection(next, dir);
+    preloadAround(next);
+  }
+  function step(dir) {
+    if (!open) return false;
+    const next = neighbour(dir);
+    if (!next) return false;
+    const old = open.clone, clone = takeClone(next);
+    adopt(next, clone, dir);
     const time = REDUCED ? 0 : M.slide, shift = M.shift * dir;
     flatten(old);
     old.animate([{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: `${-shift}px 0` }],
       { duration: time || 1, easing: EASE, fill: 'forwards' }).finished.then(() => old.remove(), () => old.remove());
     clone.animate([{ opacity: 0, translate: `${shift}px 0` }, { opacity: 1, translate: '0 0' }],
       { duration: time || 1, easing: EASE, fill: 'backwards' });
-    sharpen(next, clone);
-    showCount(next);
-    showLogo(next, dir);
-    showSection(next, dir);
-    preloadAround(next);
     return true;
   }
 
@@ -604,22 +615,52 @@
     const dx = t[0].clientX - touch.x, dy = t[0].clientY - touch.y;
     if (Math.abs(dx) > 8 || Math.abs(dy) > 8) touch.moved = true;
     if (open.z > 1) { open.tx = touch.tx + dx; open.ty = touch.ty + dy; applyZoom(); return; }
-    // not zoomed: the media follows the finger, sideways, or down (towards closing)
+    // not zoomed: sideways, a filmstrip (the neighbour rides in beside it, a screen width apart, as in Photos);
+    // down, the media follows the finger towards closing
+    const now = performance.now();
+    touch.vx = (dx - (touch.dx || 0)) / Math.max(1, now - (touch.t || now - 16)); touch.t = now;
     touch.dx = dx; touch.dy = dy;
     const side = Math.abs(dx) > Math.abs(dy);
-    open.clone.style.translate = side ? `${dx}px 0` : `0 ${Math.max(0, dy)}px`;
+    const dir = dx < 0 ? 1 : -1;
+    if (touch.peek && (!side || touch.peek.dir !== dir)) { touch.peek.clone.remove(); touch.peek = null; }
+    if (side && !touch.peek && Math.abs(dx) > 4) {
+      const next = neighbour(dir);
+      if (next) touch.peek = { dir, next, clone: takeClone(next) };
+    }
+    if (!side) { open.clone.style.translate = `0 ${Math.max(0, dy)}px`; return; }
+    // at the first or last item there's nothing beside it: the drag gives way, like a rubber band
+    open.clone.style.translate = `${touch.peek ? dx : dx * 0.35}px 0`;
+    if (touch.peek) touch.peek.clone.style.translate = `${dx + dir * (innerWidth + STRIP_GAP)}px 0`;
   }
+  const STRIP_GAP = 16;   // px between items in the touch filmstrip
   function onTouchEnd(e) {
     if (!open || !touch) return;
     if (e.touches.length) {   // one finger of a pinch lifted: carry on as a drag from here
       if (touch.pinch && e.touches.length === 1) touch = { x: e.touches[0].clientX, y: e.touches[0].clientY, tx: open.tx, ty: open.ty, dx: 0, dy: 0, moved: true };
       return;
     }
-    const { dx = 0, dy = 0, moved, pinch } = touch;
+    const { dx = 0, dy = 0, vx = 0, moved, pinch, peek } = touch;
     touch = null;
-    if (pinch || open.z > 1 || !moved) return;
-    const clone = open.clone, side = Math.abs(dx) > Math.abs(dy);
-    if (side && Math.abs(dx) > 60 && step(dx < 0 ? 1 : -1)) return;
+    if (pinch || open.z > 1 || !moved) { if (peek) peek.clone.remove(); return; }
+    const clone = open.clone, side = Math.abs(dx) > Math.abs(dy), time = REDUCED ? 1 : 300;
+    const slide = (el, from, to, opts = {}) => {
+      el.style.translate = '';
+      return el.animate([{ translate: `${from}px 0` }, { translate: `${to}px 0` }], { duration: time, easing: EASE, ...opts });
+    };
+    if (side && peek) {
+      const far = peek.dir * (innerWidth + STRIP_GAP);
+      // far enough, or flicked: glide on to the neighbour; otherwise both spring back
+      if (Math.abs(dx) > innerWidth * 0.25 || (Math.abs(dx) > 30 && Math.abs(vx) > 0.4 && Math.sign(vx) === Math.sign(dx))) {
+        slide(clone, dx, -far, { fill: 'forwards' }).finished.then(() => clone.remove(), () => clone.remove());
+        slide(peek.clone, dx + far, 0);
+        adopt(peek.next, peek.clone, peek.dir);
+      } else {
+        slide(clone, dx, 0);
+        slide(peek.clone, dx + far, far, { fill: 'forwards' }).finished.then(() => peek.clone.remove(), () => peek.clone.remove());
+      }
+      return;
+    }
+    if (peek) peek.clone.remove();
     if (!side && dy > 100) { close(); return; }
     // not far enough (or the first or last item): back into place
     const from = clone.style.translate || '0 0';
