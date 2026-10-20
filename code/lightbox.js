@@ -82,7 +82,7 @@
     /* a logo made of an image tile with text on it (Lab: an emoji on a tile) */
     .lb-logo span{position:absolute;inset:0;display:grid;place-items:center;line-height:1;}
     .lb-logo.lb-show{opacity:1;}
-    /* next to the logo: the section of the page the current item belongs to (Apron: Bills, Expenses…), in the counter's
+    /* next to the logo: the section of the page the current item belongs to (Apron: AI-Powered Clean Bills, Apron Card…), in the counter's
        type (paragraph font at the button size), so the top row reads as one */
     .lb-section{position:fixed;top:${MARGIN}px;z-index:10003;height:32px;display:flex;align-items:center;white-space:nowrap;
       color:${DARK};opacity:0;pointer-events:none;transition:opacity ${M.controls}ms ease;
@@ -379,8 +379,8 @@
   // the section label: which part of the page the current item sits in. Per page, either Framer layer name → label,
   // or a list of labels for the page's cards in order (where cards share a layer name, as on Joompay)
   const SECTIONS = {
-    '/apron': { 'Platform': 'Bills', 'Expense management': 'Expenses', 'Apron Capture': 'Capture', 'App': 'Mobile app',
-      'Design System': 'Design system' },
+    '/apron': { 'Platform': 'AI-Powered Clean Bills', 'Expense management': 'Apron Card', 'Apron Capture': 'AI-Powered Invoice Capture',
+      'App': 'Mobile App', 'Design System': 'Design System' },
     '/joompay': ['Product', 'Brand'],
     '/redmadrobot': { 'Rostelecom': 'Rostelecom Key', 'Concepts': 'Concepts' },
   };
