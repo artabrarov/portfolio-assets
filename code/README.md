@@ -24,6 +24,19 @@ The same file, since it runs on every page, also draws one keyboard focus ring f
 
 Rebuild: `npx esbuild code/lightbox.js --minify --target=es2020 > code/lightbox.min.js`
 
+## About sheet
+
+The Hero's About button (a Secondary button labelled "About", linked to `#about`) opens a white sheet in the middle of the screen, on the page's grey: a photo, a short bio and the companies I've worked at, each with its logo, role and years. Close (top right, as in the lightbox), a click on the grey, or Esc closes it; any page opened with `#about` opens it straight away. Keyboard: focus moves into the sheet, Tab stays inside it, and focus returns to the About button on close. While it's open the page behind doesn't scroll, and the lightbox ignores the images under the grey. The words, the photo and the companies are set in `CONTENT` at the top of the file; the photo lives in [`about/`](../about/).
+
+It's drawn from the site's Framer styles, read each time it opens: the cards' White colour style, corners, corner smoothing and padding for the sheet; the homepage Image Frame's corners, fill and stroke for the photo; the bio's text style in the Hero for the text (the first paragraph in the dark text colour, the rest in grey); the Secondary button for Close; and the company logos from the homepage cards (with fallbacks in `CONTENT` for pages without them).
+
+| File | What it is |
+|---|---|
+| `about.js` | Readable source |
+| `about.min.js` | Build loaded by Framer → Site Settings → Custom Code (end of body): `<script src="https://artabrarov.github.io/portfolio-assets/code/about.min.js" defer></script>` |
+
+Rebuild: `npx esbuild code/about.js --minify --target=es2020 > code/about.min.js`
+
 ## Styles come from Framer
 
 The game follows the site's Framer styles, so tweaks made in Framer reach the game without a code change:
