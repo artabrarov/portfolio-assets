@@ -79,6 +79,13 @@
     /* a logo made of an image tile with text on it (Lab: an emoji on a tile) */
     .lb-logo span{position:absolute;inset:0;display:grid;place-items:center;line-height:1;}
     .lb-logo.lb-show{opacity:1;}
+    /* next to the logo: the section of the page the current item belongs to (Apron: Bills, Expenses…), in the counter's
+       type (paragraph font at the button size), so the top row reads as one */
+    .lb-section{position:fixed;top:${MARGIN}px;z-index:10003;height:32px;display:flex;align-items:center;white-space:nowrap;
+      color:${DARK};opacity:0;pointer-events:none;transition:opacity ${M.controls}ms ease;
+      font-family:var(--lb-text-family,${TYPE});font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);
+      font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);letter-spacing:var(--lb-ls,normal);}
+    .lb-section.lb-show{opacity:1;}
     .lb-count{pointer-events:none;font-variant-numeric:tabular-nums;text-align:center;}   /* paragraph style */
     .lb-arrow{width:32px;padding:0;display:grid;place-items:center;cursor:pointer;}
     .lb-arrow svg{display:block;width:16px;height:16px;}   /* Instance Kit's arrow-left / arrow-right */
@@ -337,6 +344,56 @@
   // mouse opens hide focus rings on the buttons until Tab is pressed
   const setQuiet = on => [closeBtn, prevBtn, nextBtn, logo].forEach(b => b && b.classList.toggle('lb-quiet', on));
 
+  // the section label: which part of the page the current item sits in. Per page, either Framer layer name → label,
+  // or a list of labels for the page's cards in order (where cards share a layer name, as on Joompay)
+  const SECTIONS = {
+    '/apron': { 'Platform': 'Bills', 'Expense management': 'Expenses', 'Apron Capture': 'Capture', 'App': 'Mobile app',
+      'Design System': 'Design system' },
+    '/joompay': ['Product', 'Brand'],
+    '/redmadrobot': { 'Rostelecom': 'Rostelecom Key', 'Concepts': 'Concepts' },
+  };
+  let section = null;
+  function sectionOf(el) {
+    const map = SECTIONS[location.pathname.replace(/\/$/, '')];
+    if (!map) return '';
+    if (Array.isArray(map)) {   // the cards: the page's wide white frames, top to bottom
+      const cards = [...document.querySelectorAll('[data-framer-name]')].filter(c => c.offsetWidth >= 500 &&
+        getComputedStyle(c).backgroundColor === 'rgb(255, 255, 255)');
+      return map[cards.findIndex(c => c.contains(el))] || '';
+    }
+    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement)
+      if (n.dataset && map[n.dataset.framerName]) return map[n.dataset.framerName];
+    return '';
+  }
+  // 12px right of the logo (or at the margin without one); hidden where it would run into the counter (narrow screens)
+  function placeSection(d) {
+    const left = logo && logo.dataset.src ? MARGIN + 32 + 12 : MARGIN;
+    d.style.left = left + 'px';
+    const r = nav.isConnected && allMedia().length > 1 ? nav.getBoundingClientRect() : null;
+    d.style.visibility = r && left + d.offsetWidth > r.left - 12 ? 'hidden' : '';
+  }
+  function showSection(el, dir = 0) {
+    const text = sectionOf(el);
+    if (!text) { if (section) section.classList.remove('lb-show'); return; }
+    if (section && section.textContent === text) { placeSection(section); fadeIn(section); return; }
+    const old = section, shown = old && old.classList.contains('lb-show');
+    section = document.createElement('div');
+    section.className = 'lb-section';
+    section.textContent = text;
+    document.body.append(section);
+    placeSection(section);
+    if (shown && dir && !REDUCED) {   // another section while browsing: slides across like the logo
+      const shift = LOGO_SHIFT * dir, o = { duration: M.slide, easing: EASE, fill: 'forwards' };
+      section.classList.add('lb-show');
+      section.animate([{ opacity: 0, translate: `${shift}px 0` }, { opacity: 1, translate: '0 0' }], { ...o, fill: 'backwards' });
+      old.animate([{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: `${-shift}px 0` }], o)
+        .finished.then(() => old.remove(), () => old.remove());
+    } else {
+      if (old) old.remove();
+      fadeIn(section);
+    }
+  }
+
   function openMedia(el, viaPointer = false) {
     if (open) return;
     const from = el.getBoundingClientRect();
@@ -363,6 +420,7 @@
     sharpen(el, clone);
     showCount(el);
     showLogo(el);
+    showSection(el);
     preloadAround(el);
   }
 
@@ -394,6 +452,7 @@
     sharpen(next, clone);
     showCount(next);
     showLogo(next, dir);
+    showSection(next, dir);
     preloadAround(next);
     return true;
   }
@@ -554,6 +613,7 @@
     ready.forEach(c => { c.removeAttribute('src'); c.load(); }); ready.clear();
     nav.classList.remove('lb-show');
     if (logo) logo.classList.remove('lb-show');
+    if (section) section.classList.remove('lb-show');
     closeBtn.classList.remove('lb-show');
     // fly back only to a spot that's on screen (after browsing with the arrows it may not be)
     const r = src.isConnected ? src.getBoundingClientRect() : null;
