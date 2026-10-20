@@ -38,6 +38,7 @@
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#1f1f1f)';   // the site's colour styles
   // the buttons: the site's Primary button (White, a 1px line in the Hover colour style, a soft shadow)
   const FILL = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)';
+  const LINE = 'inset 0 0 0 1px var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)';   // a disabled button keeps the line but loses the shadow
   const EDGE = 'inset 0 0 0 1px var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0), 0 1px 8px var(--token-8f28962e-7f45-4326-857f-59f3a939af34,rgba(114,101,85,.06))';
   const TYPE = '"Instrument Sans Variable","Instrument Sans",sans-serif';   // fallback before the page's styles are read
   const QUIET = 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f5f4f0)';   // the counter isn't a button: the Fill colour style, flat
@@ -96,7 +97,7 @@
     .lb-count{pointer-events:none;font-variant-numeric:tabular-nums;text-align:center;background:${QUIET};box-shadow:none;}   /* paragraph style, flat grey: it's not a button */
     .lb-arrow{width:32px;padding:0;display:grid;place-items:center;cursor:pointer;}
     .lb-arrow svg{display:block;width:16px;height:16px;}   /* Instance Kit's arrow-left / arrow-right */
-    .lb-arrow:disabled{opacity:.4;cursor:default;}
+    .lb-arrow:disabled{opacity:.4;cursor:default;box-shadow:${LINE};}
     .lb-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;cursor:pointer;font-family:var(--lb-btn-family,${TYPE});
       font-weight:var(--lb-btn-weight,560);font-variation-settings:var(--lb-btn-wght,"wght" 560);}   /* button label style */
     .lb-close:hover,.lb-arrow:hover:not(:disabled){background:${FILL_HOVER};}

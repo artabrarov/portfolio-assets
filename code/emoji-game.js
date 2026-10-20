@@ -64,6 +64,7 @@
       // style and a soft shadow
       button: 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)',
       buttonHover: 'var(--token-161d896a-76d8-4d9e-baab-5089a763c675,#f5f4f0)',
+      buttonLine: 'inset 0 0 0 1px var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)',   // a disabled button: the line without the shadow
       buttonEdge: 'inset 0 0 0 1px var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0), 0 1px 8px var(--token-8f28962e-7f45-4326-857f-59f3a939af34,rgba(114,101,85,.06))',
     };
     const FAMILY = '"Instrument Sans Variable","Instrument Sans","Instrument Sans Placeholder",sans-serif';
@@ -134,8 +135,8 @@
         ${font('strong', '13px', '32px', 560)}line-height:32px;color:${C.dark};
         white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums;transition:background-color .2s,opacity .2s;}
       .fx-buy:hover{background:${C.buttonHover};}
-      .fx-buy.fx-cant{opacity:.45;cursor:default;}
-      .fx-buy.fx-max{cursor:default;opacity:.45;}
+      .fx-buy.fx-cant{opacity:.45;cursor:default;box-shadow:${C.buttonLine};}
+      .fx-buy.fx-max{cursor:default;opacity:.45;box-shadow:${C.buttonLine};}
       .fx-buy.fx-max:hover{background:${C.button};}
       .fx-buy.fx-cant:hover{background:${C.button};}
       .fx-up-bar{position:absolute;left:0;right:0;bottom:8px;height:2px;border-radius:2px;background:rgba(31,31,31,.12);
