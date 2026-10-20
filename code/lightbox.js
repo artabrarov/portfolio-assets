@@ -330,6 +330,14 @@
       if (closeBtn.classList.contains('lb-quiet')) d.classList.add('lb-quiet');   // same focus-ring state as the buttons
     } else d.setAttribute('aria-hidden', 'true');
     d.style.borderRadius = radiusOf(src);
+    // Framer's corner smoothing (a squircle) is CSS corner-shape on the layer with the rounding: copy it too
+    for (const n of sameBox(src)) {
+      const st = getComputedStyle(n);
+      if (st.borderRadius === '0px') continue;
+      const shape = st.getPropertyValue('corner-shape');
+      if (shape && !/^round/.test(shape)) d.style.setProperty('corner-shape', shape);
+      break;
+    }
     if (src instanceof HTMLImageElement) {
       const img = document.createElement('img'); img.alt = ''; img.src = url; d.append(img);
     } else d.style.backgroundColor = getComputedStyle(src).backgroundColor;   // a tile: its own fill
