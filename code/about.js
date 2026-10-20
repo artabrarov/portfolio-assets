@@ -21,7 +21,7 @@
     bio: [
       "I'm a product designer based in London. I love fast-paced teams full of people I can learn from, where we work hard and have a lot of fun along the way.",
       "Currently, I'm leading Apron Card, wearing both the design and the product hat. I also help look after our design system and mobile app, so things feel consistent across the product.",
-      "Before that, I helped launch and scale Joompay, a consumer banking app, and learned the ropes of design at Redmadrobot. My degree is in business and economics, and I hold a UK Global Talent visa.",
+      "Before that, I helped launch and scale Joompay, a consumer banking app, and learned the ropes of design at Redmadrobot. My degree is in international business, and I hold a UK Global Talent visa.",
     ],
     // company, role, years; page: the case study whose homepage card logo is reused; logo: fallback when no card is on the page
     work: [
@@ -67,7 +67,7 @@
       padding:${TOP}px ${MARGIN}px calc(${MARGIN}px + env(safe-area-inset-bottom,0px));}
     ${PHONE ? '' : `.ab-wrap{align-items:center;padding-top:${TOP}px;padding-bottom:${TOP}px;}`}
     /* the sheet: a card, as on the homepage (White, the cards' corners and padding) */
-    .ab-sheet{box-sizing:border-box;width:100%;max-width:560px;background:${WHITE};border-radius:var(--ab-radius,24px);
+    .ab-sheet{box-sizing:border-box;width:100%;max-width:512px;background:${WHITE};border-radius:var(--ab-radius,24px);
       corner-shape:var(--ab-corner,round);padding:var(--ab-pad,32px);display:flex;flex-direction:column;gap:32px;
       will-change:transform,opacity;}
     .ab-sheet:focus{outline:none;}
