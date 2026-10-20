@@ -32,7 +32,7 @@
       { company: 'Redmadrobot', role: 'Product Designer', years: '2019–2020', page: '/redmadrobot',
         logo: 'https://framerusercontent.com/images/WElo15BObggpnaE0YxFfHbUVlAc.png?width=320&height=320' },
     ],
-    // the line at the bottom: "Reach out by email or LinkedIn." (either left empty drops out of the sentence)
+    // the bio's last line: "Reach out by email or LinkedIn." (either left empty drops out of the sentence)
     email: 'hello@arthurabrarov.com',
     linkedin: 'https://www.linkedin.com/in/arthur-abrarov',
   };
@@ -84,16 +84,16 @@
     .ab-photo img{display:block;width:100%;height:100%;object-fit:cover;}
     .ab-photo::after{content:"";position:absolute;inset:0;border-radius:inherit;corner-shape:inherit;pointer-events:none;
       box-shadow:inset 0 0 0 var(--ab-frame-line,1px rgba(114,101,85,.04));}
-    .ab-intro,.ab-bio{display:flex;flex-direction:column;gap:12px;}
+    /* spacing on the site's scale (4 / 16 / 24 / 32): 32 between sections, as in the cards; 24 from the photo to the
+       text, as from the Hero's avatar to the name; 16 between paragraphs and between companies; 4 from name to role */
+    .ab-intro,.ab-bio{display:flex;flex-direction:column;gap:16px;}
     .ab-bio .ab-body:first-child{color:${DARK};}   /* the opening paragraph, in the dark text colour */
     /* the companies: the homepage cards' header (logo tile, name, line of text), one per row */
-    .ab-work{display:flex;flex-direction:column;gap:8px;}
-    .ab-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;}
-    .ab-row{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;column-gap:12px;
-      padding:10px 0;}
+    .ab-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:16px;}
+    .ab-row{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;column-gap:16px;}
     .ab-logo{width:32px;height:32px;overflow:hidden;border-radius:var(--ab-logo-radius,12px);corner-shape:var(--ab-logo-corner,round);}
     .ab-logo img{display:block;width:100%;height:100%;object-fit:cover;}
-    .ab-who{display:flex;flex-direction:column;min-width:0;}
+    .ab-who{display:flex;flex-direction:column;gap:4px;min-width:0;}
     .ab-who .ab-body{line-height:20px;}
     .ab-who .ab-company{color:${DARK};}   /* the company: body type (Medium), in the dark text colour */
     .ab-years{align-self:start;line-height:20px;font-variant-numeric:tabular-nums;white-space:nowrap;}   /* on the company name's line */
@@ -110,7 +110,9 @@
     .ab-close:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
     .ab-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;}
     .ab-close.ab-show{opacity:1;}
-    .ab-quiet:focus-visible{outline:none;}   /* opened with the mouse: no rings until Tab is pressed */
+    /* opened with the mouse or a link: no rings until Tab is pressed (!important and more specific than the lightbox's
+       site-wide ring, which is !important too) */
+    .ab-close.ab-quiet:focus-visible,.ab-link.ab-quiet:focus-visible{outline:none !important;}
     /* the page stays put behind the sheet: lock the page's own scroll (html) only. Locking body too would make it a
        scroll box of its own, and Framer's sticky Hero would jump to its top. The gutter keeps the scrollbar's space */
     html.ab-open{overflow:hidden !important;scrollbar-gutter:stable;}
@@ -213,10 +215,22 @@
     if (CONTENT.role) who.append(el('p', 'ab-body', CONTENT.role));
     const bio = el('div', 'ab-bio');
     CONTENT.bio.forEach(t => bio.append(el('p', 'ab-body', t)));
+    // the bio's last paragraph: "Reach out by email or LinkedIn."
+    const ways = [];
+    if (CONTENT.email) {
+      const a = el('a', 'ab-link', 'email'); a.href = 'mailto:' + CONTENT.email; ways.push(a);
+    }
+    if (CONTENT.linkedin) {
+      const a = el('a', 'ab-link', 'LinkedIn'); a.href = CONTENT.linkedin; a.target = '_blank'; a.rel = 'noopener'; ways.push(a);
+    }
+    const reach = el('p', 'ab-body');
+    if (ways.length) {
+      reach.append(CONTENT.email ? 'Reach out by ' : 'Reach out on ', ...ways.flatMap((a, i) => i ? [' or ', a] : [a]), '.');
+      bio.append(reach);
+    }
     who.append(bio);
     head.append(who);
 
-    const work = el('div', 'ab-work');
     const list = el('ul', 'ab-list');
     CONTENT.work.forEach(w => {
       const li = el('li'), row = el('div', 'ab-row');
@@ -229,21 +243,8 @@
       row.append(logo, text, el('span', 'ab-body ab-years', w.years));
       li.append(row); list.append(li);
     });
-    work.append(list);
 
-    // the last line: "Reach out by email or LinkedIn."
-    const ways = [];
-    if (CONTENT.email) {
-      const a = el('a', 'ab-link', 'email'); a.href = 'mailto:' + CONTENT.email; ways.push(a);
-    }
-    if (CONTENT.linkedin) {
-      const a = el('a', 'ab-link', 'LinkedIn'); a.href = CONTENT.linkedin; a.target = '_blank'; a.rel = 'noopener'; ways.push(a);
-    }
-    const reach = el('p', 'ab-body');
-    if (ways.length) reach.append(CONTENT.email ? 'Reach out by ' : 'Reach out on ', ...ways.flatMap((a, i) => i ? [' or ', a] : [a]), '.');
-
-    sheet.append(head, work);
-    if (ways.length) sheet.append(reach);
+    sheet.append(head, list);
     wrap.append(sheet);
     backdrop.append(wrap);
 
