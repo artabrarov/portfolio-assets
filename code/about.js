@@ -65,13 +65,14 @@
   css.textContent = `
     /* behind the drawer: the page background colour style, covering the page as the lightbox's white does */
     .ab-backdrop{position:fixed;inset:0;z-index:10001;background:${PAGE};opacity:0;}
-    /* the drawer: a card, as on the homepage (White, the cards' corners and padding), 16px in from the screen's left
+    /* the drawer: a card, as on the homepage (White, the cards' corners, padding and shadow), 16px in from the screen's left
        and bottom edges and from the top (below Close on phones); it scrolls on its own when it's taller than the screen */
     .ab-sheet{position:fixed;z-index:10002;box-sizing:border-box;top:calc(${TOP}px + env(safe-area-inset-top,0px));
       bottom:calc(${INSET}px + env(safe-area-inset-bottom,0px));left:calc(${INSET}px + env(safe-area-inset-left,0px));
       width:min(512px,calc(100% - ${INSET * 2}px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
       overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
       background:${WHITE};border-radius:var(--ab-radius,24px);corner-shape:var(--ab-corner,round);padding:var(--ab-pad,32px);
+      box-shadow:var(--ab-shadow,0 1px 12px rgba(114,101,85,.04));
       display:flex;flex-direction:column;gap:32px;will-change:transform;}
     .ab-sheet:focus{outline:none;}
     .ab-sheet p{margin:0;}
@@ -146,7 +147,7 @@
     const paras = hero ? [...hero.querySelectorAll('p')].filter(p => p.offsetWidth && !p.closest('[data-framer-name="Button"]')) : [];
     copy('body', paras.find(p => p.textContent.trim().length > 40));                     // the bio
     copy('btn', visible(document.querySelectorAll('[data-framer-name="Button"] p')));
-    // the cards' corners and padding: the first wide frame in the White colour style
+    // the cards' corners, padding and shadow: the first wide frame in the White colour style
     const card = [...document.querySelectorAll('[data-framer-name]')].find(c => c.offsetWidth >= Math.min(500, innerWidth * .8) &&
       getComputedStyle(c).backgroundColor === getComputedStyle(probe).backgroundColor);
     if (card) {
@@ -156,6 +157,7 @@
       if (shape) set('--ab-corner', shape);
       const pad = parseFloat(s.paddingTop);
       if (pad) set('--ab-pad', pad + 'px');
+      set('--ab-shadow', s.boxShadow);
     }
     // the homepage images' frame
     const frame = visible(document.querySelectorAll('[data-framer-name="Image Frame"]'));
