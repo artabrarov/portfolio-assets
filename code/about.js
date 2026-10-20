@@ -117,6 +117,8 @@
   `;
   document.head.appendChild(css);
 
+  // short words (and, a, I, the…) stay with the word after them, so no line ends on one: a non-breaking space after each
+  const glue = t => t.replace(/(?<=^|\s)(and|or|a|an|I|the|at|of|in|on|to|by|so) /g, '$1\u00a0');   // also two in a row: "and the"
   const visible = list => [...list].find(e => e.offsetWidth > 0);
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; };
 
@@ -195,19 +197,19 @@
     const who = el('div', 'ab-intro');
     if (CONTENT.role) who.append(el('p', 'ab-body', CONTENT.role));
     const bio = el('div', 'ab-bio');
-    CONTENT.bio.forEach(t => bio.append(el('p', 'ab-body', t)));
+    CONTENT.bio.forEach(t => bio.append(el('p', 'ab-body', glue(t))));
     // the bio's last paragraph: "Fancy a chat over a flat white? Drop me an email or find me on LinkedIn."
     const ways = [];
     if (CONTENT.email) {
-      const a = el('a', 'ab-link', 'email'); a.href = 'mailto:' + CONTENT.email; ways.push(['Drop me an ', a]);
+      const a = el('a', 'ab-link', 'email'); a.href = 'mailto:' + CONTENT.email; ways.push(['Drop me an\u00a0', a]);
     }
     if (CONTENT.linkedin) {
       const a = el('a', 'ab-link', 'LinkedIn'); a.href = CONTENT.linkedin; a.target = '_blank'; a.rel = 'noopener';
-      ways.push([ways.length ? 'find me on ' : 'Find me on ', a]);
+      ways.push([ways.length ? 'find me on\u00a0' : 'Find me on\u00a0', a]);
     }
     if (ways.length) {
       const reach = el('p', 'ab-body');
-      reach.append('Fancy a chat over a flat white? ', ...ways.flatMap((w, i) => i ? [' or ', ...w] : w), '.');
+      reach.append(glue('Fancy a chat over a flat white? '), ...ways.flatMap((w, i) => i ? [' or\u00a0', ...w] : w), '.');
       bio.append(reach);
     }
     who.append(bio);
