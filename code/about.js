@@ -43,7 +43,7 @@
   const MARGIN = PHONE ? 16 : 32;          // px: Close sits this far from the screen edges, as in the lightbox
   const TOP = MARGIN + 32 + 16;            // px above the sheet: Close (32px tall) and a 16px gap
   // motion, in ms: the lightbox's soft glide
-  const M = { ease: 'cubic-bezier(.32,.72,0,1)', open: 400, close: 350, rise: 16 };
+  const M = { ease: 'cubic-bezier(.32,.72,0,1)', open: 300, close: 250, rise: 16 };
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // the site's Framer colour styles (fallbacks after the commas)

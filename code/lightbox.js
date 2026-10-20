@@ -19,16 +19,17 @@
   const PHONE = matchMedia('(max-width: 599px)').matches;
   const MARGIN = PHONE ? 16 : 32;          // px between the open media and the screen edges; the buttons sit the same distance in
   const TOP = MARGIN + 32 + 16;            // px above the media: the buttons (32px tall) and a 16px gap
-  // motion, in ms: soft, to match the site's calm type and colours (was 420 / 336 / 280 ms, 48px, on .2,.8,.2,1).
+  // motion, in ms: soft but quick, in step with the rest of the site (was 400 / 350 / 380 ms; before that 420 / 336 / 280 ms,
+  // 48px, on .2,.8,.2,1).
   // window.__lbMotion (set by the local preview's ?motion= switch) can override any of these
   const M = Object.assign({
     ease: 'cubic-bezier(.32,.72,0,1)',   // a smooth glide that lands softly
-    open: 400,          // zoom from the page to full screen
-    close: 350,         // and back
-    fadeOut: 320,       // close when the item is off screen: fade and shrink in place
-    bgIn: 400, bgOut: 350,   // the white background, in step with the image
-    slide: 380, shift: 24,   // arrows: the cross-slide between items, and how far they drift (px)
-    controls: 350,      // the counter, arrows and Close fading in and out
+    open: 300,          // zoom from the page to full screen
+    close: 250,         // and back
+    fadeOut: 220,       // close when the item is off screen: fade and shrink in place
+    bgIn: 300, bgOut: 250,   // the white background, in step with the image
+    slide: 280, shift: 24,   // arrows: the cross-slide between items, and how far they drift (px)
+    controls: 250,      // the counter, arrows and Close fading in and out
   }, window.__lbMotion || {});
   const EASE = M.ease;
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -650,7 +651,7 @@
     const { dx = 0, dy = 0, vx = 0, moved, pinch, peek } = touch;
     touch = null;
     if (pinch || open.z > 1 || !moved) { if (peek) peek.clone.remove(); return; }
-    const clone = open.clone, side = Math.abs(dx) > Math.abs(dy), time = REDUCED ? 1 : 300;
+    const clone = open.clone, side = Math.abs(dx) > Math.abs(dy), time = REDUCED ? 1 : 200;
     const slide = (el, from, to, opts = {}) => {
       el.style.translate = '';
       return el.animate([{ translate: `${from}px 0` }, { translate: `${to}px 0` }], { duration: time, easing: EASE, ...opts });
@@ -673,7 +674,7 @@
     // not far enough (or the first or last item): back into place
     const from = clone.style.translate || '0 0';
     clone.style.translate = '';
-    clone.animate([{ translate: from }, { translate: '0 0' }], { duration: REDUCED ? 1 : 250, easing: EASE });
+    clone.animate([{ translate: from }, { translate: '0 0' }], { duration: REDUCED ? 1 : 150, easing: EASE });
   }
   const TOUCH = [['touchstart', onTouchStart, { passive: true }], ['touchmove', onTouchMove, { passive: false }],
     ['touchend', onTouchEnd, { passive: true }], ['touchcancel', onTouchEnd, { passive: true }]];
