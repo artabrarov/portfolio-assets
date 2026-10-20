@@ -15,6 +15,8 @@ Rebuild: `npx esbuild code/emoji-game.js --minify --target=es2020 > code/emoji-g
 
 On computers, click an image or video on any page except /sites to open it full screen; the left and right arrow keys move through the page's images and videos. Pinch on a trackpad to zoom into an open image or video (up to 4×; images load the full size original), and two fingers then pan; clicking the open media does nothing. It opens on plain white with the company's logo (top left), ← counter → (centre) and a Close button (top right) styled like the site's buttons and linked to its Framer colour styles; Close, a click on the background, Esc or scroll closes it. Keyboard: Tab reaches each image and video, Enter or Space opens it, and focus returns to it on close. Media stays in Framer: images open in a bigger version from Framer's image server, and videos carry on from the frame they were on. Phones and tablets are left as they are. The skipped pages and the minimum size (80px, which leaves out the avatar and logos) are set at the top of the file.
 
+The same file also handles one navigation detail, since it runs on every page: clicking Home on a case study lands on that project's card on Home (16px from the top), not at the top of the page. The browser's Back and fresh visits are left to Framer.
+
 | File | What it is |
 |---|---|
 | `lightbox.js` | Readable source |
