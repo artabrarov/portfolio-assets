@@ -289,14 +289,17 @@
         t.on = true; t.y = e.touches[0].clientY;
       }
       e.preventDefault();   // no scroll bounce underneath while the sheet follows the finger
-      t.dy = Math.max(0, e.touches[0].clientY - t.y);
-      sheet.style.translate = `0 ${t.dy}px`;
+      const down = Math.max(0, e.touches[0].clientY - t.y), now = performance.now();
+      // the finger's speed (px/ms), smoothed over the last few moves, so the close can carry on at it
+      if (t.at) t.v = 0.6 * ((down - t.dy) / Math.max(1, now - t.at)) + 0.4 * (t.v || 0);
+      t.dy = down; t.at = now;
+      sheet.style.translate = `0 ${down}px`;
     }, { passive: false });
     const end = () => {
       if (!t || !t.on) { t = null; return; }
-      const { dy } = t;
+      const { dy, v = 0 } = t;
       t = null;
-      if (dy > 100) { closeSheet(); return; }   // closes from where the finger let go
+      if (dy > 100) { closeSheet({ dy, v }); return; }   // carries on down from where the finger let go
       sheet.style.translate = '';
       sheet.animate([{ translate: `0 ${dy}px` }, { translate: '0 0' }], { duration: REDUCED ? 1 : 150, easing: M.ease });
     };
@@ -304,7 +307,7 @@
     backdrop.addEventListener('touchcancel', end, { passive: true });
   }
 
-  function closeSheet() {
+  function closeSheet(swipe = null) {
     if (!open) return;
     const { backdrop, sheet, close, from } = open;
     open = null;
@@ -316,8 +319,17 @@
     else close.blur();
     const t = REDUCED ? 0 : M.close;
     const done = () => { backdrop.remove(); close.remove(); };
-    sheet.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${M.rise / 2}px) scale(.98)` }],
-      { duration: t || 1, easing: M.ease, fill: 'forwards' });
+    if (swipe && !REDUCED) {
+      // after a swipe: the sheet keeps going down at the finger's speed and eases out as it fades, like a flick. The
+      // easing starts at 2.25× the average speed (.72 / .32), so this distance makes its first frames match the finger
+      const far = Math.min(innerHeight, Math.max(80, swipe.v * t / 2.25));
+      sheet.style.translate = '';
+      sheet.animate([{ translate: `0 ${swipe.dy}px` }, { translate: `0 ${swipe.dy + far}px` }], { duration: t, easing: M.ease, fill: 'forwards' });
+      sheet.animate([{ opacity: 1 }, { opacity: 0 }], { duration: t, easing: M.ease, fill: 'forwards' });   // fades as it moves, so it never rests visible
+    } else {
+      sheet.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateY(${M.rise / 2}px) scale(.98)` }],
+        { duration: t || 1, easing: M.ease, fill: 'forwards' });
+    }
     backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: REDUCED ? 150 : t, easing: 'ease', fill: 'forwards' })
       .finished.then(done, done);
   }
