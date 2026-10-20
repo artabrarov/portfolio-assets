@@ -48,17 +48,19 @@
 
   // the site's Framer colour styles (fallbacks after the commas)
   const WHITE = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)';   // the cards
-  const GREY = 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f5f4f0)';    // the page
+  const PAGE = 'var(--token-161d896a-76d8-4d9e-baab-5089a763c675,#f5f4f0)';    // the page background (Site Settings)
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#2e261c)';    // dark text
   const MUTED = 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2,#726555)';   // grey text
-  const STROKE = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#eeece6)';  // stroke, Secondary button fill
-  const FILL_HOVER = 'var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)';
+  const IMAGE = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#eeece6)';   // the Image Frame's fill, behind the photo
+  // the Secondary button, as in the emoji game: the Hover colour style at rest, Stroke on hover
+  const BUTTON = 'var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)';
+  const BUTTON_HOVER = 'var(--token-c0c08a01-85af-48e1-a222-d1e74edf9e8e,#e0ddd4)';
   const MEDIUM = '"Open Runde Medium","Open Runde",sans-serif';   // fallbacks before the page's styles are read
   const SEMI = '"Open Runde Semibold","Open Runde",sans-serif';
 
   const css = document.createElement('style');
   css.textContent = `
-    .ab-backdrop{position:fixed;inset:0;z-index:10001;background:${GREY};opacity:0;overflow-y:auto;overscroll-behavior:contain;
+    .ab-backdrop{position:fixed;inset:0;z-index:10001;background:${PAGE};opacity:0;overflow-y:auto;overscroll-behavior:contain;
       -webkit-overflow-scrolling:touch;}
     .ab-backdrop.ab-show{opacity:1;}
     .ab-wrap{min-height:100%;box-sizing:border-box;display:flex;justify-content:center;align-items:flex-start;
@@ -73,13 +75,11 @@
     /* type copied from the Hero's Framer styles by syncType(); the values after the commas are fallbacks */
     .ab-body{font-family:var(--ab-body-family,${MEDIUM});font-weight:var(--ab-body-weight,500);font-size:var(--ab-body-size,15px);
       line-height:var(--ab-body-lh,23px);letter-spacing:var(--ab-body-ls,-0.1px);color:${MUTED};}
-    .ab-small{font-family:var(--ab-small-family,${MEDIUM});font-weight:var(--ab-small-weight,500);font-size:var(--ab-small-size,13px);
-      line-height:var(--ab-small-lh,20px);letter-spacing:var(--ab-small-ls,-0.1px);color:${MUTED};}
     .ab-head{display:flex;flex-direction:column;gap:24px;}
     .ab-head .ab-avatar{width:32px;height:32px;border-radius:999px;overflow:hidden;}
     .ab-head .ab-avatar img{display:block;width:100%;height:100%;object-fit:cover;}
     /* the photo: framed like the homepage cards' images (Image Frame: corners, fill, faint inner stroke) */
-    .ab-photo{position:relative;overflow:hidden;aspect-ratio:16/9;background:var(--ab-frame-bg,${STROKE});
+    .ab-photo{position:relative;overflow:hidden;aspect-ratio:16/9;background:var(--ab-frame-bg,${IMAGE});
       border-radius:var(--ab-frame-radius,20px);corner-shape:var(--ab-frame-corner,round);}
     .ab-photo img{display:block;width:100%;height:100%;object-fit:cover;}
     .ab-photo::after{content:"";position:absolute;inset:0;border-radius:inherit;corner-shape:inherit;pointer-events:none;
@@ -94,19 +94,18 @@
     .ab-logo{width:32px;height:32px;overflow:hidden;border-radius:var(--ab-logo-radius,12px);corner-shape:var(--ab-logo-corner,round);}
     .ab-logo img{display:block;width:100%;height:100%;object-fit:cover;}
     .ab-who{display:flex;flex-direction:column;gap:4px;min-width:0;}
-    .ab-who .ab-body{line-height:20px;}
     .ab-who .ab-company{color:${DARK};}   /* the company: body type (Medium), in the dark text colour */
-    .ab-years{align-self:start;line-height:20px;font-variant-numeric:tabular-nums;white-space:nowrap;}   /* on the company name's line */
+    .ab-years{align-self:start;font-variant-numeric:tabular-nums;white-space:nowrap;}   /* on the company name's line */
     /* the contact links: dark text, grey on hover */
     .ab-link{color:${DARK};text-decoration:none;transition:color .2s;}
     .ab-link:hover{color:${MUTED};}
     /* Close: the site's Secondary button (32px pill, Stroke fill, button label type) */
     .ab-close{box-sizing:border-box;height:32px;margin:0;border:0;padding:6px 18px;border-radius:999px;display:inline-flex;
-      align-items:center;background:${STROKE};color:${DARK};text-decoration:none;white-space:nowrap;cursor:pointer;
+      align-items:center;background:${BUTTON};color:${DARK};text-decoration:none;white-space:nowrap;cursor:pointer;
       transition:background-color .2s,opacity ${M.close}ms ease;
       font-family:var(--ab-btn-family,${SEMI});font-weight:var(--ab-btn-weight,600);font-size:var(--ab-btn-size,13px);
       line-height:var(--ab-btn-lh,20px);letter-spacing:var(--ab-btn-ls,-0.1px);}
-    .ab-close:hover{background:${FILL_HOVER};}
+    .ab-close:hover{background:${BUTTON_HOVER};}
     .ab-close:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
     .ab-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;}
     .ab-close.ab-show{opacity:1;}
@@ -142,7 +141,6 @@
     const hero = visible(document.querySelectorAll('[data-framer-name="Hero"]'));
     const paras = hero ? [...hero.querySelectorAll('p')].filter(p => p.offsetWidth && !p.closest('[data-framer-name="Button"]')) : [];
     copy('body', paras.find(p => p.textContent.trim().length > 40));                     // the bio
-    copy('small', visible(document.querySelectorAll('[data-framer-name="Footer"] a p, [data-framer-name="Footer"] a')));
     copy('btn', visible(document.querySelectorAll('[data-framer-name="Button"] p')));
     // the cards' corners and padding: the first wide frame in the White colour style
     const card = [...document.querySelectorAll('[data-framer-name]')].find(c => c.offsetWidth >= Math.min(500, innerWidth * .8) &&
