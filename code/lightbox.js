@@ -298,7 +298,10 @@
   }
   function showClose() {
     if (!closeBtn.isConnected) document.body.append(closeBtn);
-    requestAnimationFrame(() => closeBtn.classList.add('lb-show'));
+    // shown straight away (a reflow first, so it still fades in): a hidden button can't take focus, and focus would
+    // stay on the clicked image, which then shows a focus ring once Esc closes the lightbox
+    closeBtn.getBoundingClientRect();
+    closeBtn.classList.add('lb-show');
   }
   function showCount(el) {
     const list = allMedia(), i = list.indexOf(el);
