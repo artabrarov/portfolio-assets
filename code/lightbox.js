@@ -88,13 +88,6 @@
     /* a logo made of an image tile with text on it (Lab: an emoji on a tile) */
     .lb-logo span{position:absolute;inset:0;display:grid;place-items:center;line-height:1;}
     .lb-logo.lb-show{opacity:1;}
-    /* next to the logo: the section of the page the current item belongs to (Apron: AI-Powered Clean Bills, Apron Card…), in the counter's
-       type (paragraph font at the button size), so the top row reads as one */
-    .lb-section{position:fixed;top:${MARGIN}px;z-index:10003;height:32px;display:flex;align-items:center;white-space:nowrap;
-      color:${DARK};opacity:0;pointer-events:none;transition:opacity ${M.controls}ms ease;
-      font-family:var(--lb-text-family,${TYPE});font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);
-      font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);letter-spacing:var(--lb-ls,normal);}
-    .lb-section.lb-show{opacity:1;}
     .lb-count{pointer-events:none;font-variant-numeric:tabular-nums;text-align:center;background:${QUIET};box-shadow:none;}   /* paragraph style, flat grey: it's not a button */
     .lb-arrow{width:32px;padding:0;display:grid;place-items:center;cursor:pointer;}
     .lb-arrow svg{display:block;width:16px;height:16px;}   /* Instance Kit's arrow-left / arrow-right */
@@ -429,44 +422,6 @@
   // mouse opens hide focus rings on the buttons until Tab is pressed
   const setQuiet = on => [closeBtn, prevBtn, nextBtn, logo].forEach(b => b && b.classList.toggle('lb-quiet', on));
 
-  // the section label: the title in the header of the section the current item sits in (Framer's Overview: Text, the
-  // first line), so renaming a section in Framer renames its label. Case studies only: on Home the avatar says enough
-  let section = null;
-  function sectionOf(el) {
-    if (location.pathname.replace(/\/$/, '') === '') return '';
-    const sec = sectionRoot(el);
-    const t = sec && [...sec.querySelectorAll('[data-framer-name="Overview"] [data-framer-name="Text"] p')].find(p => p.offsetWidth > 0);
-    return t ? t.textContent.trim() : '';
-  }
-  function placeSection(d) {
-    const left = logo && logo.dataset.src ? MARGIN + 32 + 12 : MARGIN;
-    d.style.left = left + 'px';
-    // the next thing along the top row: the counter on computers, Close on phones (their counter is at the bottom)
-    const r = PHONE ? closeBtn.getBoundingClientRect() : nav.isConnected && allMedia().length > 1 ? nav.getBoundingClientRect() : null;
-    d.style.visibility = r && r.width && left + d.offsetWidth > r.left - 12 ? 'hidden' : '';
-  }
-  function showSection(el, dir = 0) {
-    const text = sectionOf(el);
-    if (!text) { if (section) section.classList.remove('lb-show'); return; }
-    if (section && section.textContent === text) { placeSection(section); fadeIn(section); return; }
-    const old = section, shown = old && old.classList.contains('lb-show');
-    section = document.createElement('div');
-    section.className = 'lb-section';
-    section.textContent = text;
-    document.body.append(section);
-    placeSection(section);
-    if (shown && dir && !REDUCED) {   // another section while browsing: slides across like the logo
-      const shift = LOGO_SHIFT * dir, o = { duration: M.slide, easing: EASE, fill: 'forwards' };
-      section.classList.add('lb-show');
-      section.animate([{ opacity: 0, translate: `${shift}px 0` }, { opacity: 1, translate: '0 0' }], { ...o, fill: 'backwards' });
-      old.animate([{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: `${-shift}px 0` }], o)
-        .finished.then(() => old.remove(), () => old.remove());
-    } else {
-      if (old) old.remove();
-      fadeIn(section);
-    }
-  }
-
   function openMedia(el, viaPointer = false) {
     if (open) return;
     const from = el.getBoundingClientRect();
@@ -493,7 +448,6 @@
     sharpen(el, clone);
     showCount(el);
     showLogo(el);
-    showSection(el);
     preloadAround(el);
   }
 
@@ -523,7 +477,6 @@
     sharpen(next, clone);
     showCount(next);
     showLogo(next, dir);
-    showSection(next, dir);
     preloadAround(next);
   }
   function step(dir) {
@@ -727,7 +680,6 @@
     ready.forEach(c => { c.removeAttribute('src'); c.load(); }); ready.clear();
     nav.classList.remove('lb-show');
     if (logo) logo.classList.remove('lb-show');
-    if (section) section.classList.remove('lb-show');
     closeBtn.classList.remove('lb-show');
     // fly back only to a spot that's on screen (after browsing with the arrows it may not be)
     const r = src.isConnected ? src.getBoundingClientRect() : null;
