@@ -302,6 +302,7 @@
   function closeSheet(swipe = null) {
     if (!open) return;
     const { backdrop, sheet, close, from } = open;
+    [backdrop, sheet, close].forEach(n => { n.style.pointerEvents = 'none'; });   // while they fade, clicks reach the page
     open = null;
     document.documentElement.classList.remove('ab-open');
     close.classList.remove('ab-show');

@@ -105,6 +105,11 @@
     .lb-close:focus-visible,.lb-arrow:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
     .lb-quiet:focus-visible,a.lb-logo.lb-quiet:focus-visible{outline:none;}   /* opened with the mouse: no rings until Tab is pressed */
     .lb-nav.lb-show,.lb-close.lb-show{opacity:1;}
+    /* hidden controls stay on the page between openings: invisible, they must not catch clicks (Close sits over Home's
+       View buttons, the logo link over the Hero's avatar) or Tab. Clicks pass through as soon as they start fading out;
+       visibility follows once the fade is done, so the fade still shows */
+    .lb-close:not(.lb-show),.lb-nav:not(.lb-show),.lb-logo:not(.lb-show){pointer-events:none !important;visibility:hidden;
+      transition:opacity ${M.controls}ms ease,visibility 0s linear ${M.controls}ms;}
   `;
   document.head.appendChild(css);
 
@@ -723,6 +728,7 @@
   function close() {
     if (!open) return;
     const { src, clone, backdrop, radius } = open;
+    backdrop.style.pointerEvents = clone.style.pointerEvents = 'none';   // while they fade, clicks reach the page
     open = null;
     ready.forEach(c => { c.removeAttribute('src'); c.load(); }); ready.clear();
     nav.classList.remove('lb-show');
