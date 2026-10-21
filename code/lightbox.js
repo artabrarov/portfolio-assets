@@ -83,8 +83,7 @@
       pointer-events:none;transition:opacity ${M.controls}ms ease;}
     .lb-logo img{display:block;width:100%;height:100%;object-fit:cover;}
     /* a logo that links somewhere on the page (Home's card logos go to their case studies) does too */
-    a.lb-logo{pointer-events:auto;cursor:pointer;transition:opacity ${M.controls}ms ease,scale .2s ease;}
-    a.lb-logo:hover{scale:1.06;}
+    a.lb-logo{pointer-events:auto;cursor:pointer;}
     a.lb-logo:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
     /* a logo made of an image tile with text on it (Lab: an emoji on a tile) */
     .lb-logo span{position:absolute;inset:0;display:grid;place-items:center;line-height:1;}
@@ -313,8 +312,8 @@
     nextBtn.disabled = i === list.length - 1;
     requestAnimationFrame(() => nav.classList.add('lb-show'));
   }
-  // the company logo, top left: the nearest small image around the item (the card's logo on Home, the company's
-  // logo on a case study), skipping the game's avatar. Into another company's items, it slides like the images
+  // the avatar, top left: the one in the header of the item's section (its card's on Home, its section's on a case
+  // study), skipping the game's avatar. Into another section's items, it slides like the images
   const LOGO_SHIFT = 8;   // px: the logo's slide, shorter than the images' (it's only 32px wide)
   let logo = null;        // the logo on screen
   // the company logo nearest the item: a small image, or a small filled tile with text on it (Lab: an emoji on a tile)
@@ -322,7 +321,20 @@
     !e.closest('.fx-av, .fx-world, [class^="lb-"], [data-framer-name="Button"]');
   const isTile = e => !(e instanceof HTMLImageElement) && Math.abs(e.offsetWidth - e.offsetHeight) <= 2 && !e.querySelector('img') &&
     e.textContent.trim() && getComputedStyle(e).backgroundColor !== 'rgba(0, 0, 0, 0)';
+  // Framer's Avatar layer (an image, or an icon on a tile) in the item's section (the frame with its header, Overview);
+  // a section without one gets the page's own (the Hero's, the company logo); failing both, as before, the nearest
+  // small image or filled tile with text
+  const isAvatar = e => e.offsetWidth > 0 && small(e);
+  const sectionRoot = el => {
+    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement)
+      if (n.querySelector('[data-framer-name="Overview"]')) return n;
+    return null;
+  };
   function logoOf(el) {
+    const sec = sectionRoot(el);
+    const av = sec && [...sec.querySelectorAll('[data-framer-name="Avatar"]')].find(isAvatar) ||
+      [...document.querySelectorAll('[data-framer-name="Hero"] [data-framer-name="Avatar"]')].find(isAvatar);
+    if (av) return av;
     for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
       const c = [...n.querySelectorAll('img')].find(i => i !== el && small(i)) ||
         [...n.querySelectorAll('div')].find(t => small(t) && isTile(t));
@@ -330,8 +342,15 @@
     }
     return null;
   }
-  // what identifies a logo (the same logo stays put while browsing): an image's address, or a tile's fill and text
+  // what identifies a logo (the same logo stays put while browsing): an image's address, an Avatar's own markup, or a
+  // tile's fill and text
+  // what a copied Avatar layer keeps from the page, part by part
+  const LOOK = ['display', 'position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'flex-shrink', 'overflow',
+    'background-color', 'background-image', 'background-size', 'background-position', 'border-radius', 'corner-shape',
+    'opacity', 'transform', 'color', 'fill', 'stroke', 'object-fit', 'box-shadow'];
+  const isLayer = src => !(src instanceof HTMLImageElement) && src.dataset.framerName === 'Avatar';
   const logoKey = src => src instanceof HTMLImageElement ? src.currentSrc || src.src :
+    isLayer(src) ? 'avatar:' + (src.querySelector('img')?.currentSrc || src.innerHTML) :
     'tile:' + getComputedStyle(src).backgroundColor + ':' + src.textContent.trim();
   function makeLogo(src, url) {
     const link = src.closest('a[href]');
@@ -352,6 +371,26 @@
       const shape = st.getPropertyValue('corner-shape');
       if (shape && !/^round/.test(shape)) d.style.setProperty('corner-shape', shape);
       break;
+    }
+    if (isLayer(src)) {
+      // an Avatar layer: a copy of it, drawn by the page's own Framer styles (an image, or an icon on a tile), scaled
+      // to 32px. A link avatar (Home's cards) is copied as a plain frame, as the lightbox's logo is the link
+      const copy = document.createElement('div');
+      copy.innerHTML = src.innerHTML;
+      copy.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
+      // Framer's CSS for the layer is scoped to the page around it, so the copy carries each part's computed look inline
+      const parts = [src, ...src.querySelectorAll('*')], copies = [copy, ...copy.querySelectorAll('*')];
+      parts.forEach((n, i) => {
+        const st = getComputedStyle(n), c = copies[i];
+        if (!c) return;
+        LOOK.forEach(k => c.style.setProperty(k, st.getPropertyValue(k)));
+      });
+      const w = src.offsetWidth || 32;
+      Object.assign(copy.style, { position: 'absolute', inset: 'auto', left: '0', top: '0', margin: '0', width: w + 'px', height: w + 'px',
+        transform: w === 32 ? 'none' : `scale(${32 / w})`, transformOrigin: '0 0' });
+      d.append(copy);
+      document.body.append(d);
+      return d;
     }
     if (src instanceof HTMLImageElement) {
       const img = document.createElement('img'); img.alt = ''; img.src = url; d.append(img);
@@ -390,28 +429,15 @@
   // mouse opens hide focus rings on the buttons until Tab is pressed
   const setQuiet = on => [closeBtn, prevBtn, nextBtn, logo].forEach(b => b && b.classList.toggle('lb-quiet', on));
 
-  // the section label: which part of the page the current item sits in. Per page, either Framer layer name → label,
-  // or a list of labels for the page's cards in order (where cards share a layer name, as on Joompay)
-  const SECTIONS = {
-    '/apron': { 'Platform': 'AI-Powered Clean Bills', 'Expense management': 'Apron Card', 'Apron Capture': 'AI-Powered Invoice Capture',
-      'App': 'Mobile App', 'Design System': 'Design System' },
-    '/joompay': ['Product', 'Brand'],
-    '/redmadrobot': { 'Rostelecom': 'Rostelecom Key', 'Concepts': 'Concepts' },
-  };
+  // the section label: the title in the header of the section the current item sits in (Framer's Overview: Text, the
+  // first line), so renaming a section in Framer renames its label. Case studies only: on Home the avatar says enough
   let section = null;
   function sectionOf(el) {
-    const map = SECTIONS[location.pathname.replace(/\/$/, '')];
-    if (!map) return '';
-    if (Array.isArray(map)) {   // the cards: the page's wide white frames, top to bottom
-      const cards = [...document.querySelectorAll('[data-framer-name]')].filter(c => c.offsetWidth >= 500 &&
-        getComputedStyle(c).backgroundColor === 'rgb(255, 255, 255)');
-      return map[cards.findIndex(c => c.contains(el))] || '';
-    }
-    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement)
-      if (n.dataset && map[n.dataset.framerName]) return map[n.dataset.framerName];
-    return '';
+    if (location.pathname.replace(/\/$/, '') === '') return '';
+    const sec = sectionRoot(el);
+    const t = sec && [...sec.querySelectorAll('[data-framer-name="Overview"] [data-framer-name="Text"] p')].find(p => p.offsetWidth > 0);
+    return t ? t.textContent.trim() : '';
   }
-  // 12px right of the logo (or at the margin without one); hidden where it would run into what's next to it
   function placeSection(d) {
     const left = logo && logo.dataset.src ? MARGIN + 32 + 12 : MARGIN;
     d.style.left = left + 'px';
