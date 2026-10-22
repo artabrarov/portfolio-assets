@@ -19,8 +19,8 @@
     photoAlt: 'Arthur outside the National Museum of Scotland',
     role: '',                              // a line under the name; empty hides it
     bio: [
-      "I'm a product designer based in London. I love fast-paced teams full of people I can learn from, where we work hard and have a lot of fun along the way.",
-      "Currently, I'm leading Apron Card, wearing both the design and the product hat. I also help look after our design system and mobile app, so things feel consistent across the product.",
+      "I’m a product designer based in London. I love fast-paced teams full of people I can learn from, where we work hard and have a lot of fun along the way.",
+      "Currently, I’m leading Apron Card, wearing both the design and the product hat. I also help look after our design system and mobile app, so things feel consistent across the product.",
       "Before that, I helped launch and scale Joompay, a consumer banking app, and learned the ropes of design at Redmadrobot. My degree is in international business, and I hold a UK Global Talent visa.",
     ],
     // company, role, years
@@ -76,7 +76,8 @@
     .ab-sheet:focus{outline:none;}
     .ab-sheet p{margin:0;}
     /* type copied from the Hero's Framer styles by syncType(); the values after the commas are fallbacks */
-    .ab-body{font-family:var(--ab-body-family,${MEDIUM});font-weight:var(--ab-body-weight,500);font-variation-settings:var(--ab-body-wght,normal);
+    .ab-body{text-wrap:pretty;   /* no lone word on a paragraph's last line, as on the rest of the site */
+      font-family:var(--ab-body-family,${MEDIUM});font-weight:var(--ab-body-weight,500);font-variation-settings:var(--ab-body-wght,normal);
       font-feature-settings:var(--ab-body-feat,normal);font-size:var(--ab-body-size,15px);
       line-height:var(--ab-body-lh,23px);letter-spacing:var(--ab-body-ls,-0.1px);color:${MUTED};}
     .ab-head{display:flex;flex-direction:column;gap:24px;}
