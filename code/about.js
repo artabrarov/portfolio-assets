@@ -76,7 +76,8 @@
     .ab-sheet:focus{outline:none;}
     .ab-sheet p{margin:0;}
     /* type copied from the Hero's Framer styles by syncType(); the values after the commas are fallbacks */
-    .ab-body{font-family:var(--ab-body-family,${MEDIUM});font-weight:var(--ab-body-weight,500);font-variation-settings:var(--ab-body-wght,normal);font-size:var(--ab-body-size,15px);
+    .ab-body{font-family:var(--ab-body-family,${MEDIUM});font-weight:var(--ab-body-weight,500);font-variation-settings:var(--ab-body-wght,normal);
+      font-feature-settings:var(--ab-body-feat,normal);font-size:var(--ab-body-size,15px);
       line-height:var(--ab-body-lh,23px);letter-spacing:var(--ab-body-ls,-0.1px);color:${MUTED};}
     .ab-head{display:flex;flex-direction:column;gap:24px;}
     .ab-head .ab-avatar{width:32px;height:32px;border-radius:999px;overflow:hidden;}
@@ -105,7 +106,8 @@
     .ab-close{box-sizing:border-box;height:32px;margin:0;border:0;padding:6px 18px;border-radius:999px;display:inline-flex;
       align-items:center;background:${BUTTON};box-shadow:${BUTTON_EDGE};color:${DARK};text-decoration:none;white-space:nowrap;cursor:pointer;
       transition:background-color .2s,opacity ${M.close}ms ease;
-      font-family:var(--ab-btn-family,${SEMI});font-weight:var(--ab-btn-weight,600);font-variation-settings:var(--ab-btn-wght,normal);font-size:var(--ab-btn-size,13px);
+      font-family:var(--ab-btn-family,${SEMI});font-weight:var(--ab-btn-weight,600);font-variation-settings:var(--ab-btn-wght,normal);
+      font-feature-settings:var(--ab-btn-feat,normal);font-size:var(--ab-btn-size,13px);
       line-height:var(--ab-btn-lh,20px);letter-spacing:var(--ab-btn-ls,-0.1px);}
     .ab-close:hover{background:${BUTTON_HOVER};}
     .ab-close:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
@@ -141,6 +143,7 @@
       const t = getComputedStyle(node);
       set(`--ab-${prefix}-family`, t.fontFamily); set(`--ab-${prefix}-weight`, t.fontWeight); set(`--ab-${prefix}-wght`, t.fontVariationSettings);
       set(`--ab-${prefix}-size`, t.fontSize); set(`--ab-${prefix}-lh`, t.lineHeight); set(`--ab-${prefix}-ls`, t.letterSpacing);
+      set(`--ab-${prefix}-feat`, t.fontFeatureSettings);   // the font's alternate letters (Inter's cv03, cv11…), as the page sets them
     };
     const hero = visible(document.querySelectorAll('[data-framer-name="Hero"]'));
     const paras = hero ? [...hero.querySelectorAll('p')].filter(p => p.offsetWidth && !p.closest('[data-framer-name="Button"]')) : [];
