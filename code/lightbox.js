@@ -787,8 +787,15 @@
 
   // event delegation: Framer re-renders images, so nothing is bound to them directly
   let hovered = null;
+  // A Framer overlay (the About panel on Home) lives in #overlay. While one is open, the lightbox stays out of it: no
+  // zoom cursor, no keys, and no opening, including for the click that closes the overlay. Framer closes it as the press
+  // starts, so by the time the click lands the overlay is gone and the click would reach the image underneath; whether
+  // an overlay was open is noted at pointerdown for that reason.
+  const framerOverlay = () => { const o = document.getElementById('overlay'); return !!(o && o.childElementCount); };
+  let pressedOverOverlay = false;
+  document.addEventListener('pointerdown', () => { pressedOverOverlay = !open && framerOverlay(); }, { capture: true, passive: true });
   document.addEventListener('pointerover', e => {
-    if (open) return;
+    if (open || framerOverlay()) return;
     const m = mediaAt(e);
     if (hovered && hovered !== e.target) hovered.classList.remove('lb-zoomable');
     hovered = m ? e.target : null;
@@ -807,6 +814,9 @@
       if (e.target !== open.clone) close();   // the open image or video itself: nothing
       return;
     }
+    const overOverlay = pressedOverOverlay || framerOverlay();
+    pressedOverOverlay = false;
+    if (overOverlay) return;
     const m = mediaAt(e);
     if (!m) return;
     e.preventDefault();
@@ -815,7 +825,7 @@
   addEventListener('keydown', e => {
     if (!open) {
       const el = document.activeElement;
-      if ((e.key === 'Enter' || e.key === ' ') && el && el.hasAttribute(KEY) && zoomable(el)) { e.preventDefault(); openMedia(el); }
+      if ((e.key === 'Enter' || e.key === ' ') && el && el.hasAttribute(KEY) && zoomable(el) && !framerOverlay()) { e.preventDefault(); openMedia(el); }
       return;
     }
     // Tab is the key that moves focus, so it brings the ring back; the arrows and Esc leave it hidden
