@@ -43,8 +43,8 @@
   const LINE = 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0))';
   const EDGE = 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)), var(--site-btn-shadow,0 1px 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))';
   const TYPE = '"Instrument Sans Variable","Instrument Sans",sans-serif';   // fallback before the page's styles are read
-  const QUIET = 'var(--token-3a13a808-b14e-4572-b32b-40a978401861,#f5f4f0)';   // the counter isn't a button: the Fill colour style, flat
-  const FILL_HOVER = 'var(--token-161d896a-76d8-4d9e-baab-5089a763c675,#f5f4f0)';   // the buttons' hover colour: the page background
+  const QUIET = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the counter isn't a button: the Background colour style, flat
+  const FILL_HOVER = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the buttons' hover colour: the Background colour style
 
   const css = document.createElement('style');
   css.textContent = `
