@@ -19,7 +19,8 @@
     photoAlt: 'Arthur outside the National Museum of Scotland',
     role: '',                              // a line under the name; empty hides it
     bio: [
-      "I’m a product design leader based in London. Early at Apron ($50m+ raised) and Joompay (acquired by Vivid Money). Previous experience includes agency work at Redmadrobot and audit at KPMG. Bachelor’s degree in International Business. UK Global Talent.",
+      "I’m a product design leader based in London. Early at Apron ($50m+ raised) and Joompay (acquired by Vivid Money).",
+      "Previous experience includes agency work at Redmadrobot and audit at KPMG. Bachelor’s degree in International Business. UK Global Talent.",
       "Currently, I’m leading Apron Card, wearing both the design and the product hat. I also help look after our design system and mobile app, so things feel consistent across the product.",
     ],
     // company, role, years
