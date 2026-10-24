@@ -25,9 +25,9 @@
     ],
     // company, role, years
     work: [
-      { company: 'Apron', role: 'Product & Design', years: '2022–now' },
-      { company: 'Joompay', role: 'Founding Designer', years: '2020–2022' },
-      { company: 'Redmadrobot', role: 'Product Designer', years: '2019–2020' },
+      { company: 'Apron', role: 'Product & Design', years: '2022–26' },
+      { company: 'Joompay', role: 'Founding Designer', years: '2020–22' },
+      { company: 'Redmadrobot', role: 'Product Designer', years: '2019–20' },
     ],
     // the bio's last line: "Fancy a chat over a flat white? Drop me an email or find me on LinkedIn." (either left empty
     // drops out of the sentence)
@@ -50,6 +50,7 @@
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#2e261c)';    // dark text
   const MUTED = 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2,#726555)';   // grey text
   // the line between the bio and the companies: the colour style behind the homepage images (#eeece6)
+  const STROKE = 'var(--token-c0c08a01-85af-48e1-a222-d1e74edf9e8e,#e0ddd4)';   // the Stroke colour style
   const LINE = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#eeece6)';
   const IMAGE = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#eeece6)';   // the Image Frame's fill, behind the photo
   // the site's Primary button, as in the lightbox and the emoji game: White, the page background on hover, a 1px line
@@ -93,16 +94,19 @@
        text, as from the Hero's avatar to the name; 16 between paragraphs and between companies */
     .ab-intro,.ab-bio{display:flex;flex-direction:column;gap:16px;}
     .ab-bio .ab-body:first-child{color:${DARK};}   /* the opening paragraph, in the dark text colour */
-    /* the companies, one per row: name over role, years on the right */
+    /* the companies, one line each: the name on the left; the role right-aligned, next to the years; the years in a
+       column of their own, left-aligned. One grid for the whole list (rows are display:contents), so the columns line up */
     .ab-divider{height:1px;flex-shrink:0;background:${LINE};}   /* 32 above and below: the sheet's gap */
-    .ab-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:16px;}
-    .ab-row{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;}
-    .ab-who{display:flex;flex-direction:column;min-width:0;}   /* name and role sit straight on top of each other */
-    .ab-who .ab-company{color:${DARK};}   /* the company: body type (Medium), in the dark text colour */
-    .ab-years{align-self:start;font-variant-numeric:tabular-nums;white-space:nowrap;}   /* on the company name's line */
-    /* the contact links: dark text, grey on hover */
-    .ab-link{color:${DARK};text-decoration:none;transition:color .2s;}
-    .ab-link:hover{color:${MUTED};}
+    .ab-list{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:16px;}
+    .ab-list li,.ab-row,.ab-who{display:contents;}
+    /* the company: the Hero name's bold style, dark */
+    .ab-who .ab-company{color:${DARK};min-width:0;font-weight:var(--ab-strong-weight,600);font-variation-settings:var(--ab-strong-wght,normal);}
+    .ab-who .ab-company+.ab-body{color:${DARK};text-align:right;white-space:nowrap;}   /* the role: body type, dark */
+    .ab-years{font-variant-numeric:tabular-nums;white-space:nowrap;}
+    /* the contact links, exactly as the links in the case studies' text (Apron's "raised"): grey, underlined in the
+       Stroke colour 6px below, the font's own line weight; dark on hover, the line unchanged, no transition */
+    .ab-link{color:${MUTED};text-decoration:underline ${STROKE};text-underline-offset:6px;}
+    .ab-link:hover{color:${DARK};}
     /* Close: the site's Primary button (32px pill, White with a line and shadow, button label type) */
     .ab-close{box-sizing:border-box;height:32px;margin:0;border:0;padding:6px 18px;border-radius:999px;display:inline-flex;
       align-items:center;background:${BUTTON};box-shadow:${BUTTON_EDGE};color:${DARK};text-decoration:none;white-space:nowrap;cursor:pointer;
@@ -149,6 +153,7 @@
     const hero = visible(document.querySelectorAll('[data-framer-name="Hero"]'));
     const paras = hero ? [...hero.querySelectorAll('p')].filter(p => p.offsetWidth && !p.closest('[data-framer-name="Button"]')) : [];
     copy('body', paras.find(p => p.textContent.trim().length > 40));                     // the bio
+    copy('strong', paras.find(p => p.textContent.trim() === CONTENT.name));              // the name above it: the bold style
     copy('btn', visible(document.querySelectorAll('[data-framer-name="Button"] p')));
     // the buttons' line and shadow, from the page's Primary button (not its fill, which may be mid-hover)
     const primary = [...document.querySelectorAll('[data-framer-name="Primary"]')].find(e => e.offsetWidth > 0);
