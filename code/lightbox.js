@@ -101,7 +101,7 @@
     .lb-section.lb-show{opacity:1;}
     .lb-count{pointer-events:none;font-variant-numeric:tabular-nums;text-align:center;background:${QUIET};box-shadow:none;}   /* paragraph style, flat grey: it's not a button */
     .lb-arrow{width:${SIZE}px;padding:0;display:grid;place-items:center;cursor:pointer;}
-    .lb-arrow svg{display:block;width:16px;height:16px;}   /* Instance Kit's arrow-left / arrow-right */
+    .lb-arrow svg{display:block;width:16px;height:16px;}   /* the site's chevron-left / chevron-right */
     .lb-arrow:disabled{opacity:.4;cursor:default;box-shadow:${LINE};}
     .lb-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;cursor:pointer;font-family:var(--lb-btn-family,${TYPE});
       font-weight:var(--lb-btn-weight,525);font-variation-settings:var(--lb-btn-wght,"wght" 525);}   /* button label style */
@@ -265,9 +265,9 @@
     b.innerHTML = `<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="${d}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     return b;
   };
-  // paths from Instance Kit's Icons (arrow-left.svg, arrow-right.svg)
-  const prevBtn = arrow('Previous', 'M12.6667 7.99998H3.33333M7.99999 3.33331L3.33333 7.99998L7.99999 12.6666');
-  const nextBtn = arrow('Next', 'M3.33333 8.00004H12.6667M7.99999 12.6667L12.6667 8.00004L7.99999 3.33337');
+  // paths from the Framer project's Icons (chevron-left, chevron-right), the ones the site's own buttons use
+  const prevBtn = arrow('Previous', 'M9 12L5 8L9 4');
+  const nextBtn = arrow('Next', 'M7 12L11 8L7 4');
   const count = document.createElement('div');
   count.className = 'lb-count';
   count.setAttribute('aria-live', 'polite');
