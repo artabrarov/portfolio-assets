@@ -81,8 +81,8 @@
     /* phones: ← counter → at the bottom, within reach of a thumb (above the home indicator) */
     ${PHONE ? `.lb-nav{top:auto;bottom:calc(${MARGIN}px + env(safe-area-inset-bottom,0px));}` : ''}
     /* top left: the logo of the company the current item belongs to */
-    .lb-logo{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;width:${SIZE}px;height:${SIZE}px;overflow:hidden;opacity:0;
-      pointer-events:none;transition:opacity ${M.controls}ms ease;}
+    .lb-logo{position:fixed;top:${MARGIN}px;left:var(--lb-l,${MARGIN}px);z-index:10003;width:${SIZE}px;height:${SIZE}px;overflow:hidden;opacity:0;
+      pointer-events:none;transition:opacity ${M.controls}ms ease,left ${M.controls}ms ease;}
     .lb-logo img{display:block;width:100%;height:100%;object-fit:cover;}
     .lb-logo::after{content:"";position:absolute;inset:0;border-radius:inherit;corner-shape:inherit;box-shadow:var(--lb-logo-line,none);
       pointer-events:none;}
@@ -103,7 +103,7 @@
     .lb-arrow{width:${SIZE}px;padding:0;display:grid;place-items:center;cursor:pointer;}
     .lb-arrow svg{display:block;width:16px;height:16px;}   /* Instance Kit's arrow-left / arrow-right */
     .lb-arrow:disabled{opacity:.4;cursor:default;box-shadow:${LINE};}
-    .lb-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;cursor:pointer;font-family:var(--lb-btn-family,${TYPE});
+    .lb-close{position:fixed;top:${MARGIN}px;right:var(--lb-r,${MARGIN}px);z-index:10003;opacity:0;cursor:pointer;font-family:var(--lb-btn-family,${TYPE});
       font-weight:var(--lb-btn-weight,525);font-variation-settings:var(--lb-btn-wght,"wght" 525);}   /* button label style */
     .lb-close:hover,.lb-arrow:hover:not(:disabled){background:${FILL_HOVER};}
     .lb-close:focus-visible,.lb-arrow:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
@@ -192,6 +192,11 @@
     return { left: (innerWidth - w) / 2, top: TOP + (room - h) / 2, width: w, height: h };
   }
   const px = r => ({ left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+  // the top row (logo, section label, Close) lines up with the open media's left and right edges, not the screen's: the
+  // media is centred, so on a screen wider than its shape it starts further in than the buttons otherwise would
+  const edgeVars = document.documentElement.style;
+  function setEdges(r) { edgeVars.setProperty('--lb-l', r.left + 'px'); edgeVars.setProperty('--lb-r', (innerWidth - r.left - r.width) + 'px'); }
+  const leftEdge = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--lb-l')) || MARGIN;
 
   let open = null;   // { src, clone, backdrop, radius, y }
 
@@ -430,6 +435,7 @@
   }
   const fadeIn = d => { d.getBoundingClientRect(); d.classList.add('lb-show'); };   // reflow first, so the fade runs
   function showLogo(el, dir = 0) {
+    setEdges(targetRect(el));
     const src = logoOf(el), url = src ? logoKey(src) : '';
     if (!url) { if (logo) logo.classList.remove('lb-show'); return; }
     if (logo && logo.dataset.src === url) { fadeIn(logo); return; }
@@ -459,7 +465,7 @@
     return t ? t.textContent.trim() : '';
   }
   function placeSection(d) {
-    const left = logo && logo.dataset.src ? MARGIN + SIZE + 12 : MARGIN;
+    const left = leftEdge() + (logo && logo.dataset.src ? SIZE + 12 : 0);
     d.style.left = left + 'px';
     // the next thing along the top row: the counter on computers, Close on phones (their counter is at the bottom)
     const r = PHONE ? closeBtn.getBoundingClientRect() : nav.isConnected && allMedia().length > 1 ? nav.getBoundingClientRect() : null;
@@ -568,7 +574,10 @@
     clone.getAnimations().forEach(a => a.cancel());
     clone.style.transform = '';
     Object.assign(open, { z: 1, tx: 0, ty: 0 });
-    Object.assign(clone.style, px(targetRect(clone.videoWidth ? clone : src)), { borderRadius: '12px' });
+    const r = targetRect(clone.videoWidth ? clone : src);
+    Object.assign(clone.style, px(r), { borderRadius: '12px' });
+    setEdges(r);
+    if (section) placeSection(section);
   }
 
   // zoom: a transform on top of the open image's own box, so the open, close and slide animations stay as they are
