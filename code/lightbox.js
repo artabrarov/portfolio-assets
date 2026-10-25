@@ -837,7 +837,22 @@
     e.preventDefault();
     openMedia(m, true);
   }, true);
+  // ← → on a case study, with nothing open: the previous and next case study, through the page's own chevron buttons (the
+  // two text-less links beside Home), so it behaves exactly like clicking them
+  function caseStudyLink(dir) {
+    const home = [...document.querySelectorAll('a')].find(a => a.textContent.trim() === 'Home' && a.offsetWidth > 0);
+    let row = home;
+    for (let i = 0; row && i < 5; i++) { row = row.parentElement; if (row && row.querySelectorAll('a').length > 2) break; }
+    const pair = row ? [...row.querySelectorAll('a[href]')].filter(a => a !== home && a.offsetWidth > 0 && !a.textContent.trim())
+      .sort((x, y) => x.getBoundingClientRect().left - y.getBoundingClientRect().left) : [];
+    return pair.length === 2 ? pair[dir < 0 ? 0 : 1] : null;
+  }
   addEventListener('keydown', e => {
+    if (!open && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey &&
+        !e.defaultPrevented && !framerOverlay() && !(document.activeElement && document.activeElement.closest('input, textarea, select, [contenteditable]'))) {
+      const link = caseStudyLink(e.key === 'ArrowLeft' ? -1 : 1);
+      if (link) { e.preventDefault(); link.click(); return; }
+    }
     if (!open) {
       const el = document.activeElement;
       if ((e.key === 'Enter' || e.key === ' ') && el && el.hasAttribute(KEY) && zoomable(el) && !framerOverlay()) { e.preventDefault(); openMedia(el); }
