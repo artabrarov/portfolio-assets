@@ -18,7 +18,8 @@
   const RADIUS = '24px';                   // corner of media whose rounding comes from a mask (Framer's squircles)
   const PHONE = matchMedia('(max-width: 599px)').matches;
   const MARGIN = PHONE ? 16 : 32;          // px between the open media and the screen edges; the buttons sit the same distance in
-  const TOP = MARGIN + 32 + 16;            // px above the media: the buttons (32px tall) and a 16px gap
+  const SIZE = 36;                         // px: the site's buttons and avatars are 36px
+  const TOP = MARGIN + SIZE + 16;          // px above the media: the buttons and a 16px gap
   // motion, in ms: soft but quick, in step with the rest of the site (was 400 / 350 / 380 ms; before that 420 / 336 / 280 ms,
   // 48px, on .2,.8,.2,1).
   // window.__lbMotion (set by the local preview's ?motion= switch) can override any of these
@@ -67,19 +68,19 @@
     .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;
       transform-origin:0 0;}
     .lb-media.lb-media{cursor:default;}   /* open media is for looking (and pinching); the white around it closes */
-    /* top left: ← counter →, top right: Close. All look like the site's Primary button: 32px tall, White with a line and
+    /* top left: ← counter →, top right: Close. All look like the site's Primary button: 36px tall, White with a line and
        a soft shadow, dark text */
-    .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:32px;margin:0;border:0;
+    .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:${SIZE}px;margin:0;border:0;
       border-radius:999px;background:${FILL};box-shadow:${EDGE};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color .2s;
       /* type copied from the page's Framer styles by syncType(); the values after the commas are fallbacks */
       font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);
       letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);}
-    .lb-count,.lb-close{padding:6px 18px;}
+    .lb-count,.lb-close{padding:8px 18px;}
     .lb-nav{position:fixed;top:${MARGIN}px;left:50%;translate:-50% 0;z-index:10003;display:flex;gap:8px;opacity:0;transition:opacity ${M.controls}ms ease;}
     /* phones: ← counter → at the bottom, within reach of a thumb (above the home indicator) */
     ${PHONE ? `.lb-nav{top:auto;bottom:calc(${MARGIN}px + env(safe-area-inset-bottom,0px));}` : ''}
     /* top left: the logo of the company the current item belongs to */
-    .lb-logo{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;width:32px;height:32px;overflow:hidden;opacity:0;
+    .lb-logo{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;width:${SIZE}px;height:${SIZE}px;overflow:hidden;opacity:0;
       pointer-events:none;transition:opacity ${M.controls}ms ease;}
     .lb-logo img{display:block;width:100%;height:100%;object-fit:cover;}
     /* a logo that links somewhere on the page (Home's card logos go to their case studies) does too */
@@ -90,13 +91,13 @@
     .lb-logo.lb-show{opacity:1;}
     /* next to the logo: the section of the page the current item belongs to (Apron: AI-Powered Clean Bills, Apron Card…), in the counter's
        type (paragraph font at the button size), so the top row reads as one */
-    .lb-section{position:fixed;top:${MARGIN}px;z-index:10003;height:32px;display:flex;align-items:center;white-space:nowrap;
+    .lb-section{position:fixed;top:${MARGIN}px;z-index:10003;height:${SIZE}px;display:flex;align-items:center;white-space:nowrap;
       color:${DARK};opacity:0;pointer-events:none;transition:opacity ${M.controls}ms ease;
       font-family:var(--lb-text-family,${TYPE});font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);
       font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);letter-spacing:var(--lb-ls,normal);}
     .lb-section.lb-show{opacity:1;}
     .lb-count{pointer-events:none;font-variant-numeric:tabular-nums;text-align:center;background:${QUIET};box-shadow:none;}   /* paragraph style, flat grey: it's not a button */
-    .lb-arrow{width:32px;padding:0;display:grid;place-items:center;cursor:pointer;}
+    .lb-arrow{width:${SIZE}px;padding:0;display:grid;place-items:center;cursor:pointer;}
     .lb-arrow svg{display:block;width:16px;height:16px;}   /* Instance Kit's arrow-left / arrow-right */
     .lb-arrow:disabled{opacity:.4;cursor:default;box-shadow:${LINE};}
     .lb-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;cursor:pointer;font-family:var(--lb-btn-family,${TYPE});
@@ -179,7 +180,7 @@
       safeProbe.style.cssText = 'position:fixed;left:0;bottom:0;width:0;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none';
       document.body.append(safeProbe);
     }
-    return MARGIN + 32 + 16 + safeProbe.offsetHeight;
+    return MARGIN + SIZE + 16 + safeProbe.offsetHeight;
   }
   function targetRect(el) {
     const ratio = ratioOf(el), room = innerHeight - TOP - bottomRoom();
@@ -322,7 +323,7 @@
   }
   // the avatar, top left: the one in the header of the item's section (its card's on Home, its section's on a case
   // study), skipping the game's avatar. Into another section's items, it slides like the images
-  const LOGO_SHIFT = 8;   // px: the logo's slide, shorter than the images' (it's only 32px wide)
+  const LOGO_SHIFT = 8;   // px: the logo's slide, shorter than the images' (it's only 36px wide)
   let logo = null;        // the logo on screen
   // the company logo nearest the item: a small image, or a small filled tile with text on it (Lab: an emoji on a tile)
   const small = e => e.offsetWidth >= 16 && e.offsetWidth <= 48 && e.offsetHeight >= 16 && e.offsetHeight <= 48 &&
@@ -355,7 +356,8 @@
   // what a copied Avatar layer keeps from the page, part by part
   const LOOK = ['display', 'position', 'left', 'top', 'right', 'bottom', 'width', 'height', 'flex-shrink', 'overflow',
     'background-color', 'background-image', 'background-size', 'background-position', 'border-radius', 'corner-shape',
-    'opacity', 'transform', 'color', 'fill', 'stroke', 'object-fit', 'box-shadow'];
+    'opacity', 'transform', 'color', 'fill', 'stroke', 'object-fit', 'box-shadow',
+    'flex-direction', 'justify-content', 'align-items', 'gap', 'padding'];   // a tile that centres its icon (a Framer stack)
   const isLayer = src => !(src instanceof HTMLImageElement) && src.dataset.framerName === 'Avatar';
   const logoKey = src => src instanceof HTMLImageElement ? src.currentSrc || src.src :
     isLayer(src) ? 'avatar:' + (src.querySelector('img')?.currentSrc || src.innerHTML) :
@@ -382,7 +384,7 @@
     }
     if (isLayer(src)) {
       // an Avatar layer: a copy of it, drawn by the page's own Framer styles (an image, or an icon on a tile), scaled
-      // to 32px. A link avatar (Home's cards) is copied as a plain frame, as the lightbox's logo is the link
+      // to SIZE. A link avatar (Home's cards) is copied as a plain frame, as the lightbox's logo is the link
       const copy = document.createElement('div');
       copy.innerHTML = src.innerHTML;
       copy.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
@@ -393,9 +395,9 @@
         if (!c) return;
         LOOK.forEach(k => c.style.setProperty(k, st.getPropertyValue(k)));
       });
-      const w = src.offsetWidth || 32;
+      const w = src.offsetWidth || SIZE;
       Object.assign(copy.style, { position: 'absolute', inset: 'auto', left: '0', top: '0', margin: '0', width: w + 'px', height: w + 'px',
-        transform: w === 32 ? 'none' : `scale(${32 / w})`, transformOrigin: '0 0' });
+        transform: w === SIZE ? 'none' : `scale(${SIZE / w})`, transformOrigin: '0 0' });
       d.append(copy);
       document.body.append(d);
       return d;
@@ -410,7 +412,7 @@
     if (t) {
       const span = document.createElement('span');
       span.textContent = t.textContent.trim();
-      span.style.fontSize = parseFloat(getComputedStyle(t).fontSize) * 32 / box.getBoundingClientRect().width + 'px';
+      span.style.fontSize = parseFloat(getComputedStyle(t).fontSize) * SIZE / box.getBoundingClientRect().width + 'px';
       d.append(span);
     }
     document.body.append(d);
@@ -447,7 +449,7 @@
     return t ? t.textContent.trim() : '';
   }
   function placeSection(d) {
-    const left = logo && logo.dataset.src ? MARGIN + 32 + 12 : MARGIN;
+    const left = logo && logo.dataset.src ? MARGIN + SIZE + 12 : MARGIN;
     d.style.left = left + 'px';
     // the next thing along the top row: the counter on computers, Close on phones (their counter is at the bottom)
     const r = PHONE ? closeBtn.getBoundingClientRect() : nav.isConnected && allMedia().length > 1 ? nav.getBoundingClientRect() : null;

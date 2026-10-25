@@ -132,8 +132,8 @@
       .fx-up-lvl{color:${C.grey};}
       .fx-up-info{color:${C.grey};font-size:var(--fx-small-size,14px);line-height:var(--fx-small-lh,20px);font-variant-numeric:tabular-nums;}
       /* the shop's buttons look like the site's Primary button: fill, line, shadow, hover, label style (button), 14px sides */
-      .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:32px;padding:0 14px;border-radius:999px;background:${C.button};box-shadow:${C.buttonEdge};
-        ${font('strong', '13px', '32px', 560)}line-height:32px;color:${C.dark};
+      .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:36px;padding:0 14px;border-radius:999px;background:${C.button};box-shadow:${C.buttonEdge};
+        ${font('strong', '14px', '36px', 560)}line-height:36px;color:${C.dark};
         white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums;transition:background-color .2s,opacity .2s;}
       .fx-buy:hover{background:${C.buttonHover};}
       .fx-buy.fx-cant{opacity:.45;cursor:default;box-shadow:${C.buttonLine};}
