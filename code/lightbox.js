@@ -41,8 +41,8 @@
   const FILL = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)';
   // a disabled button keeps the line but loses the shadow. The line and shadow are copied from the page's button when
   // the lightbox opens (--site-btn-*); these are the fallbacks
-  const LINE = '0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0))';
-  const EDGE = '0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)), var(--site-btn-shadow,0 1px 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))';
+  const LINE = 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0))';
+  const EDGE = 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)), var(--site-btn-shadow,0 1px 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))';
   const TYPE = '"Inter Variable","Inter",sans-serif';   // fallback before the page's styles are read
   const QUIET = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the counter isn't a button: the Background colour style, flat
   const FILL_HOVER = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the buttons' hover colour: the Background colour style
@@ -147,15 +147,6 @@
     }
     return '0px';
   }
-  // Framer draws a 1px stroke outside a frame as a shadow (0 0 0 1px): split it from the soft shadow after it
-  const splitShadows = v => v && v !== 'none' ? v.split(/,(?![^(]*\))/).map(x => x.trim()) : [];
-  const ringOf = v => {
-    const parts = splitShadows(v);
-    const i = parts.findIndex(p => /^(rgba?\([^)]*\)|#\w+) 0px 0px 0px [\d.]+px$/.test(p));
-    if (i < 0) return null;
-    const [, color, width] = parts[i].match(/^(.*) 0px 0px 0px ([\d.]+px)$/);
-    return { color, width, rest: parts.filter((_, k) => k !== i).join(', ') };
-  };
   // a transparent image sitting in a Framer card (a frame with a fill, a stroke and rounded corners): the card's
   // look, so the lightbox can draw it behind the image. Read from the page, so it follows the colour styles
   function cardOf(el) {
@@ -164,9 +155,8 @@
       const s = getComputedStyle(n);
       if (s.backgroundColor === 'rgba(0, 0, 0, 0)' || s.backgroundColor === 'transparent') continue;
       const a = getComputedStyle(n, '::after');   // Framer draws a frame's stroke on ::after
-      const ring = ringOf(s.boxShadow);
       const line = parseFloat(a.borderTopWidth) ? `${a.borderTopWidth} ${a.borderTopColor}`
-        : parseFloat(s.borderTopWidth) ? `${s.borderTopWidth} ${s.borderTopColor}` : ring ? `${ring.width} ${ring.color}` : '';
+        : parseFloat(s.borderTopWidth) ? `${s.borderTopWidth} ${s.borderTopColor}` : '';
       return { bg: s.backgroundColor, line };
     }
     return null;
@@ -306,10 +296,8 @@
     const primary = [...document.querySelectorAll('[data-framer-name="Primary"]')].find(e => e.offsetWidth > 0);
     if (primary) {
       const s = getComputedStyle(primary), a = getComputedStyle(primary, '::after');   // Framer draws the line on ::after
-      const ring = ringOf(s.boxShadow), soft = ring ? ring.rest : s.boxShadow;   // the line: a 1px shadow ring, or a border
-      if (ring) root.setProperty('--site-btn-line', ring.color);
-      else if (parseFloat(a.borderTopWidth)) root.setProperty('--site-btn-line', a.borderTopColor);
-      root.setProperty('--site-btn-shadow', !soft || soft === 'none' ? '0 0 #0000' : soft);
+      if (parseFloat(a.borderTopWidth)) root.setProperty('--site-btn-line', a.borderTopColor);
+      root.setProperty('--site-btn-shadow', s.boxShadow === 'none' ? '0 0 #0000' : s.boxShadow);
     }
   }
   function showClose() {
@@ -402,13 +390,6 @@
       const a = getComputedStyle(n, '::after');
       if (a.content === 'none' || !(parseFloat(a.borderTopWidth) > 0) || a.borderTopStyle === 'none') continue;
       d.style.setProperty('--lb-logo-line', `inset 0 0 0 ${a.borderTopWidth} ${a.borderTopColor}`);
-      break;
-    }
-    // …or a 1px shadow ring outside it: the logo draws the same ring (its own shadow isn't clipped by its rounding)
-    for (const n of sameBox(src)) {
-      const ring = ringOf(getComputedStyle(n).boxShadow);
-      if (!ring) continue;
-      d.style.boxShadow = `0 0 0 ${ring.width} ${ring.color}`;
       break;
     }
     if (isLayer(src)) {
