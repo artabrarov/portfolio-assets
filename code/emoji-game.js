@@ -65,14 +65,23 @@
       button: 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)',
       buttonHover: 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)',
       // the line and shadow are copied from the page's button (--site-btn-*); these are the fallbacks
-      buttonLine: 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0))',   // a disabled button: the line without the shadow
-      buttonEdge: 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)), var(--site-btn-shadow,0 1px 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))',
+      buttonLine: '0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0))',   // a disabled button: the line without the shadow
+      buttonEdge: '0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)), var(--site-btn-shadow,0 1px 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))',
     };
     const FAMILY = '"Inter Variable","Inter",sans-serif';
     const font = (role, size, lh, wght) => `font-family:var(--fx-${role}-family,${FAMILY});font-size:var(--fx-${role}-size,${size});` +
       `line-height:var(--fx-${role}-lh,${lh});font-weight:var(--fx-${role}-weight,${wght});` +
       `font-variation-settings:var(--fx-${role}-wght,"wght" ${wght});letter-spacing:var(--fx-${role}-ls,normal);`;
 
+    // Framer draws a 1px stroke outside a frame as a shadow (0 0 0 1px): split it from the soft shadow after it
+    const splitShadows = v => v && v !== 'none' ? v.split(/,(?![^(]*\))/).map(x => x.trim()) : [];
+    const ringOf = v => {
+      const parts = splitShadows(v);
+      const i = parts.findIndex(p => /^(rgba?\([^)]*\)|#\w+) 0px 0px 0px [\d.]+px$/.test(p));
+      if (i < 0) return null;
+      const [, color, width] = parts[i].match(/^(.*) 0px 0px 0px ([\d.]+px)$/);
+      return { color, width, rest: parts.filter((_, k) => k !== i).join(', ') };
+    };
     const css = document.createElement('style');
     css.textContent = `
       .fx-av-emoji{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;line-height:1;
@@ -175,8 +184,10 @@
       const primary = [...document.querySelectorAll('[data-framer-name="Primary"]')].find(e => e.offsetWidth > 0);
       if (primary) {
         const s = getComputedStyle(primary), a = getComputedStyle(primary, '::after');   // Framer draws the line on ::after
-        if (parseFloat(a.borderTopWidth)) root.setProperty('--site-btn-line', a.borderTopColor);
-        root.setProperty('--site-btn-shadow', s.boxShadow === 'none' ? '0 0 #0000' : s.boxShadow);
+        const ring = ringOf(s.boxShadow), soft = ring ? ring.rest : s.boxShadow;   // the line: a 1px shadow ring, or a border
+        if (ring) root.setProperty('--site-btn-line', ring.color);
+        else if (parseFloat(a.borderTopWidth)) root.setProperty('--site-btn-line', a.borderTopColor);
+        root.setProperty('--site-btn-shadow', !soft || soft === 'none' ? '0 0 #0000' : soft);
       }
       if (link) {
         const s = getComputedStyle(link), v = p => s.getPropertyValue(p).trim();
