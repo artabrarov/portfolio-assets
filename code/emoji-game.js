@@ -650,12 +650,9 @@
             \x3Cdiv class="fx-up-txt">\x3Cdiv class="fx-up-name">${u.name}\x3Cspan class="fx-up-lvl">\x3C/span>\x3C/div>\x3Cdiv class="fx-up-info">\x3C/div>\x3C/div>
             \x3Cbutton class="fx-buy" type="button">\x3Cspan class="fx-buy-cost">\x3C/span> coins\x3C/button>
             ${k === 'auto' ? '\x3Ci class="fx-up-bar">\x3C/i>' : ''}
-          \x3C/div>`).join('') + '\x3Cdiv class="fx-shop-foot">\x3Cbutton class="fx-back" type="button">Back to portfolio\x3C/button>\x3Cbutton class="fx-back fx-mute" type="button">Mute\x3C/button>' +
-          (MOTION_ASK ? '\x3Cbutton class="fx-back fx-shake" type="button">Shake to clear\x3C/button>' : '') + '\x3C/div>';
+          \x3C/div>`).join('') + '\x3Cdiv class="fx-shop-foot">\x3Cbutton class="fx-back" type="button">Back to portfolio\x3C/button>\x3Cbutton class="fx-back fx-mute" type="button">Mute\x3C/button>\x3C/div>';
         shopEl.querySelectorAll('.fx-up').forEach(r => r.querySelector('.fx-buy').addEventListener('click', () => buy(r.dataset.k, r)));
-        shopEl.querySelector('.fx-back:not(.fx-mute):not(.fx-shake)').addEventListener('click', closeGame);
-        const shake = shopEl.querySelector('.fx-shake');
-        if (shake) shake.addEventListener('click', () => enableShake(shake), { once: true });
+        shopEl.querySelector('.fx-back:not(.fx-mute)').addEventListener('click', closeGame);
         const mute = shopEl.querySelector('.fx-mute');
         mute.addEventListener('click', () => { soundOn = !soundOn; mute.textContent = soundOn ? 'Mute' : 'Unmute'; saveNow(); if (soundOn) chime(2); });
         mute.textContent = soundOn ? 'Mute' : 'Unmute';
@@ -754,6 +751,23 @@
       });
       if (!foot) document.body.classList.remove('fx-game');
     }
+    // moved to another page (Framer swaps pages without reloading): stop at once, no animation — coins and levels are kept,
+    // and the homepage shows its intro again on the way back
+    function leaveGame() {
+      if (!playing && !bodies.length) return;
+      playing = false;
+      started = false;
+      clearTimeout(autoTimer);
+      saveNow();
+      if (held) release();
+      hideLabel();
+      for (const b of bodies.splice(0)) b.el.remove();
+      world.querySelectorAll('.fx-body').forEach(el => el.remove());
+      if (scoreEl) scoreEl.classList.remove('fx-show');
+      if (shopEl) { settle(shopEl); shopEl.remove(); }
+      document.querySelectorAll('.fx-play').forEach(c => c.classList.remove('fx-play'));
+      document.body.classList.remove('fx-game', 'fx-playing', 'fx-game-full');
+    }
     function updateShop() {
       if (!shopEl) return;
       shopEl.querySelectorAll('.fx-up').forEach(r => {
@@ -839,58 +853,6 @@
       }
     }, 1000);
 
-    /* phones: shake the device and every emoji vanishes */
-    function clearAll() {
-      if (held) release();
-      const list = [...bodies].sort(() => Math.random() - 0.5);
-      list.forEach((b, i) => {
-        const wait = Math.min(i * 25, 700);
-        if (i < 12) setTimeout(() => bodies.includes(b) && dissolve(b), wait);   // the first dozen turn to dust
-        else {                                                                  // the rest just fade, to keep phones smooth
-          const k = bodies.indexOf(b); if (k >= 0) bodies.splice(k, 1);
-          b.el.animate([{ opacity: 1, scale: 1 }, { opacity: 0, scale: 0.4 }],
-            { duration: 320, delay: wait, easing: 'ease-in', fill: 'forwards' }).finished.then(() => b.el.remove());
-        }
-      });
-      if (navigator.vibrate) navigator.vibrate(30);
-    }
-    let motionOn = false;
-    function listenForShake() {
-      if (motionOn || !('DeviceMotionEvent' in window)) return;
-      motionOn = true;
-      let lastA = null, hits = [], cool = 0;
-      addEventListener('devicemotion', e => {
-        const a = e.accelerationIncludingGravity;
-        if (!a || a.x == null) return;
-        if (lastA) {
-          const jolt = Math.abs(a.x - lastA.x) + Math.abs(a.y - lastA.y) + Math.abs(a.z - lastA.z);
-          const now = performance.now();
-          if (jolt > 28) hits.push(now);
-          hits = hits.filter(t => now - t < 900);
-          if (hits.length >= 3 && now > cool && bodies.length) { hits = []; cool = now + 1500; clearAll(); }
-        }
-        lastA = { x: a.x, y: a.y, z: a.z };
-      });
-    }
-    // iPhones only share motion after the visitor allows it, and the request has to come from a tap —
-    // so there it sits behind a "Shake to clear" link in the game; other phones just listen
-    const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const CAN_ASK = window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function';
-    const MOTION_ASK = TOUCH && IOS && CAN_ASK;
-    let motionAsked = false;
-    function askForMotion() {                            // other phones: start listening on the first tap, no prompt
-      if (motionOn || motionAsked || !TOUCH || MOTION_ASK) return;
-      motionAsked = true;
-      if (CAN_ASK) DeviceMotionEvent.requestPermission().then(r => r === 'granted' && listenForShake()).catch(() => {});
-      else listenForShake();
-    }
-    function enableShake(btn) {
-      const gone = () => btn.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }).finished.then(() => btn.remove());
-      DeviceMotionEvent.requestPermission()
-        .then(r => { if (r === 'granted') listenForShake(); gone(); })   // declined: iOS won't ask again this visit, so the link goes too
-        .catch(gone);
-    }
-
     /* avatar */
     const seen = new WeakSet();
     const onHome = () => location.pathname === '/' || location.pathname === '';   // the game lives on the homepage only
@@ -929,11 +891,11 @@
       av.addEventListener('pointerenter', () => { if (!playing) setFace(fromTier(0, face.textContent)); av.classList.add('fx-av-on'); });
       av.addEventListener('pointerleave', () => av.classList.remove('fx-av-on'));
       av.__fx = { av, face, setFace, label };
-      av.addEventListener('click', askForMotion);
       av.addEventListener('pointerdown', e => { avatarEl = av; faceEl = face; setFaceFn = setFace; labelEl = label; drop(e, false); });
     });
     scan();
-    new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });
+    new MutationObserver(() => { scan(); if (!onHome()) leaveGame(); }).observe(document.body, { childList: true, subtree: true });
+    addEventListener('popstate', () => { if (!onHome()) leaveGame(); });
 
     /* physics */
     let raf = 0, last = 0, still = 0;
