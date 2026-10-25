@@ -84,6 +84,8 @@
     .lb-logo{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;width:${SIZE}px;height:${SIZE}px;overflow:hidden;opacity:0;
       pointer-events:none;transition:opacity ${M.controls}ms ease;}
     .lb-logo img{display:block;width:100%;height:100%;object-fit:cover;}
+    .lb-logo::after{content:"";position:absolute;inset:0;border-radius:inherit;corner-shape:inherit;box-shadow:var(--lb-logo-line,none);
+      pointer-events:none;}
     /* a logo that links somewhere on the page (Home's card logos go to their case studies) does too */
     a.lb-logo{pointer-events:auto;cursor:pointer;}
     a.lb-logo:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
@@ -381,6 +383,13 @@
       if (st.borderRadius === '0px') continue;
       const shape = st.getPropertyValue('corner-shape');
       if (shape && !/^round/.test(shape)) d.style.setProperty('corner-shape', shape);
+      break;
+    }
+    // the avatar's line (Framer's border, drawn by an ::after on the layer): drawn by the logo's own ::after
+    for (const n of sameBox(src)) {
+      const a = getComputedStyle(n, '::after');
+      if (a.content === 'none' || !(parseFloat(a.borderTopWidth) > 0) || a.borderTopStyle === 'none') continue;
+      d.style.setProperty('--lb-logo-line', `inset 0 0 0 ${a.borderTopWidth} ${a.borderTopColor}`);
       break;
     }
     if (isLayer(src)) {
