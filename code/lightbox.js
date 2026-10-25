@@ -43,7 +43,7 @@
   // the lightbox opens (--site-btn-*); these are the fallbacks
   const LINE = 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0))';
   const EDGE = 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)), var(--site-btn-shadow,0 1px 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))';
-  const TYPE = '"Instrument Sans Variable","Instrument Sans",sans-serif';   // fallback before the page's styles are read
+  const TYPE = '"Inter Variable","Inter",sans-serif';   // fallback before the page's styles are read
   const QUIET = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the counter isn't a button: the Background colour style, flat
   const FILL_HOVER = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the buttons' hover colour: the Background colour style
 
@@ -74,7 +74,7 @@
       border-radius:999px;background:${FILL};box-shadow:${EDGE};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color .2s;
       /* type copied from the page's Framer styles by syncType(); the values after the commas are fallbacks */
       font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);
-      letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);}
+      letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,425);font-variation-settings:var(--lb-text-wght,"wght" 425);}
     .lb-count{padding:8px 18px;}
     .lb-close{padding:8px 14px;}   /* the site's Button component: 14px sides */
     .lb-nav{position:fixed;top:${MARGIN}px;left:50%;translate:-50% 0;z-index:10003;display:flex;gap:8px;opacity:0;transition:opacity ${M.controls}ms ease;}
@@ -94,7 +94,7 @@
        type (paragraph font at the button size), so the top row reads as one */
     .lb-section{position:fixed;top:${MARGIN}px;z-index:10003;height:${SIZE}px;display:flex;align-items:center;white-space:nowrap;
       color:${DARK};opacity:0;pointer-events:none;transition:opacity ${M.controls}ms ease;
-      font-family:var(--lb-text-family,${TYPE});font-weight:var(--lb-text-weight,460);font-variation-settings:var(--lb-text-wght,"wght" 460);
+      font-family:var(--lb-text-family,${TYPE});font-weight:var(--lb-text-weight,425);font-variation-settings:var(--lb-text-wght,"wght" 425);
       font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);letter-spacing:var(--lb-ls,normal);}
     .lb-section.lb-show{opacity:1;}
     .lb-count{pointer-events:none;font-variant-numeric:tabular-nums;text-align:center;background:${QUIET};box-shadow:none;}   /* paragraph style, flat grey: it's not a button */
@@ -102,7 +102,7 @@
     .lb-arrow svg{display:block;width:16px;height:16px;}   /* Instance Kit's arrow-left / arrow-right */
     .lb-arrow:disabled{opacity:.4;cursor:default;box-shadow:${LINE};}
     .lb-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;cursor:pointer;font-family:var(--lb-btn-family,${TYPE});
-      font-weight:var(--lb-btn-weight,560);font-variation-settings:var(--lb-btn-wght,"wght" 560);}   /* button label style */
+      font-weight:var(--lb-btn-weight,525);font-variation-settings:var(--lb-btn-wght,"wght" 525);}   /* button label style */
     .lb-close:hover,.lb-arrow:hover:not(:disabled){background:${FILL_HOVER};}
     .lb-close:focus-visible,.lb-arrow:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
     .lb-quiet:focus-visible,a.lb-logo.lb-quiet:focus-visible{outline:none;}   /* opened with the mouse: no rings until Tab is pressed */
