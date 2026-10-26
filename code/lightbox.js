@@ -165,13 +165,14 @@
     return null;
   }
 
-  // Framer serves scaled-down images (?scale-down-to=1024); ask for one big enough for this screen
+  // Framer serves scaled-down images (?scale-down-to=1024); the lightbox shows the original instead. Framer's resizer
+  // doesn't premultiply alpha, so on the transparent mock-ups (most of the site's images) every scaled copy gets a dark
+  // fringe along the phones' and windows' edges; the browser scales the original cleanly. The originals are small enough
+  // (about 130–400 KB) to load straight away
   function bigSrc(img) {
     try {
       const url = new URL(img.currentSrc || img.src);
-      if (!url.hostname.endsWith('framerusercontent.com')) return url.href;
-      const need = Math.max(innerWidth, innerHeight) * Math.min(devicePixelRatio || 1, 2);
-      url.searchParams.set('scale-down-to', need > 2048 ? '4096' : '2048');
+      if (url.hostname.endsWith('framerusercontent.com')) url.searchParams.delete('scale-down-to');
       return url.href;
     } catch (e) { return img.currentSrc || img.src; }
   }
