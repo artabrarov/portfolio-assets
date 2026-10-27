@@ -187,6 +187,25 @@
     } catch (e) { return img.currentSrc || img.src; }
   }
 
+  // the same fringe shows on the page as thin dark lines along the phones' and windows' sides: the browser picks
+  // Framer's 512 or 1024 copy for a card-sized image. From 2048 up the fringe is all but gone (measured at card size:
+  // the 1024 copy's edge darkens to 226, the 2048 copy's to 238, the original's to 242, on the 246 frame), so the
+  // images in Framer's image layers drop the two smallest sizes and the browser scales the 2048 one (50–100 KB) itself.
+  // Framer can add images later (page transitions) or set srcset again, so new ones are caught as they come
+  const SMALL_COPY = /[?&]scale-down-to=(512|1024)(&|$)/;
+  function skipSmallCopies(img) {
+    const set = img.getAttribute('srcset');
+    if (!set || !SMALL_COPY.test(set) || !img.closest('[data-framer-name="Img"]')) return;
+    img.setAttribute('srcset', set.split(',').filter(c => !SMALL_COPY.test(c.trim().split(' ')[0])).join(','));
+  }
+  document.querySelectorAll('[data-framer-name="Img"] img').forEach(skipSmallCopies);
+  new MutationObserver(changes => {
+    for (const c of changes) {
+      if (c.type === 'attributes') { if (c.target instanceof HTMLImageElement) skipSmallCopies(c.target); continue; }
+      for (const n of c.addedNodes) if (n.nodeType === 1) (n instanceof HTMLImageElement ? [n] : n.querySelectorAll('img')).forEach(skipSmallCopies);
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['srcset'] });
+
   // where the open image sits: as large as fits between the controls, centred
   // the space the navigation takes at the bottom on phones (with the home indicator's safe area)
   let safeProbe = null;

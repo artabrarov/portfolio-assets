@@ -19,6 +19,8 @@ The same file, since it runs on every page, also draws one keyboard focus ring f
 
 It also gives the images their shadow, on the page and open in the lightbox: two tight drop shadows (0 1px 1px and 0 2px 4px, as the buttons and cards) in the Medium Shadow colour style, on every Framer layer named `Img`. Being a drop shadow, it follows the transparent phones and windows rather than the frame's edge; images with a solid backdrop show none on the page. In the lightbox the image's card is drawn as its own layer underneath, so the shadow follows the image there too. Set by `SHADOW` at the top of the file; try values with the local preview's `?shadow=on`.
 
+It also keeps the images sharp-edged on the page: Framer's 512 and 1024 px copies of a transparent image get a dark fringe along the phones' and windows' edges (its resizer doesn't premultiply alpha), so for Framer's `Img` layers it drops those two sizes from the srcset and the browser scales the 2048 copy (50–100 KB) itself.
+
 | File | What it is |
 |---|---|
 | `lightbox.js` | Readable source |
