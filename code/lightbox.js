@@ -46,6 +46,7 @@
   const TYPE = '"Inter Variable","Inter",sans-serif';   // fallback before the page's styles are read
   const QUIET = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the counter isn't a button: the Background colour style, flat
   const FILL_HOVER = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the buttons' hover colour: the Background colour style
+  const HOVER = '.15s cubic-bezier(.4,0,.2,1)';   // the buttons' hover, as the site's Button components: quick, starting fast (was .2s ease)
   // the images' shadow, on the page and open in the lightbox: a drop shadow, so it follows the transparent phones and
   // windows rather than the frame's edge. The buttons' and cards' two tight shadows (0 1px 1px and 0 2px 4px) in the
   // Medium Shadow colour style, so it follows Framer; compared with the local preview's ?shadow=on (was 0 1px 12px)
@@ -80,7 +81,7 @@
     /* top left: ← counter →, top right: Close. All look like the site's Primary button: 36px tall, White with a line and
        a soft shadow, dark text */
     .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:${SIZE}px;margin:0;border:0;
-      border-radius:999px;background:${FILL};box-shadow:${EDGE};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color .2s;
+      border-radius:999px;background:${FILL};box-shadow:${EDGE};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color ${HOVER};
       /* type copied from the page's Framer styles by syncType(); the values after the commas are fallbacks */
       font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);
       letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,425);font-variation-settings:var(--lb-text-wght,"wght" 425);}
