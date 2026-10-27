@@ -47,9 +47,9 @@
   const QUIET = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the counter isn't a button: the Background colour style, flat
   const FILL_HOVER = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the buttons' hover colour: the Background colour style
   // the images' shadow, on the page and open in the lightbox: a drop shadow, so it follows the transparent phones and
-  // windows rather than the frame's edge. In the Dark Grey colour, a touch stronger than the Shadow style (0.04);
-  // tuned with the local preview's ?shadow=on (was 0 0 8px at 0.04, too faint)
-  const SHADOW = 'drop-shadow(0 1px 12px rgba(114,101,85,.06))';
+  // windows rather than the frame's edge. In the Medium Shadow colour style (Dark Grey at 6%), so it follows Framer;
+  // tuned with the local preview's ?shadow=on
+  const SHADOW = 'drop-shadow(0 1px 12px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.06)))';
 
   const css = document.createElement('style');
   css.textContent = `
