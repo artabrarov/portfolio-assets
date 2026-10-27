@@ -44,7 +44,7 @@
       return fromTier(i, not);
     }
     const pct = p => { const v = p * 100; return (v >= 1 ? +v.toFixed(1) : +v.toPrecision(2)) + '%'; };   // 85%, 2.5%, 0.45%, 0.05%
-    const BASE = 40;            // px diameter on a quick click
+    const BASE = 48;            // px diameter on a quick click (was 40 until Oct 27, 2026)
     const MAX = 180;            // px diameter after a long hold
     const GROW_DELAY = 180;     // ms before holding starts to grow it
     const GROW_TIME = 2200;     // ms from BASE to MAX while holding
