@@ -41,8 +41,8 @@
   const FILL = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)';
   // a disabled button keeps the line but loses the shadow. The line and shadow are copied from the page's button when
   // the lightbox opens (--site-btn-*); these are the fallbacks
-  const LINE = 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0))';
-  const EDGE = 'inset 0 0 0 1px var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)), var(--site-btn-shadow,0 1px 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))';
+  const LINE = 'inset 0 0 0 var(--site-btn-line-width,1px) var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0))';
+  const EDGE = 'inset 0 0 0 var(--site-btn-line-width,1px) var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)), var(--site-btn-shadow,0 1px 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))';
   const TYPE = '"Inter Variable","Inter",sans-serif';   // fallback before the page's styles are read
   const QUIET = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the counter isn't a button: the Background colour style, flat
   const FILL_HOVER = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the buttons' hover colour: the Background colour style
@@ -333,8 +333,18 @@
     const primary = [...document.querySelectorAll('[data-framer-name="Primary"]')].find(e => e.offsetWidth > 0);
     if (primary) {
       const s = getComputedStyle(primary), a = getComputedStyle(primary, '::after');   // Framer draws the line on ::after
-      if (parseFloat(a.borderTopWidth)) root.setProperty('--site-btn-line', a.borderTopColor);
-      root.setProperty('--site-btn-shadow', s.boxShadow === 'none' ? '0 0 #0000' : s.boxShadow);
+      // a button drawn with a hairline ring (a first shadow with no offset or blur, only a spread) instead of a border:
+      // the ring is the line, so a disabled button keeps it too, and the shadows after it are the shadow
+      const ring = s.boxShadow.match(/^(rgba?\([^)]*\)) 0px 0px 0px ([\d.]+px)(?:, (.*))?$/);
+      if (parseFloat(a.borderTopWidth)) {
+        root.setProperty('--site-btn-line', a.borderTopColor);
+        root.setProperty('--site-btn-line-width', a.borderTopWidth);
+        root.setProperty('--site-btn-shadow', s.boxShadow === 'none' ? '0 0 #0000' : s.boxShadow);
+      } else if (ring) {
+        root.setProperty('--site-btn-line', ring[1]);
+        root.setProperty('--site-btn-line-width', ring[2]);
+        root.setProperty('--site-btn-shadow', ring[3] || '0 0 #0000');
+      }
     }
   }
   function showClose() {
