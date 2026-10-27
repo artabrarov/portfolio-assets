@@ -219,11 +219,16 @@
       // a page image Framer hasn't loaded yet (lazy, further down): go straight for the sharp one, which may already be on its way
       clone.src = el.complete && el.naturalWidth ? el.currentSrc || el.src : bigSrc(el);
     }
-    // draw the card behind a transparent image (its fill, and its stroke as an inset line that follows the corners)
+    // draw the card the image sits in: its fill behind the image, and its stroke as an outline just inside the edge.
+    // An outline is drawn over the image and follows the corners; an inset shadow (as before) sits under the image,
+    // so a solid image (all of them since they were flattened) covered it
     const card = cardOf(el);
     if (card) {
       clone.style.backgroundColor = card.bg;
-      if (card.line) clone.style.boxShadow = `inset 0 0 0 ${card.line}`;
+      if (card.line) {
+        const [width, ...color] = card.line.split(' ');
+        Object.assign(clone.style, { outline: `${width} solid ${color.join(' ')}`, outlineOffset: `-${width}` });
+      }
     }
     clone.setAttribute('role', 'dialog');
     clone.setAttribute('aria-modal', 'true');
