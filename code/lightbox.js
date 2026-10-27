@@ -46,6 +46,9 @@
   const TYPE = '"Inter Variable","Inter",sans-serif';   // fallback before the page's styles are read
   const QUIET = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the counter isn't a button: the Background colour style, flat
   const FILL_HOVER = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the buttons' hover colour: the Background colour style
+  // the images' shadow, on the page and open in the lightbox: a drop shadow, so it follows the transparent phones and
+  // windows rather than the frame's edge. In the Shadow colour style; tuned with the local preview's ?shadow=on
+  const SHADOW = 'drop-shadow(0 0 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))';
 
   const css = document.createElement('style');
   css.textContent = `
@@ -68,6 +71,10 @@
     .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;
       transform-origin:0 0;}
     .lb-media.lb-media{cursor:default;}   /* open media is for looking (and pinching); the white around it closes */
+    /* the images' shadow: Framer's image layers on the page, and their open copies */
+    [data-framer-name="Img"],.lb-media.lb-shadow{filter:${SHADOW};}
+    /* the card behind an open transparent image, a layer of its own so the shadow can follow the image */
+    .lb-card{position:fixed;z-index:10002;pointer-events:none;transform-origin:0 0;}
     /* top left: ← counter →, top right: Close. All look like the site's Primary button: 36px tall, White with a line and
        a soft shadow, dark text */
     .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:${SIZE}px;margin:0;border:0;
@@ -218,9 +225,13 @@
       // a page image Framer hasn't loaded yet (lazy, further down): go straight for the sharp one, which may already be on its way
       clone.src = el.complete && el.naturalWidth ? el.currentSrc || el.src : bigSrc(el);
     }
-    // draw the card behind a transparent image (its fill, and its stroke as an inset line that follows the corners)
+    // draw the card behind a transparent image (its fill, and its stroke as an inset line that follows the corners).
+    // An image with the page's shadow keeps its card on a layer underneath, so the shadow follows the image
     const card = cardOf(el);
-    if (card) {
+    const shadow = !video && el.closest('[data-framer-name="Img"]');
+    if (shadow) clone.classList.add('lb-shadow');
+    if (card && shadow) addCard(clone, card);
+    else if (card) {
       clone.style.backgroundColor = card.bg;
       if (card.line) clone.style.boxShadow = `inset 0 0 0 ${card.line}`;
     }
@@ -229,6 +240,27 @@
     clone.tabIndex = -1;
     clone.setAttribute('aria-label', el.alt || (video ? 'Video, full screen' : 'Image, full screen'));
     return clone;
+  }
+  // the card layers under open images: each follows its image's place, size, corners, zoom and fade every frame
+  // (before each paint, so they never lag), and goes when its image does
+  const cards = new Map();   // open image → its card
+  function addCard(clone, card) {
+    const layer = document.createElement('div');
+    layer.className = 'lb-card';
+    layer.style.backgroundColor = card.bg;
+    if (card.line) layer.style.boxShadow = `inset 0 0 0 ${card.line}`;
+    if (!cards.size) requestAnimationFrame(syncCards);
+    cards.set(clone, layer);
+  }
+  function syncCards() {
+    for (const [clone, layer] of cards) {
+      if (!clone.isConnected) { layer.remove(); cards.delete(clone); continue; }
+      if (layer.nextSibling !== clone) clone.before(layer);
+      const s = getComputedStyle(clone);
+      Object.assign(layer.style, { left: s.left, top: s.top, width: s.width, height: s.height,
+        transform: s.transform, borderRadius: s.borderRadius, opacity: s.opacity });
+    }
+    if (cards.size) requestAnimationFrame(syncCards);
   }
   // swap in the sharper version of an image once it has loaded (straight away if it was preloaded)
   const loaded = new Set();
