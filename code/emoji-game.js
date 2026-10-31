@@ -75,7 +75,7 @@
 
     const css = document.createElement('style');
     css.textContent = `
-      .fx-av-emoji{position:absolute;inset:0;display:grid;place-items:center;font-size:20px;line-height:1;
+      .fx-av-emoji{position:absolute;inset:0;display:grid;place-items:center;font-size:32px;line-height:1;
         opacity:0;scale:.5;transition:opacity .2s ease,scale .3s cubic-bezier(.3,1.6,.5,1);
         pointer-events:none;user-select:none;}
       .fx-av{cursor:pointer;touch-action:none;}
