@@ -46,3 +46,18 @@ The game follows the site's Framer styles, so tweaks made in Framer reach the ga
 - **Text** copies the Framer text styles at runtime from the homepage elements that use them: body text from the bio in the `Hero` frame, small text and the link style from the `Footer` links, strong text from the `Button` label.
 
 Every value has a fallback in the CSS, so the game keeps its look if a style can't be read. If a Framer colour style is deleted and recreated, its token ID changes and the `C` constants in `emoji-game.js` need the new one.
+
+## Coffee
+
+The footer's Coffee link (to `#coffee`) opens the coffee I drink, full screen like the lightbox: the bags stand in a line, newest in the middle and older ones to its left, each with its name and roaster under it. Scroll, swipe or drag to move along the line; hovering a bag turns it to face you. Click a bag, or anywhere in its column (its name and roaster too), to zoom in: it flies to the middle while the rest fade where they are, with "<coffee> by <roaster>" and my review under it and the lightbox's ‹ n / N › switcher at the top. Zoomed in, dragging turns the bag round (tipping it only slightly up and down), it leans a little towards the pointer, and ‹ ›, ← → or a swipe slide to the next one. A click outside or Esc goes back to the line; there, a click outside, Close or Esc closes it, and Back works too. Any page opened with `#coffee` opens it straight away. It opens with the bags turning in from the side and growing slightly, over the lightbox's own 300 ms and easing.
+
+The bags aren't modelled: each is a block-bottom bag (or a stand-up pouch) of its real size, built in the script, with photos of its faces wrapped on. The list is [`coffee/coffees.json`](../coffee/coffees.json), and each bag's faces are `coffee/<slug>/front.webp`, `back.webp`, `left.webp`, `right.webp` and `bottom.webp`; adding a coffee is a push, with no Framer step. three.js loads from esm.sh only when Coffee is first opened.
+
+It's drawn from the site's Framer styles: the White, Black, Dark Grey and Background colour styles (as CSS tokens); the Title and Paragraph text styles, read from the page each time it opens, for the zoomed-in title and review; and the Title Large and Paragraph Large text styles (19/28) for the name and roaster on the line, read the same way when the page uses them, otherwise Title and Paragraph at 19/28. Close and the switcher are the lightbox's own buttons (its classes), so they need `lightbox.min.js` on the page.
+
+| File | What it is |
+|---|---|
+| `coffee.js` | Readable source |
+| `coffee.min.js` | Build loaded by Framer → Site Settings → Custom Code (end of body), after the lightbox: `<script src="https://artabrarov.github.io/portfolio-assets/code/coffee.min.js" defer></script>` |
+
+Rebuild: `npx esbuild code/coffee.js --minify --target=es2020 > code/coffee.min.js`

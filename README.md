@@ -8,8 +8,9 @@ It isn't a library or a template, just the assets behind one site, kept in the o
 
 | Folder | What it is | Used by |
 |---|---|---|
-| [`code/`](code/) | The emoji clicker game on the homepage, an image and video lightbox for every page but /sites, and the About sheet | `<script>` tags in Framer's site-wide custom code |
+| [`code/`](code/) | The emoji clicker game on the homepage, an image and video lightbox for every page but /sites, the About sheet, and Coffee | `<script>` tags in Framer's site-wide custom code |
 | [`about/`](about/) | The photo at the top of the About sheet | `code/about.js` |
+| [`coffee/`](coffee/) | The coffee I drink: the list and photos of each bag's faces | `code/coffee.js`, from the footer's Coffee link |
 | [`sites/`](sites/) | Screenshots and hover videos of portfolio sites I admire | The gallery on [arthurabrarov.com/sites](https://arthurabrarov.com/sites) |
 
 ## How changes go live
