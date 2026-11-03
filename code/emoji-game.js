@@ -89,7 +89,7 @@
         pointer-events:auto;cursor:grab;user-select:none;touch-action:none;will-change:transform;}
       .fx-body.fx-held{cursor:grabbing;}
       .fx-body.fx-new{pointer-events:none;}
-      .fx-rarity{position:absolute;left:calc(100% + 12px);top:calc(50% - var(--fx-small-lh,20px) / 2);${font('small', '14px', '20px', 425)}
+      .fx-rarity{position:absolute;left:calc(100% + 12px);top:calc(50% - var(--fx-small-lh,22px) / 2);${font('small', '14px', '22px', 425)}
         color:${C.grey};white-space:nowrap;pointer-events:none;opacity:0;translate:-4px 0;
         transition:opacity .3s ease,translate .3s ease;}
       .fx-rarity.fx-show{opacity:1;translate:0 0;}
@@ -106,7 +106,7 @@
       .fx-rarity[data-tier="4"]{filter:drop-shadow(0 0 10px rgba(242,201,76,.55));}
       @keyframes fx-wave{from{background-position:125% 0}to{background-position:-125% 0}}
       .fx-body.fx-pop{animation:fx-pop .45s cubic-bezier(.3,1.6,.5,1);}
-      .fx-score{position:absolute;right:0;top:calc(18px - var(--fx-body-lh,24px) / 2);${font('body', '16px', '24px', 425)}
+      .fx-score{position:absolute;right:0;top:calc(20px - var(--fx-body-lh,26px) / 2);${font('body', '16px', '26px', 425)}
         color:${C.dark};font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none;
         opacity:0;translate:0 -6px;scale:.6;transform-origin:100% 50%;
         transition:opacity .35s ease,translate .5s cubic-bezier(.3,1.6,.5,1),scale .5s cubic-bezier(.3,1.6,.5,1);}
@@ -114,7 +114,7 @@
       .fx-score .fx-pts{margin-left:4px;}
       .fx-score .fx-num{display:inline-block;transform-origin:100% 60%;}
       .fx-back{all:unset;align-self:flex-start;cursor:pointer;color:var(--fx-link-color,${C.grey});
-        ${font('small', '14px', '20px', 425)}
+        ${font('small', '14px', '22px', 425)}
         text-decoration:underline;text-decoration-color:var(--fx-link-deco,transparent);text-underline-offset:var(--fx-link-offset,3px);transition:color .2s,text-decoration-color .2s;}
       .fx-back:focus-visible{border-radius:4px;}   /* the site's focus ring (set in lightbox.js) rounds a little round the text */
       .fx-back:hover{color:var(--fx-link-hover-color,${C.dark});text-decoration-color:var(--fx-link-hover-deco,${C.stroke});}
@@ -124,16 +124,16 @@
       .fx-game-full [data-framer-name="Hero"] [data-framer-name="Footer"]{display:none !important;}
       .fx-play > :not(.fx-av):not(.fx-shop):not(.fx-score):not(:has(.fx-av)){display:none !important;}
       .fx-shop{display:flex;flex-direction:column;gap:10px;align-self:stretch;width:100%;box-sizing:border-box;
-        ${font('small', '14px', '20px', 425)}color:${C.dark};}
+        ${font('small', '14px', '22px', 425)}color:${C.dark};}
       .fx-up{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:8px;
         transition:padding-bottom .4s cubic-bezier(.45,0,.2,1);}
       .fx-up.fx-has-bar{padding-bottom:18px;}   /* room for the progress line, so the gap to the next row stays the same */
-      .fx-up-name{font-size:var(--fx-body-size,16px);line-height:var(--fx-body-lh,24px);}
+      .fx-up-name{font-size:var(--fx-body-size,16px);line-height:var(--fx-body-lh,26px);}
       .fx-up-lvl{color:${C.grey};}
-      .fx-up-info{color:${C.grey};font-size:var(--fx-small-size,14px);line-height:var(--fx-small-lh,20px);font-variant-numeric:tabular-nums;}
+      .fx-up-info{color:${C.grey};font-size:var(--fx-small-size,14px);line-height:var(--fx-small-lh,22px);font-variant-numeric:tabular-nums;}
       /* the shop's buttons look like the site's Primary button: fill, line, shadow, hover, label style (button), 14px sides */
-      .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:36px;padding:0 14px;border-radius:999px;background:${C.button};box-shadow:${C.buttonEdge};
-        ${font('strong', '14px', '36px', 525)}line-height:36px;color:${C.dark};
+      .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:40px;padding:0 14px;border-radius:999px;background:${C.button};box-shadow:${C.buttonEdge};
+        ${font('strong', '14px', '40px', 525)}line-height:40px;color:${C.dark};
         white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums;transition:background-color .2s,opacity .2s;}
       .fx-buy:hover{background:${C.buttonHover};}
       .fx-buy.fx-cant{opacity:.45;cursor:default;box-shadow:${C.buttonLine};}

@@ -18,7 +18,7 @@
   const RADIUS = '24px';                   // corner of media whose rounding comes from a mask (Framer's squircles)
   const PHONE = matchMedia('(max-width: 599px)').matches;
   const MARGIN = PHONE ? 16 : 32;          // px between the open media and the screen edges; the buttons sit the same distance in
-  const SIZE = 36;                         // px: the site's buttons and avatars are 36px
+  const SIZE = 40;                         // px: the site's buttons and avatars are 40px (36px until Nov 3, 2026)
   const TOP = MARGIN + SIZE + 16;          // px above the media: the buttons and a 16px gap
   // motion, in ms: soft but quick, in step with the rest of the site (was 400 / 350 / 380 ms; before that 420 / 336 / 280 ms,
   // 48px, on .2,.8,.2,1).
@@ -69,15 +69,15 @@
     .lb-media{position:fixed;z-index:10002;margin:0;object-fit:cover;cursor:zoom-out;will-change:left,top,width,height;
       transform-origin:0 0;}
     .lb-media.lb-media{cursor:default;}   /* open media is for looking (and pinching); the white around it closes */
-    /* top left: ← counter →, top right: Close. All look like the site's Primary button: 36px tall, White with a line and
+    /* top left: ← counter →, top right: Close. All look like the site's Primary button: 40px tall, White with a line and
        a soft shadow, dark text */
     .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:${SIZE}px;margin:0;border:0;
       border-radius:999px;background:${FILL};box-shadow:${EDGE};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color ${HOVER};
       /* type copied from the page's Framer styles by syncType(); the values after the commas are fallbacks */
-      font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);
+      font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,14px);line-height:var(--lb-lh,22px);
       letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,425);font-variation-settings:var(--lb-text-wght,"wght" 425);}
     /* the label is centred in the pill, as in the site's Button component, rather than held by top and bottom padding:
-       the copied line height (22px) plus 8px padding overflowed the 36px pill and sat the text 1px low */
+       the copied line height (22px) plus 8px padding overflowed the pill and sat the text 1px low */
     .lb-count,.lb-close{display:inline-flex;align-items:center;justify-content:center;}
     .lb-count{padding:0 18px;}
     .lb-close{padding:0 14px;}   /* the site's Button component: 14px sides */
@@ -101,7 +101,7 @@
     .lb-section{position:fixed;top:${MARGIN}px;z-index:10003;height:${SIZE}px;display:flex;align-items:center;white-space:nowrap;
       color:${DARK};opacity:0;pointer-events:none;transition:opacity ${M.controls}ms ease;
       font-family:var(--lb-text-family,${TYPE});font-weight:var(--lb-text-weight,425);font-variation-settings:var(--lb-text-wght,"wght" 425);
-      font-size:var(--lb-size,14px);line-height:var(--lb-lh,20px);letter-spacing:var(--lb-ls,normal);}
+      font-size:var(--lb-size,14px);line-height:var(--lb-lh,22px);letter-spacing:var(--lb-ls,normal);}
     .lb-section.lb-show{opacity:1;}
     .lb-count{pointer-events:none;font-variant-numeric:tabular-nums;text-align:center;background:${QUIET};box-shadow:none;}   /* paragraph style, flat grey: it's not a button */
     .lb-arrow{width:${SIZE}px;padding:0;display:grid;place-items:center;cursor:pointer;}
@@ -346,7 +346,7 @@
   }
   // the avatar, top left: the one in the header of the item's section (its card's on Home, its section's on a case
   // study), skipping the game's avatar. Into another section's items, it slides like the images
-  const LOGO_SHIFT = 8;   // px: the logo's slide, shorter than the images' (it's only 36px wide)
+  const LOGO_SHIFT = 8;   // px: the logo's slide, shorter than the images' (it's only 40px wide)
   let logo = null;        // the logo on screen
   // the company logo nearest the item: a small image, or a small filled tile with text on it (Lab: an emoji on a tile)
   const small = e => e.offsetWidth >= 16 && e.offsetWidth <= 48 && e.offsetHeight >= 16 && e.offsetHeight <= 48 &&

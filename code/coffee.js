@@ -41,8 +41,8 @@
   };
   // the site's Framer text styles, by id (data-styles-preset), and what to use when the page doesn't have one
   const STYLES = {
-    title: { id: 'JKwDHhFaI', size: '15px', line: '24px', weight: 525 },          // Title
-    paragraph: { id: 'QRxj038Jb', size: '15px', line: '24px', weight: 425 },      // Paragraph
+    title: { id: 'JKwDHhFaI', size: '16px', line: '26px', weight: 525 },          // Title
+    paragraph: { id: 'QRxj038Jb', size: '16px', line: '26px', weight: 425 },      // Paragraph
     titleLarge: { id: 'qfI2n2Dvt', from: 'title', size: '19px', line: '28px' },   // Title Large
     paragraphLarge: { id: 'mnEcxcKo_', from: 'paragraph', size: '19px', line: '28px' }, // Paragraph Large
   };
