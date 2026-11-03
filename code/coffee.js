@@ -22,7 +22,11 @@
   const HASH = '#coffee';
   const UNIT = 24;      // cm per scene unit
   const REST = -29;     // each bag's resting turn in degrees (or its own `rest`): the front and a bit of its right side
-  const FRONT = 0.5;    // how much of the window's height a bag zoomed in takes
+  const FRONT = 0.62;   // how much of the window's height a bag zoomed in takes (FRONT_PHONE on phones)
+  const FRONT_PHONE = 0.68, LINE = 0.416, LINE_PHONE = 0.46; // and a bag on the line (a share of the height)
+  const GAP = 1.0;      // on computers, from one bag's middle to the next, in bag heights
+  const phone = () => matchMedia('(max-width: 599px)').matches;
+  const touch = matchMedia('(pointer: coarse)').matches;
   const TILT = 0.2;     // the most a bag tips up or down while dragged, in radians (about 11°)
   const LEAN_Y = 0.22, LEAN_P = 0.12; // how far a bag zoomed in leans towards the pointer (radians, at the window's edge)
   // opening: how much smaller and how far round to the side bags start, over the lightbox's own 300ms and easing
@@ -57,6 +61,13 @@
     open(true);
   }, true);
   addEventListener('popstate', () => { if (location.hash === HASH) open(false); else if (opened) close(false); });
+  // on phones Framer's router follows the link itself (pushState, no click for us), so watch the address too
+  const onAddress = () => { if (location.hash === HASH && !opened) open(false); };
+  addEventListener('hashchange', onAddress);
+  for (const m of ['pushState', 'replaceState']) {
+    const orig = history[m];
+    history[m] = function (...args) { const r = orig.apply(this, args); setTimeout(onAddress, 0); return r; };
+  }
   // opened at #coffee: wait for Framer to finish building the page, or it clears #overlay
   if (location.hash === HASH) {
     const go = () => setTimeout(() => location.hash === HASH && open(false), 300);
@@ -127,7 +138,7 @@
 .cf-label{position:absolute;left:0;top:0;white-space:nowrap;text-align:center;transition:opacity .15s ease}
 .cf-name{${css(tl, C.text)}}
 .cf-roaster{${css(pl, C.muted)};margin-top:4px}
-@media (max-width:600px){.cf-caption{bottom:16px}}`;
+@media (max-width:599px){.cf-caption{top:calc(16px + env(safe-area-inset-top,0px));bottom:auto}}`;
     };
     paint();
     document.head.appendChild(style);
@@ -258,7 +269,7 @@
 
     // focus: the bag zoomed in (-1: none); pos: where the line is scrolled to (a float index, the newest last)
     let focus = -1, pos = n - 1, target = pos, hover = null, pointerX = 0.5, pointerY = 0.5;
-    let raf = 0, running = false, dirty = true, placed = false, introAt = -1, drag = null;
+    let raf = 0, running = false, dirty = true, placed = false, introAt = -1, drag = null, glide = 0;
 
     const bags = list.map(makeBag);
     // the name and roaster under each bag on the line
@@ -284,7 +295,7 @@
       const faces = new Set(c.faces || ['front', 'back']);
       const dir = BASE + encodeURIComponent(c.slug) + '/';
       const mat = (face, extra = {}) => {
-        const m = new THREE.MeshPhysicalMaterial({ ...finish, color: plain, ...extra });
+        const m = new (finish.clearcoat ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial)({ ...finish, color: plain, ...extra });
         if (faces.has(face)) loader.load(dir + face + '.webp', (t) => {
           t.colorSpace = THREE.SRGBColorSpace;
           t.anisotropy = maxAniso;
@@ -313,11 +324,13 @@
     }
 
     // ---- where each bag should be: x, y, z, its scale and opacity; the loop eases each one there ----
-    const view = () => { const h = H0 / FRONT; return { h, w: h * camera.aspect }; };
+    const view = () => { const h = H0 / (phone() ? FRONT_PHONE : FRONT); return { h, w: h * camera.aspect }; };
     // its place on the line (its name and roaster are pinned under it)
+    // on phones the bag in the middle fills most of the width, with half of each neighbour at the screen's edges
     const spot = (i) => {
-      const size = view().h * 0.26;
-      return { x: (i - pos) * size * 1.45, y: H0 / 2 + view().h * 0.03, z: 0, size, gap: size * 1.45 };
+      const v = view(), ph = phone();
+      const gap = ph ? v.w / 2 : v.h * LINE * GAP, size = ph ? Math.min(v.w * 0.7, v.h * LINE_PHONE) : v.h * LINE;
+      return { x: (i - pos) * gap, y: H0 / 2 + v.h * 0.03, z: 0, size, gap };
     };
     const slide = () => view().w * 0.3; // how far bags slide when switching with ‹ ›
     const focused = () => (focus >= 0 ? bags[focus] : null);
@@ -384,11 +397,11 @@
 
     function frameCamera() {
       const w = canvas.clientWidth, h = canvas.clientHeight;
-      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, touch ? 1.5 : 2));
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       // a bag zoomed in (sized to H0) takes FRONT of the height, in the middle of the window
-      const fit = H0 / FRONT;
+      const fit = view().h;
       const dist = fit / 2 / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
       camera.position.set(0, H0 / 2 + dist * 0.12, dist);
       camera.lookAt(0, H0 / 2, 0);
@@ -427,7 +440,8 @@
       if (e.button) return;
       try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
       const b = hit(e);
-      drag = { on: b, turning: b && b === focused(), x: e.clientX, y: e.clientY, moved: 0 };
+      drag = { on: b, turning: b && b === focused(), x: e.clientX, y: e.clientY, moved: 0, touch: e.pointerType !== 'mouse' };
+      glide = 0;
       if (drag.turning) { b.spin = 0; canvas.style.cursor = 'grabbing'; }
       kick();
     });
@@ -450,7 +464,10 @@
         turn(drag.on, dx * 0.011, dy * 0.011);
         drag.on.spin = dx * 0.011;
       } else if (focus < 0) {
-        target = pos = clampPos(pos - dx / (spot(0).gap * canvas.clientHeight / view().h));
+        const step = dx / (spot(0).gap * canvas.clientHeight / view().h);
+        target = pos = clampPos(pos - step);
+        const now = performance.now(), dt = Math.max(now - (drag.t || now - 16), 1);
+        drag.v = -step / dt * 16; drag.t = now; // its speed, per frame
       }
       dirty = true;
       kick();
@@ -464,6 +481,8 @@
         if (d.on) focusOn(bags.indexOf(d.on));
         // a click on nothing goes back from a bag zoomed in; on the line it closes, like the lightbox
         else if (!unfocus()) onOutside();
+      } else if (d.touch && !d.turning && focus < 0 && performance.now() - (d.t || 0) < 80) {
+        glide = d.v || 0; // a flick carries on, slowing down
       }
       kick();
     };
@@ -541,7 +560,12 @@
       raf = 0;
       if (!running) return;
       let moving = false;
-      if (!drag || drag.turning) {
+      if (glide && !drag) {
+        target = pos = clampPos(pos + glide);
+        glide *= 0.95;
+        if (Math.abs(glide) < 0.0005 || pos === 0 || pos === n - 1) glide = 0;
+        moving = true;
+      } else if (!drag || drag.turning) {
         const d = target - pos;
         if (Math.abs(d) > 0.0005) { pos += d * 0.14; moving = true; } else pos = target;
       }
