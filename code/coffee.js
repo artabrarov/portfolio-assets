@@ -398,13 +398,13 @@
       return { x: (i - pos) * gap, y: H0 / 2 + v.h * 0.03, z: 0, size, gap };
     };
     const slide = () => view().w * 0.3; // how far bags slide when switching with ‹ ›
-    // zoomed in: as big as FRONT allows, but always clear of the switcher and the caption (24px from each), and
-    // centred in the space between them
+    // zoomed in: as big as FRONT allows, but always clear of the switcher and the caption (24px from each, 32px on
+    // phones), and centred in the space between them
     const zoomed = (b) => {
-      const h = canvas.clientHeight || 1, sp = space(), front = phone() ? FRONT_PHONE : FRONT;
-      const free = Math.max(h - sp.top - sp.bottom - 48, h * 0.2);
+      const h = canvas.clientHeight || 1, sp = space(), front = phone() ? FRONT_PHONE : FRONT, pad = phone() ? 32 : 24;
+      const free = Math.max(h - sp.top - sp.bottom - 2 * pad, h * 0.2);
       const k = Math.min(1, free / (front * h));
-      const mid = sp.top + 24 + free / 2;
+      const mid = sp.top + pad + free / 2;
       return { y: H0 / 2 + (h / 2 - mid) * (view().h / h), s: fitOf(b) * k };
     };
     const focused = () => (focus >= 0 ? bags[focus] : null);
