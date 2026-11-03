@@ -152,7 +152,10 @@
 .cf-label{position:absolute;left:0;top:0;white-space:nowrap;text-align:center;transition:opacity .15s ease}
 .cf-name{${css(tl, C.text)}}
 .cf-roaster{${css(pl, C.muted)};margin-top:4px}
-@media (max-width:599px){.cf-caption{top:calc(16px + env(safe-area-inset-top,0px));bottom:auto}}`;
+@media (max-width:599px){
+  .cf-caption{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+  .cf-root .lb-nav{top:calc(16px + env(safe-area-inset-top,0px));bottom:auto}
+}`;
     };
     paint();
     document.head.appendChild(style);
@@ -190,7 +193,12 @@
       fetch(BASE + 'coffees.json', { cache: 'no-cache' }).then((r) => r.json()),
     ]).then(([THREE, room, data]) => {
       const list = (data.coffees || []).filter((c) => c.slug).sort((a, b) => String(a.date).localeCompare(String(b.date)));
-      scene = createScene(THREE, room.RoomEnvironment, canvas, labels, list, (focus) => {
+      // the space the switcher (at the top) and the caption (at the bottom) take, in pixels from each edge
+      const space = () => {
+        const r = root.getBoundingClientRect(), n = nav.getBoundingClientRect(), c = caption.getBoundingClientRect();
+        return { top: n.bottom - r.top, bottom: r.bottom - c.top };
+      };
+      scene = createScene(THREE, room.RoomEnvironment, canvas, labels, list, space, (focus) => {
         showCaption(focus >= 0 ? list[focus] : null);
         nav.classList.toggle('lb-show', list.length > 1 && focus >= 0);
         closer.classList.toggle('lb-show', focus < 0);
@@ -253,7 +261,8 @@
   // ---------- the 3D scene ----------
 
   // onState(focus): the bag zoomed in changed (-1: none); onOutside: a click on nothing on the line
-  function createScene(THREE, RoomEnvironment, canvas, labelsEl, list, onState, onOutside) {
+  // space(): how far the switcher and the caption reach in from the top and bottom (px), to keep the bag clear of them
+  function createScene(THREE, RoomEnvironment, canvas, labelsEl, list, space, onState, onOutside) {
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -360,11 +369,20 @@
       return { x: (i - pos) * gap, y: H0 / 2 + v.h * 0.03, z: 0, size, gap };
     };
     const slide = () => view().w * 0.3; // how far bags slide when switching with ‹ ›
+    // zoomed in: as big as FRONT allows, but always clear of the switcher and the caption (24px from each), and
+    // centred in the space between them
+    const zoomed = (b) => {
+      const h = canvas.clientHeight || 1, sp = space(), front = phone() ? FRONT_PHONE : FRONT;
+      const free = Math.max(h - sp.top - sp.bottom - 48, h * 0.2);
+      const k = Math.min(1, free / (front * h));
+      const mid = sp.top + 24 + free / 2;
+      return { y: H0 / 2 + (h / 2 - mid) * (view().h / h), s: fitOf(b) * k };
+    };
     const focused = () => (focus >= 0 ? bags[focus] : null);
     function goal(b, i) {
-      if (focus >= 0 && i === focus) return { x: 0, y: H0 / 2, z: 0, s: fitOf(b), o: 1 };
+      if (focus >= 0 && i === focus) { const z = zoomed(b); return { x: 0, y: z.y, z: 0, s: z.s, o: 1 }; }
       // switched away from with ‹ ›: it slides out the other way as it fades
-      if (focus >= 0 && b.away) return { x: -b.away * slide(), y: H0 / 2, z: 0, s: fitOf(b), o: 0 };
+      if (focus >= 0 && b.away) { const z = zoomed(b); return { x: -b.away * slide(), y: z.y, z: 0, s: z.s, o: 0 }; }
       // zooming in, the others stay where they are and fade out, quickly
       const g = spot(i), grow = focus < 0 && hover === b ? 1.06 : 1;
       return { x: g.x, y: g.y, z: g.z, s: fitOf(b) * g.size * grow / H0, o: focus >= 0 ? 0 : 1 };
@@ -573,7 +591,8 @@
       out.away = d; out.spin = 0;
       const b = bags[i];
       b.away = 0;
-      b.cur = { x: d * slide(), y: H0 / 2, z: 0, s: fitOf(b), o: 0 };
+      const z = zoomed(b);
+      b.cur = { x: d * slide(), y: z.y, z: 0, s: z.s, o: 0 };
       b.yaw = b.rest; b.pitch = 0; b.leanY = b.leanP = 0; orient(b);
       focus = i;
       report();
