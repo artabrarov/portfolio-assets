@@ -182,7 +182,9 @@
     const [prev, next] = nav.querySelectorAll('.lb-arrow');
     prev.addEventListener('click', () => scene && scene.step(-1));
     next.addEventListener('click', () => scene && scene.step(1));
-    root.addEventListener('keydown', (e) => {
+    // keys work whenever Coffee is open, wherever the focus went (a click on the bags can take it off the overlay)
+    document.addEventListener('keydown', (e) => {
+      if (!opened || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
       if (e.key === 'Escape') { e.stopPropagation(); if (!(scene && scene.unfocus())) close(); }
       if (e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); scene && scene.step(-1); }
       if (e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); scene && scene.step(1); }
@@ -217,8 +219,6 @@
         showCaption(focus >= 0 ? list[focus] : null);
         nav.classList.toggle('lb-show', list.length > 1 && focus >= 0);
         if (focus >= 0) count.textContent = `${focus + 1} / ${list.length}`;
-        prev.disabled = focus <= 0;
-        next.disabled = focus >= list.length - 1;
       }, () => close());
       return scene;
     }).catch((e) => { console.warn('Coffee could not load', e); });
@@ -603,10 +603,11 @@
       kick();
       return true;
     }
-    // switching with ‹ ›, ← → or a swipe: the next one slides in from the side it's on, like the lightbox
+    // switching with ‹ ›, ← → or a swipe: the next one slides in from the side it's on, like the lightbox, and
+    // it goes round: after the last comes the first again
     function step(d) {
       if (focus < 0) { target = clampPos(Math.round(target) + d); kick(); return; }
-      const i = clampPos(focus + d);
+      const i = (focus + d + n) % n;
       if (i === focus) return;
       const out = focused();
       out.away = d; out.spin = 0;
