@@ -194,9 +194,23 @@
     ]).then(([THREE, room, data]) => {
       const list = (data.coffees || []).filter((c) => c.slug).sort((a, b) => String(a.date).localeCompare(String(b.date)));
       // the space the switcher (at the top) and the caption (at the bottom) take, in pixels from each edge
+      // (the caption's room is its height for the longest of the coffees, measured once per window width, so the
+      // bag zoomed in lands where it stays instead of moving once its text is in)
+      let roomFor = 0, roomH = 0;
+      const captionRoom = () => {
+        if (roomFor === root.clientWidth) return roomH;
+        const probe = caption.cloneNode(true);
+        probe.classList.remove('cf-out');
+        probe.style.visibility = 'hidden';
+        root.appendChild(probe);
+        roomH = Math.max(...list.map((c) => { fillCaption(probe, c); return probe.getBoundingClientRect().height; }));
+        probe.remove();
+        roomFor = root.clientWidth;
+        return roomH;
+      };
       const space = () => {
         const r = root.getBoundingClientRect(), n = nav.getBoundingClientRect(), c = caption.getBoundingClientRect();
-        return { top: n.bottom - r.top, bottom: r.bottom - c.top };
+        return { top: n.bottom - r.top, bottom: r.bottom - c.bottom + captionRoom() };
       };
       scene = createScene(THREE, room.RoomEnvironment, canvas, labels, list, space, (focus) => {
         showCaption(focus >= 0 ? list[focus] : null);
@@ -209,6 +223,16 @@
       return scene;
     }).catch((e) => { console.warn('Coffee could not load', e); });
 
+    // "Church Street by 15grams" (the coffee and its roaster in Black, "by" in Dark Grey) and the review
+    function fillCaption(el, c) {
+      const t = el.querySelector('.cf-title');
+      t.textContent = '';
+      const by = document.createElement('span');
+      by.className = 'cf-by';
+      by.textContent = ' by ';
+      t.append(c.name || '', ...(c.roaster ? [by, c.roaster] : []));
+      el.querySelector('.cf-review').textContent = c.review || '';
+    }
     let shown;
     function showCaption(c) {
       if (c === shown) return;
@@ -216,14 +240,7 @@
       shown = c;
       const fill = () => {
         if (!c) return;
-        // "Church Street by 15grams": the coffee and its roaster in Black, "by" in Dark Grey
-        const t = caption.querySelector('.cf-title');
-        t.textContent = '';
-        const by = document.createElement('span');
-        by.className = 'cf-by';
-        by.textContent = ' by ';
-        t.append(c.name || '', ...(c.roaster ? [by, c.roaster] : []));
-        caption.querySelector('.cf-review').textContent = c.review || '';
+        fillCaption(caption, c);
         caption.classList.remove('cf-out');
       };
       clearTimeout(showCaption.t);
@@ -267,6 +284,8 @@
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.NeutralToneMapping;
+    // the bags are always drawn as see-through-capable (to fade), nearest first, so a bag's front hides its own back
+    renderer.setTransparentSort((a, b) => a.groupOrder - b.groupOrder || a.renderOrder - b.renderOrder || a.z - b.z || a.id - b.id);
     const scene = new THREE.Scene();
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
@@ -329,7 +348,7 @@
         kick();
       };
       const mat = (face, extra = {}) => {
-        const m = new (finish.clearcoat ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial)({ ...finish, color: plain, ...extra });
+        const m = new (finish.clearcoat ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial)({ ...finish, color: plain, transparent: true, depthWrite: true, ...extra });
         if (faces.has(face)) {
           waiting++;
           loader.load(dir + face + '.webp', (t) => {
@@ -391,14 +410,7 @@
     function fade(b, o) {
       if (b.faded === o) return;
       b.faded = o;
-      b.pivot.traverse((m) => {
-        if (!m.isMesh) return;
-        const was = m.material.transparent;
-        m.material.transparent = o < 1;
-        m.material.opacity = o;
-        m.material.depthWrite = o >= 1;
-        if (was !== m.material.transparent) m.material.needsUpdate = true;
-      });
+      b.pivot.traverse((m) => { if (m.isMesh) m.material.opacity = o; });
     }
     function layout() {
       let moving = false;
