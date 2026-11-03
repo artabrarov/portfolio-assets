@@ -27,7 +27,6 @@
   const FRONT_PHONE = 0.68, LINE = 0.416, LINE_PHONE = 0.46; // and a bag on the line (a share of the height)
   const GAP = 1.0;      // on computers, from one bag's middle to the next, in bag heights
   const phone = () => matchMedia('(max-width: 599px)').matches;
-  const touch = matchMedia('(pointer: coarse)').matches;
   const TILT = 0.2;     // the most a bag tips up or down while dragged, in radians (about 11°)
   const LEAN_Y = 0.22, LEAN_P = 0.12; // how far a bag zoomed in leans towards the pointer (radians, at the window's edge)
   // opening: how much smaller and how far round to the side bags start, over the lightbox's own 300ms and easing
@@ -290,7 +289,7 @@
   // onState(focus): the bag zoomed in changed (-1: none); onOutside: a click on nothing on the line
   // space(): how far the switcher and the caption reach in from the top and bottom (px), to keep the bag clear of them
   function createScene(THREE, RoomEnvironment, canvas, labelsEl, list, space, onState, onOutside) {
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.NeutralToneMapping;
@@ -462,7 +461,8 @@
 
     function frameCamera() {
       const w = canvas.clientWidth, h = canvas.clientHeight;
-      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, touch ? 1.5 : 2));
+      // the screen's full sharpness (phones are 3x): the bags are never blurred to save work
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 3));
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       // a bag zoomed in (sized to H0) takes FRONT of the height, in the middle of the window
