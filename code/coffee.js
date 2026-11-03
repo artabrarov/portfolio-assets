@@ -69,6 +69,20 @@
     history[m] = function (...args) { const r = orig.apply(this, args); setTimeout(onAddress, 0); return r; };
   }
   // opened at #coffee: wait for Framer to finish building the page, or it clears #overlay
+  // once the page has loaded and gone idle, fetch three.js, the list and every bag's faces ahead, so the first
+  // open shows the bags straight away (the browser's cache then serves them)
+  const prefetch = () => {
+    import(THREE_URL).catch(() => {}); import(ROOM_URL).catch(() => {});
+    fetch(BASE + 'coffees.json', { cache: 'no-cache' }).then((r) => r.json()).then((d) => (d.coffees || []).forEach((c) => {
+      (c.faces || ['front', 'back']).forEach((f) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous'; // as three.js asks for them, so the cached copies are the ones it gets
+        img.src = BASE + encodeURIComponent(c.slug) + '/' + f + '.webp';
+      });
+    })).catch(() => {});
+  };
+  const whenIdle = () => setTimeout(() => (window.requestIdleCallback || setTimeout)(prefetch, { timeout: 4000 }), 1500);
+  document.readyState === 'complete' ? whenIdle() : addEventListener('load', whenIdle, { once: true });
   if (location.hash === HASH) {
     const go = () => setTimeout(() => location.hash === HASH && open(false), 300);
     document.readyState === 'complete' ? go() : addEventListener('load', go, { once: true });
@@ -269,7 +283,9 @@
 
     // focus: the bag zoomed in (-1: none); pos: where the line is scrolled to (a float index, the newest last)
     let focus = -1, pos = n - 1, target = pos, hover = null, pointerX = 0.5, pointerY = 0.5;
-    let raf = 0, running = false, dirty = true, placed = false, introAt = -1, drag = null, glide = 0;
+    let raf = 0, running = false, dirty = true, placed = false, drag = null, glide = 0;
+    // a bag's opening: it starts turned towards its side and a little smaller, then settles into its rest
+    const intro = (b) => { b.introAt = performance.now(); b.yaw = b.rest - INTRO_TURN; b.spin = 0; orient(b); };
 
     const bags = list.map(makeBag);
     // the name and roaster under each bag on the line
@@ -294,17 +310,28 @@
       const plain = new THREE.Color(b.color || '#d9d2c3');
       const faces = new Set(c.faces || ['front', 'back']);
       const dir = BASE + encodeURIComponent(c.slug) + '/';
+      // the bag stays hidden until all its faces are in (or failed), so it never shows as a blank bag
+      let waiting = 0, bag = null;
+      const landed = () => {
+        if (--waiting > 0 || !bag) return;
+        bag.ready = true;
+        if (running) intro(bag);
+        dirty = true;
+        kick();
+      };
       const mat = (face, extra = {}) => {
         const m = new (finish.clearcoat ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial)({ ...finish, color: plain, ...extra });
-        if (faces.has(face)) loader.load(dir + face + '.webp', (t) => {
-          t.colorSpace = THREE.SRGBColorSpace;
-          t.anisotropy = maxAniso;
-          m.map = t; m.color.set(0xffffff); m.alphaTest = face === 'front' || face === 'back' ? 0.5 : 0;
-          m.needsUpdate = true;
-          bags.forEach((t2) => { t2.faded = undefined; }); // the new texture takes the current fade
-          dirty = true;
-          kick();
-        });
+        if (faces.has(face)) {
+          waiting++;
+          loader.load(dir + face + '.webp', (t) => {
+            t.colorSpace = THREE.SRGBColorSpace;
+            t.anisotropy = maxAniso;
+            m.map = t; m.color.set(0xffffff); m.alphaTest = face === 'front' || face === 'back' ? 0.5 : 0;
+            m.needsUpdate = true;
+            bags.forEach((t2) => { t2.faded = undefined; }); // the new texture takes the current fade
+            landed();
+          }, undefined, landed);
+        }
         return m;
       };
       // the bag turns about its middle (`pivot` holds its orientation), so its body sits half its height down
@@ -318,7 +345,7 @@
       holder.add(pivot);
       scene.add(holder);
       const rest = THREE.MathUtils.degToRad(c.rest ?? REST);
-      const bag = { c, W, H, D, holder, pivot, rest, yaw: rest, pitch: 0, leanY: 0, leanP: 0, spin: 0, cur: null };
+      bag = { c, W, H, D, holder, pivot, rest, yaw: rest, pitch: 0, leanY: 0, leanP: 0, spin: 0, cur: null, ready: waiting === 0, introAt: -1 };
       orient(bag);
       return bag;
     }
@@ -373,25 +400,23 @@
         b.holder.position.set(b.cur.x, b.cur.y, b.cur.z);
         b.holder.scale.setScalar(Math.max(b.cur.s, 1e-4));
         fade(b, b.cur.o);
-        b.holder.visible = b.cur.s > 0.002 && b.cur.o > 0.01 && Math.abs(b.cur.x) < view().w;
+        b.holder.visible = b.ready && b.cur.s > 0.002 && b.cur.o > 0.01 && Math.abs(b.cur.x) < view().w;
         // its name and roaster, pinned under its place on the line, so they fade where they are
         const g = spot(i);
         v3.set(g.x, g.y - g.size / 2 - 0.14, g.z).project(camera);
         labels[i].style.transform = `translate(${((v3.x + 1) / 2) * w}px, ${((1 - v3.y) / 2) * h}px) translate(-50%, 0)`;
-        labels[i].style.opacity = focus < 0 && Math.abs(g.x) < view().w ? '1' : '0';
+        labels[i].style.opacity = b.ready && focus < 0 && Math.abs(g.x) < view().w ? '1' : '0';
       });
       placed = true;
-      // opening: each bag grows from a little smaller and turns from its side into its rest
-      if (introAt >= 0) {
-        const t = Math.min(1, (performance.now() - introAt) / INTRO_MS), k = ease(t);
-        if (t >= 1) introAt = -1;
-        bags.forEach((b, i) => {
-          if (b === focused()) return;
-          b.holder.scale.setScalar(Math.max(goal(b, i).s * (INTRO_SCALE + (1 - INTRO_SCALE) * k), 1e-4));
-          if (hover !== b && !(drag && drag.on === b)) { b.yaw = b.rest - INTRO_TURN * (1 - k); orient(b); }
-        });
+      // opening: each bag grows from a little smaller and turns from its side into its rest (from when it's ready)
+      bags.forEach((b, i) => {
+        if (b.introAt < 0 || b === focused()) return;
+        const t = Math.min(1, (performance.now() - b.introAt) / INTRO_MS), k = ease(t);
+        if (t >= 1) b.introAt = -1;
+        b.holder.scale.setScalar(Math.max(goal(b, i).s * (INTRO_SCALE + (1 - INTRO_SCALE) * k), 1e-4));
+        if (hover !== b && !(drag && drag.on === b)) { b.yaw = b.rest - INTRO_TURN * (1 - k); orient(b); }
         moving = true;
-      }
+      });
       return moving;
     }
 
@@ -611,9 +636,8 @@
           bags.forEach((t) => { t.away = 0; t.spin = 0; t.pitch = 0; t.leanY = t.leanP = 0; });
           placed = false;
         }
-        // opening: each bag starts turned towards its side and a little smaller, then settles into its rest
-        introAt = performance.now();
-        bags.forEach((t) => { t.yaw = t.rest - INTRO_TURN; t.spin = 0; orient(t); });
+        // opening: the bags that are ready play it now; the rest play it as their faces arrive
+        bags.forEach((t) => { if (t.ready) intro(t); });
         addEventListener('resize', onResize);
         frameCamera();
         lastFocus = null;
