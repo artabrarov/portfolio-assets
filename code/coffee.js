@@ -6,7 +6,8 @@
     little towards the pointer, and ‹ ›, ← → or a swipe slide to the next one. A click outside or Esc goes back to
     the line; there, a click outside, Close or Esc closes it, and Back works too.
     Opens from any link to #coffee (the footer's Coffee link) or when a page is opened at #coffee.
-    The bags are built here, not modelled: a block-bottom bag or a stand-up pouch of the bag's real size, with photos
+    In the title, the coffee links to its page (`url`) and the roaster to its site (`roasterUrl`), hidden in the
+    words. The bags are built here, not modelled: a block-bottom bag or a stand-up pouch of the bag's real size, with photos
     of each face wrapped on. The list is coffee/coffees.json next to this script's code/ folder, each bag's faces
     are coffee/<slug>/<face>.webp; adding a coffee is a push, with no Framer step. three.js loads on first open.
     Styles come from Framer: colour styles (as CSS tokens); the text styles Title and Paragraph, read from the page
@@ -147,6 +148,7 @@
 .cf-caption.cf-out{opacity:0}
 .cf-title{${css(title, C.text)}}
 .cf-by{color:${C.muted}}
+.cf-title a{color:inherit;text-decoration:none;pointer-events:auto;cursor:pointer}
 .cf-review{${css(para, C.muted)};margin:2px 0 0;text-wrap:pretty}
 .cf-labels{position:absolute;inset:0;pointer-events:none}
 .cf-label{position:absolute;left:0;top:0;white-space:nowrap;text-align:center;transition:opacity .15s ease}
@@ -223,14 +225,22 @@
       return scene;
     }).catch((e) => { console.warn('Coffee could not load', e); });
 
-    // "Church Street by 15grams" (the coffee and its roaster in Black, "by" in Dark Grey) and the review
+    // "Church Street by 15grams" (the coffee and its roaster in Black, "by" in Dark Grey) and the review; the coffee
+    // links to its page and the roaster to its site, hidden in the words as on the homepage's company names
+    const linked = (text, url) => {
+      if (!url) return text || '';
+      const a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = text || '';
+      return a;
+    };
     function fillCaption(el, c) {
       const t = el.querySelector('.cf-title');
       t.textContent = '';
       const by = document.createElement('span');
       by.className = 'cf-by';
       by.textContent = ' by ';
-      t.append(c.name || '', ...(c.roaster ? [by, c.roaster] : []));
+      t.append(linked(c.name, c.url), ...(c.roaster ? [by, linked(c.roaster, c.roasterUrl)] : []));
       el.querySelector('.cf-review').textContent = c.review || '';
     }
     let shown;
