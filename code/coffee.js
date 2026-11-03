@@ -2,7 +2,7 @@
     middle and older ones to its left, each with its name and roaster under it; scroll, swipe or drag to move along
     it. Click a bag (or anywhere in its column, labels included) to zoom in: it flies to the middle while the rest
     fade where they are, with "<coffee> by <roaster>" and Arthur's review under it, and the lightbox's ‹ n / N ›
-    switcher at the top. Zoomed in, dragging turns the bag round (tipping it only slightly up and down), it leans a
+    switcher at the top, and Close (back to the line). Zoomed in, dragging turns the bag round (tipping it only slightly up and down), it leans a
     little towards the pointer, and ‹ ›, ← → or a swipe slide to the next one. A click outside or Esc goes back to
     the line; there, a click outside, Close or Esc closes it, and Back works too.
     Opens from any link to #coffee (the footer's Coffee link) or when a page is opened at #coffee.
@@ -175,9 +175,9 @@
     const canvas = root.querySelector('canvas');
     const caption = root.querySelector('.cf-caption');
     const labels = root.querySelector('.cf-labels');
-    // zoomed in, Close steps aside: a click around the bag (or Esc) goes back to the line, then Close closes
+    // Close: zoomed in, it goes back to the line (as a click around the bag or Esc do); on the line, it closes
     const closer = root.querySelector('.lb-close');
-    closer.addEventListener('click', () => close());
+    closer.addEventListener('click', () => { if (!(scene && scene.unfocus())) close(); });
     const nav = root.querySelector('.lb-nav'), count = nav.querySelector('.lb-count');
     const [prev, next] = nav.querySelectorAll('.lb-arrow');
     prev.addEventListener('click', () => scene && scene.step(-1));
@@ -216,7 +216,6 @@
       scene = createScene(THREE, room.RoomEnvironment, canvas, labels, list, space, (focus) => {
         showCaption(focus >= 0 ? list[focus] : null);
         nav.classList.toggle('lb-show', list.length > 1 && focus >= 0);
-        closer.classList.toggle('lb-show', focus < 0);
         if (focus >= 0) count.textContent = `${focus + 1} / ${list.length}`;
         prev.disabled = focus <= 0;
         next.disabled = focus >= list.length - 1;
