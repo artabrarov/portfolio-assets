@@ -69,18 +69,9 @@
     history[m] = function (...args) { const r = orig.apply(this, args); setTimeout(onAddress, 0); return r; };
   }
   // opened at #coffee: wait for Framer to finish building the page, or it clears #overlay
-  // once the page has loaded and gone idle, fetch three.js, the list and every bag's faces ahead, so the first
-  // open shows the bags straight away (the browser's cache then serves them)
-  const prefetch = () => {
-    import(THREE_URL).catch(() => {}); import(ROOM_URL).catch(() => {});
-    fetch(BASE + 'coffees.json', { cache: 'no-cache' }).then((r) => r.json()).then((d) => (d.coffees || []).forEach((c) => {
-      (c.faces || ['front', 'back']).forEach((f) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous'; // as three.js asks for them, so the cached copies are the ones it gets
-        img.src = BASE + encodeURIComponent(c.slug) + '/' + f + '.webp';
-      });
-    })).catch(() => {});
-  };
+  // once the page has loaded and gone idle, build the whole view ahead, unseen: three.js, the list, every bag's
+  // faces decoded and on the GPU and its shaders compiled, so the first open has nothing left to do but draw
+  const prefetch = () => { if (!ui) ui = build(); };
   const whenIdle = () => setTimeout(() => (window.requestIdleCallback || setTimeout)(prefetch, { timeout: 4000 }), 1500);
   document.readyState === 'complete' ? whenIdle() : addEventListener('load', whenIdle, { once: true });
   if (location.hash === HASH) {
@@ -321,9 +312,26 @@
     let focus = -1, pos = n - 1, target = pos, hover = null, pointerX = 0.5, pointerY = 0.5;
     let raf = 0, running = false, dirty = true, placed = false, drag = null, glide = 0;
     // a bag's opening: it starts turned towards its side and a little smaller, then settles into its rest
-    const intro = (b) => { b.introAt = performance.now(); b.yaw = b.rest - INTRO_TURN; b.spin = 0; orient(b); };
+    // its clock starts after the first frame it's drawn in (0 until then), so a slow first frame can't eat it
+    const intro = (b) => { b.introAt = 0; b.yaw = b.rest - INTRO_TURN; b.spin = 0; orient(b); };
 
-    const bags = list.map(makeBag);
+    const textures = [];
+    let bags = [];
+    // the bags show all together, once every one has its faces (or they failed), never one by one
+    const everyReady = () => bags.length === n && bags.every((t) => t.ready);
+    // ahead of the first open: compile the shaders (in parallel where the browser can) and send the faces to the
+    // GPU, one per idle moment, so neither happens in the opening's frames
+    let warmed = false;
+    function warm() {
+      if (warmed) return;
+      warmed = true;
+      const idle = window.requestIdleCallback || ((f) => setTimeout(f, 16));
+      const upload = (k) => { if (k < textures.length) idle(() => { renderer.initTexture(textures[k]); upload(k + 1); }, { timeout: 1000 }); };
+      Promise.resolve(renderer.compileAsync ? renderer.compileAsync(scene, camera) : renderer.compile(scene, camera))
+        .catch(() => {}).then(() => upload(0));
+    }
+    bags = list.map(makeBag);
+    if (everyReady()) warm();
     // the name and roaster under each bag on the line
     const labels = list.map((c) => {
       const el = document.createElement('div'), name = document.createElement('div'), roaster = document.createElement('div');
@@ -351,7 +359,9 @@
       const landed = () => {
         if (--waiting > 0 || !bag) return;
         bag.ready = true;
-        if (running) intro(bag);
+        if (!everyReady()) return;
+        if (running) bags.forEach(intro);
+        warm();
         dirty = true;
         kick();
       };
@@ -360,6 +370,7 @@
         if (faces.has(face)) {
           waiting++;
           loader.load(dir + face + '.webp', (t) => {
+            textures.push(t);
             t.colorSpace = THREE.SRGBColorSpace;
             t.anisotropy = maxAniso;
             m.map = t; m.color.set(0xffffff); m.alphaTest = face === 'front' || face === 'back' ? 0.5 : 0;
@@ -422,7 +433,7 @@
     }
     function layout() {
       let moving = false;
-      const w = canvas.clientWidth, h = canvas.clientHeight;
+      const w = canvas.clientWidth, h = canvas.clientHeight, all = everyReady();
       bags.forEach((b, i) => {
         const t = goal(b, i);
         if (!b.cur || !placed) b.cur = { ...t };
@@ -438,18 +449,18 @@
         b.holder.position.set(b.cur.x, b.cur.y, b.cur.z);
         b.holder.scale.setScalar(Math.max(b.cur.s, 1e-4));
         fade(b, b.cur.o);
-        b.holder.visible = b.ready && b.cur.s > 0.002 && b.cur.o > 0.01 && Math.abs(b.cur.x) < view().w;
+        b.holder.visible = all && b.cur.s > 0.002 && b.cur.o > 0.01 && Math.abs(b.cur.x) < view().w;
         // its name and roaster, pinned under its place on the line, so they fade where they are
         const g = spot(i);
         v3.set(g.x, g.y - g.size / 2 - 0.14, g.z).project(camera);
         labels[i].style.transform = `translate(${((v3.x + 1) / 2) * w}px, ${((1 - v3.y) / 2) * h}px) translate(-50%, 0)`;
-        labels[i].style.opacity = b.ready && focus < 0 && Math.abs(g.x) < view().w ? '1' : '0';
+        labels[i].style.opacity = all && focus < 0 && Math.abs(g.x) < view().w ? '1' : '0';
       });
       placed = true;
       // opening: each bag grows from a little smaller and turns from its side into its rest (from when it's ready)
       bags.forEach((b, i) => {
         if (b.introAt < 0 || b === focused()) return;
-        const t = Math.min(1, (performance.now() - b.introAt) / INTRO_MS), k = ease(t);
+        const t = b.introAt ? Math.min(1, (performance.now() - b.introAt) / INTRO_MS) : 0, k = ease(t);
         if (t >= 1) b.introAt = -1;
         b.holder.scale.setScalar(Math.max(goal(b, i).s * (INTRO_SCALE + (1 - INTRO_SCALE) * k), 1e-4));
         if (hover !== b && !(drag && drag.on === b)) { b.yaw = b.rest - INTRO_TURN * (1 - k); orient(b); }
@@ -661,6 +672,8 @@
       if (moving || dirty || drag) {
         renderer.render(scene, camera);
         dirty = false;
+        // the opening's clock starts once its first frame is drawn
+        if (everyReady()) bags.forEach((b) => { if (b.introAt === 0) b.introAt = performance.now(); });
       }
       if (moving || drag) kick();
     }
@@ -677,8 +690,8 @@
           bags.forEach((t) => { t.away = 0; t.spin = 0; t.pitch = 0; t.leanY = t.leanP = 0; });
           placed = false;
         }
-        // opening: the bags that are ready play it now; the rest play it as their faces arrive
-        bags.forEach((t) => { if (t.ready) intro(t); });
+        // opening: the bags play it together, now if their faces are in, or once they are
+        if (everyReady()) bags.forEach(intro);
         addEventListener('resize', onResize);
         frameCamera();
         lastFocus = null;
