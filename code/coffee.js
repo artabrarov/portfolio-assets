@@ -3,7 +3,7 @@
     it. Click a bag (or anywhere in its column, labels included) to zoom in: it flies to the middle while the rest
     fade where they are, with "<coffee> by <roaster>" and Arthur's review under it, and the lightbox's ‹ n / N ›
     switcher at the top, and Close (back to the line). Zoomed in, dragging turns the bag round (tipping it only slightly up and down), it leans a
-    little towards the pointer, and ‹ ›, ← → or a swipe slide to the next one. A click outside or Esc goes back to
+    little towards the pointer, and ‹ › or ← → slide to the next one. A click outside or Esc goes back to
     the line; there, a click outside, Close or Esc closes it, and Back works too.
     Opens from any link to #coffee (the footer's Coffee link) or when a page is opened at #coffee.
     In the title, the coffee links to its page (`url`) and the roaster to its site (`roasterUrl`), hidden in the
@@ -563,33 +563,14 @@
     };
     canvas.addEventListener('pointerup', up);
     canvas.addEventListener('pointercancel', up);
-    let wheelSum = 0, wheelT = 0, wheelLock = false, wheelAt = 0, wheelLow = 0, wheelDir = 0;
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
+      // zoomed in, the trackpad does nothing (‹ ›, ← → switch); on the line, it follows the trackpad exactly, and
+      // stays wherever it's left
+      if (focus >= 0) return;
       const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-      if (focus < 0) {
-        // the line follows the trackpad exactly, and stays wherever it's left
-        target = pos = clampPos(pos + d / 300);
-        dirty = true;
-      } else {
-        // zoomed in, one swipe moves one bag. After a step, the rest of that swipe and its momentum are ignored;
-        // momentum only ever slows down, so a sudden speed-up (or a change of direction) is a new swipe
-        const a = Math.abs(d), now = performance.now();
-        clearTimeout(wheelT);
-        wheelT = setTimeout(() => { wheelLock = false; wheelSum = 0; }, 160);
-        if (wheelLock) {
-          wheelLow = Math.min(wheelLow, a);
-          if (now - wheelAt > 120 && (a > Math.max(4, wheelLow * 2.5) || Math.sign(d) !== wheelDir)) { wheelLock = false; wheelSum = 0; }
-        }
-        if (!wheelLock) {
-          wheelSum += d;
-          if (Math.abs(wheelSum) > 50) {
-            wheelDir = Math.sign(wheelSum);
-            step(wheelDir);
-            wheelLock = true; wheelSum = 0; wheelAt = now; wheelLow = a;
-          }
-        }
-      }
+      target = pos = clampPos(pos + d / 300);
+      dirty = true;
       kick();
     }, { passive: false });
     const clampPos = (p) => Math.max(0, Math.min(n - 1, p));
@@ -614,7 +595,7 @@
       kick();
       return true;
     }
-    // switching with ‹ ›, ← → or a swipe: the next one slides in from the side it's on, like the lightbox, and
+    // switching with ‹ › or ← →: the next one slides in from the side it's on, like the lightbox, and
     // it goes round: after the last comes the first again
     function step(d) {
       if (focus < 0) { target = clampPos(Math.round(target) + d); kick(); return; }
