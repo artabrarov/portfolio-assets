@@ -37,12 +37,12 @@
   const OVERLAY = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fff)';   // behind open media: the White colour style (the cards'), no effects
   const MAX_ZOOM = 4;                      // a pinch zooms open media up to 4×
   const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#1f1f1f)';   // the site's colour styles
-  // the buttons: the site's Primary button (White, a 1px line in the Hover colour style, a soft shadow)
+  // the buttons: the site's Primary button (White, a 0.5px ring in the Stroke colour style, a soft shadow)
   const FILL = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)';
   // a disabled button keeps the line but loses the shadow. The line and shadow are copied from the page's button when
   // the lightbox opens (--site-btn-*); these are the fallbacks
-  const LINE = 'inset 0 0 0 var(--site-btn-line-width,1px) var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0))';
-  const EDGE = 'inset 0 0 0 var(--site-btn-line-width,1px) var(--site-btn-line,var(--token-561f0f19-24cd-4e69-b381-b29adb2edb7f,#e9e7e0)), var(--site-btn-shadow,0 1px 8px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))';
+  const LINE = 'inset 0 0 0 var(--site-btn-line-width,0.5px) var(--site-btn-line,var(--token-f682623a-bc5f-4262-bc82-733e13a97122,#e0ddd4))';
+  const EDGE = 'inset 0 0 0 var(--site-btn-line-width,0.5px) var(--site-btn-line,var(--token-f682623a-bc5f-4262-bc82-733e13a97122,#e0ddd4)), var(--site-btn-shadow,0 1px 1px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)), 0 2px 4px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))';
   const TYPE = '"Inter Variable","Inter",sans-serif';   // fallback before the page's styles are read
   const QUIET = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the counter isn't a button: the Background colour style, flat
   const FILL_HOVER = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the buttons' hover colour: the Background colour style
