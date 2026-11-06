@@ -2,6 +2,7 @@
     Loaded on the live site from GitHub Pages (code/emoji-game.min.js) through one script tag in
     Framer: Site Settings, General, Custom Code, end of body. Edit this file, rebuild the .min.js, push.
     Needs: a frame named "Hero" containing an avatar image of 48px or less, and the footer links frame named "Footer".
+    Since the Nov 6, 2026 one-column Home, those frames are called "Header Content" and "Links"; both names work.
     Runs on the homepage only. The dot grid is the DotGridRepel code component, which reacts to the emojis on its own. */
 (() => {
   if (window.__emojiGame) return;          // run once, even with Framer's page transitions
@@ -120,8 +121,8 @@
       .fx-back:hover{color:var(--fx-link-hover-color,${C.dark});text-decoration-color:var(--fx-link-hover-deco,${C.stroke});}
       .fx-shop-foot{display:flex;gap:16px;margin-top:8px;}
       .fx-shop > .fx-up:first-child{margin-top:8px;}   /* spacing inside the shop, so it collapses with it */
-      .fx-game [data-framer-name="Hero"] [data-framer-name="Footer"]{pointer-events:none !important;}
-      .fx-game-full [data-framer-name="Hero"] [data-framer-name="Footer"]{display:none !important;}
+      .fx-game :is([data-framer-name="Hero"],[data-framer-name="Header Content"]) :is([data-framer-name="Footer"],[data-framer-name="Links"]){pointer-events:none !important;}
+      .fx-game-full :is([data-framer-name="Hero"],[data-framer-name="Header Content"]) :is([data-framer-name="Footer"],[data-framer-name="Links"]){display:none !important;}
       .fx-play > :not(.fx-av):not(.fx-shop):not(.fx-score):not(:has(.fx-av)){display:none !important;}
       .fx-shop{display:flex;flex-direction:column;gap:10px;align-self:stretch;width:100%;box-sizing:border-box;
         ${font('small', '14px', '22px', 425)}color:${C.dark};}
@@ -153,7 +154,7 @@
     // small text and the link style from the "Footer" links, strong text from the "Button" label.
     // Runs again on resize, since Framer text styles can change per breakpoint.
     function syncFramerStyles() {
-      const heroes = [...document.querySelectorAll('[data-framer-name="Hero"]')];   // one per breakpoint: read the one on screen
+      const heroes = [...document.querySelectorAll(':is([data-framer-name="Hero"],[data-framer-name="Header Content"])')];   // one per breakpoint: read the one on screen
       const hero = heroes.find(h => h.offsetHeight > 0) || heroes[0];
       if (!hero) return;
       const root = document.documentElement.style;
@@ -167,8 +168,8 @@
         root.setProperty(`--fx-${role}-wght`, s.fontVariationSettings);
         root.setProperty(`--fx-${role}-ls`, s.letterSpacing);
       };
-      const link = hero.querySelector('[data-framer-name="Footer"] a');
-      copy('body', [...hero.querySelectorAll('p')].find(p => !p.closest('[data-framer-name="Footer"],[data-framer-name="Button"],[class^="fx-"]')));
+      const link = hero.querySelector(':is([data-framer-name="Footer"],[data-framer-name="Links"]) a');
+      copy('body', [...hero.querySelectorAll('p')].find(p => !p.closest(':is([data-framer-name="Footer"],[data-framer-name="Links"]),[data-framer-name="Button"],[class^="fx-"]')));
       copy('small', link);
       copy('strong', hero.querySelector('[data-framer-name="Button"] p'));
       // the buttons' line and shadow, from the page's Primary button (not its fill, which may be mid-hover)
@@ -697,8 +698,8 @@
     const fadeIn = (el, delay = 0) => own(el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, delay, easing: 'ease-out', fill: 'backwards' }));
     const settle = el => { el.getAnimations().forEach(a => mine.has(a) && a.cancel()); el.style.overflow = ''; };
     const footerOf = () => {
-      const hero = avatarEl && avatarEl.closest('[data-framer-name="Hero"]');
-      return hero && [...hero.querySelectorAll('[data-framer-name="Footer"]')].find(f => f.offsetHeight > 0);
+      const hero = avatarEl && avatarEl.closest(':is([data-framer-name="Hero"],[data-framer-name="Header Content"])');
+      return hero && [...hero.querySelectorAll(':is([data-framer-name="Footer"],[data-framer-name="Links"])')].find(f => f.offsetHeight > 0);
     };
     // Framer renders one Hero per breakpoint — always work with the avatar that is actually on screen
     const visibleAvatar = () => [...document.querySelectorAll('.fx-av')].find(a => a.offsetWidth > 0) || avatarEl;
@@ -866,7 +867,7 @@
     /* avatar */
     const seen = new WeakSet();
     const onHome = () => location.pathname === '/' || location.pathname === '';   // the game lives on the homepage only
-    const scan = () => onHome() && document.querySelectorAll('[data-framer-name="Hero"] img').forEach(img => {
+    const scan = () => onHome() && document.querySelectorAll(':is([data-framer-name="Hero"],[data-framer-name="Header Content"]) img').forEach(img => {
       const r = img.getBoundingClientRect();
       if (!r.width || r.width > 48) return;
       // the avatar box: the outermost ancestor that is still the photo's size (works for components and plain Image layers)
