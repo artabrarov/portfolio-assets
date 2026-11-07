@@ -7,6 +7,24 @@
 (() => {
   if (window.__emojiGame) return;          // run once, even with Framer's page transitions
   window.__emojiGame = true;
+  /* The coin counter sits on the shop's right edge. It used to be pinned to the right of its row, which matched in the
+     old 256px sidebar; on the one-column Home (Nov 6, 2026) the row is four columns wide, so the play column (shop and
+     counter) is capped at 360px and the counter follows the shop's right edge. */
+  (() => {
+    const PLAY_MAX = 360;
+    const place = () => document.querySelectorAll('.fx-score').forEach(s => {
+      const row = s.parentElement;
+      if (!row) return;
+      const cs = getComputedStyle(row);
+      const pl = parseFloat(cs.paddingLeft) || 0, pr = parseFloat(cs.paddingRight) || 0;
+      s.style.right = 'auto';
+      s.style.left = (pl + Math.min(row.clientWidth - pl - pr, PLAY_MAX)) + 'px';
+      s.style.transform = 'translateX(-100%)';
+    });
+    new MutationObserver(place).observe(document.documentElement, { childList: true, subtree: true });
+    addEventListener('resize', place);
+  })();
+
 
   /* ───────────── Emoji avatar + gravity playground ───────────── */
   function emojiDrop() {
@@ -115,7 +133,7 @@
       .fx-score .fx-pts{margin-left:4px;}
       .fx-score .fx-num{display:inline-block;transform-origin:100% 60%;}
       .fx-back{all:unset;align-self:flex-start;cursor:pointer;color:var(--fx-link-color,${C.grey});
-        ${font('small', '14px', '22px', 425)}
+        ${font('link', '14px', '22px', 425)}
         text-decoration:underline;text-decoration-color:var(--fx-link-deco,transparent);text-underline-offset:var(--fx-link-offset,3px);transition:color .2s,text-decoration-color .2s;}
       .fx-back:focus-visible{border-radius:4px;}   /* the site's focus ring (set in lightbox.js) rounds a little round the text */
       .fx-back:hover{color:var(--fx-link-hover-color,${C.dark});text-decoration-color:var(--fx-link-hover-deco,${C.stroke});}
@@ -124,12 +142,12 @@
       .fx-game :is([data-framer-name="Hero"],[data-framer-name="Header Content"]) :is([data-framer-name="Footer"],[data-framer-name="Links"]){pointer-events:none !important;}
       .fx-game-full :is([data-framer-name="Hero"],[data-framer-name="Header Content"]) :is([data-framer-name="Footer"],[data-framer-name="Links"]){display:none !important;}
       .fx-play > :not(.fx-av):not(.fx-shop):not(.fx-score):not(:has(.fx-av)){display:none !important;}
-      .fx-shop{display:flex;flex-direction:column;gap:10px;align-self:stretch;width:100%;box-sizing:border-box;
+      .fx-shop{display:flex;flex-direction:column;gap:10px;align-self:stretch;width:100%;max-width:360px;box-sizing:border-box;
         ${font('small', '14px', '22px', 425)}color:${C.dark};}
       .fx-up{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:8px;
         transition:padding-bottom .4s cubic-bezier(.45,0,.2,1);}
       .fx-up.fx-has-bar{padding-bottom:18px;}   /* room for the progress line, so the gap to the next row stays the same */
-      .fx-up-name{font-size:var(--fx-body-size,16px);line-height:var(--fx-body-lh,26px);}
+      .fx-up-name{${font('title', '15px', '23px', 550)}}   /* Auto-drop, Luck: the site's Title style, read from the name in the header */
       .fx-up-lvl{color:${C.grey};}
       .fx-up-info{color:${C.grey};font-size:var(--fx-small-size,14px);line-height:var(--fx-small-lh,22px);font-variant-numeric:tabular-nums;}
       /* the shop's buttons look like the site's Primary button: fill, line, shadow, hover, label style (button), 14px sides */
@@ -141,7 +159,7 @@
       .fx-buy.fx-max{cursor:default;opacity:.45;box-shadow:${C.buttonLine};}
       .fx-buy.fx-max:hover{background:${C.button};}
       .fx-buy.fx-cant:hover{background:${C.button};}
-      .fx-up-bar{position:absolute;left:0;right:0;bottom:8px;height:2px;border-radius:2px;background:rgba(31,31,31,.12);
+      .fx-up-bar{position:absolute;left:0;right:0;bottom:8px;height:4px;border-radius:2px;background:rgba(31,31,31,.12);
         transform-origin:0 50%;scale:0 1;}
       .fx-float{position:absolute;right:0;top:0;font-size:14px;line-height:20px;
         font-family:var(--fx-strong-family,${FAMILY});font-weight:var(--fx-strong-weight,700);font-variation-settings:var(--fx-strong-wght,"wght" 700);
@@ -168,10 +186,17 @@
         root.setProperty(`--fx-${role}-wght`, s.fontVariationSettings);
         root.setProperty(`--fx-${role}-ls`, s.letterSpacing);
       };
-      const link = hero.querySelector(':is([data-framer-name="Footer"],[data-framer-name="Links"]) a');
+      const footerLink = hero.querySelector(':is([data-framer-name="Footer"],[data-framer-name="Links"]) a');
+      // a standalone link in the header: a paragraph that is only a link (X · Email · GitHub on the one-column Home,
+      // Nov 6, 2026, not the "Apron Card" link inside the intro); the game's Back and Mute links take its text style and
+      // decoration, falling back to the footer links
+      const ownLink = [...hero.querySelectorAll('p a')].find(a => !a.closest('[class^="fx-"]') && a.closest('p').textContent.trim() === a.textContent.trim());
+      const link = ownLink || footerLink;
       copy('body', [...hero.querySelectorAll('p')].find(p => !p.closest(':is([data-framer-name="Footer"],[data-framer-name="Links"]),[data-framer-name="Button"],[class^="fx-"]')));
-      copy('small', link);
+      copy('small', footerLink);   // the shop's small text keeps the footer links' size
+      copy('link', link);          // Back and Mute: the link row's own text style
       copy('strong', hero.querySelector('[data-framer-name="Button"] p'));
+      copy('title', [...hero.querySelectorAll('p')].find(p => !p.closest('[class^="fx-"]')));   // the name, in the Title style
       // the buttons' line and shadow, from the page's Primary button (not its fill, which may be mid-hover)
       const primary = [...document.querySelectorAll('[data-framer-name="Primary"]')].find(e => e.offsetWidth > 0);
       if (primary) {
