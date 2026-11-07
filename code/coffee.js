@@ -465,6 +465,7 @@
     const BAG_MAX = 400;
     let frm = null;
     function frame() {
+      camera.updateMatrixWorld(); // it's measured through the camera, which only updates itself when drawn
       const w = canvas.clientWidth, h = canvas.clientHeight, v = view(), unit = v.h / h; // world units per px
       // the lines: the top one as far below Close as Close is from the top (32px on computers, 16px on phones), the
       // bottom one as far up from the bottom as Close is from the top
@@ -526,8 +527,11 @@
     function layout() {
       let moving = false;
       const w = canvas.clientWidth, h = canvas.clientHeight, all = everyReady();
-      if (LINE_ONLY && (!frm || frm.w !== w || frm.h !== h)) {
+      if (LINE_ONLY && h > 0 && (!frm || frm.w !== w || frm.h !== h)) {
         frame(); // only on open and resize: it measures the text
+        // measured again: the bags go straight to their places (no gliding there from the old ones, which on open
+        // made them slide down from above), and the opening plays as it always did, growing and turning into place
+        placed = false;
         if (fitsAll()) pos = target = (n - 1) / 2; else pos = target = Math.max(0, Math.min(n - 1, target));
       }
       bags.forEach((b, i) => {
