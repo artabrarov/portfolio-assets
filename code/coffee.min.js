@@ -1,7 +1,8 @@
 /*  Coffee, since Nov 7, 2026 (line only): the bags stand in a line in the site's lines style, each in a box of its own
     (540px wide; on phones the screen less 32px each side) between a line under Close and one near the bottom, with
     its title ("<coffee> by <roaster>", both linked) and review under it. Each box has two frames with 64px padding
-    (32px on phones): the text, 32px above the bottom line, and the bag above it, sized to fit; every box takes the
+    at the sides (32px on phones): the text, 32px above the bottom line, and the bag above it (at least 64px above and
+    below, 32px on phones), sized to fit but at most 400px tall on computers, centred in its frame; every box takes the
     tallest text so the bags match. Dragging a bag turns it where it stands; dragging elsewhere, scrolling or ← →
     move along the line, which sits centred when every box fits. There's no zooming in: ?coffeeZoom=on brings back
     the earlier view described below.
@@ -458,7 +459,10 @@
     // one as far up), holds two frames with 32px padding: the text at the bottom (32px in from the sides and the bottom
     // line) and, 32px above it, the bag (32px in from the sides and the top line), sized to fit its frame. Every cell
     // takes the tallest text, so the bags all come out the same size.
-    const PAD_WIDE = 64; // 32 tried first, Nov 7; the text keeps 32 above the bottom line (phones: 32, and 16 at the bottom)
+    const PAD_WIDE = 64; // 32 tried first, Nov 7; the text keeps 32 above the bottom line (phones: 32, 16 at the bottom)
+    // on computers a bag is at most 400px tall, centred in its frame, so big screens get air rather than giant bags
+    // (128px above and below it was tried first: right on a 1440x900 screen, too small on short ones)
+    const BAG_MAX = 400;
     let frm = null;
     function frame() {
       const w = canvas.clientWidth, h = canvas.clientHeight, v = view(), unit = v.h / h; // world units per px
@@ -470,16 +474,16 @@
       root.style.setProperty('--cf-line-y', line + 'px');
       root.style.setProperty('--cf-line-bottom', lineBottom + 'px');
       // phones: each box is the screen less 32px each side (the neighbours show at the edges), with 32px padding
-      const ph = phone(), PAD = ph ? 32 : PAD_WIDE, PAD_BOTTOM = ph ? 16 : 32;
+      const ph = phone(), PAD = ph ? 32 : PAD_WIDE, PAD_BOTTOM = ph ? 16 : 32, PAD_BAG = ph ? 32 : 64;
       const gapPx = ph ? Math.max(200, w - 64) : CELL, textW = Math.max(120, Math.round(gapPx - 2 * PAD));
       labels.forEach((l) => { l.style.width = textW + 'px'; });
       const textH = Math.max(0, ...labels.map((l) => l.offsetHeight));
       const textBottom = h - lineBottom - PAD_BOTTOM;                       // px from the top
-      const top = line + PAD, bottom = textBottom - textH - PAD;
+      const top = line + PAD_BAG, bottom = textBottom - textH - PAD_BAG; // above and below the bag
       const frameH = Math.max(40, bottom - top), frameW = Math.max(40, gapPx - 2 * PAD);
       // the widest a bag gets turning round, as a share of its fitted size
       const wide = Math.max(...bags.map((b) => Math.hypot(b.W, b.D) / Math.max(b.H, b.W * 0.8, b.D * 0.8)));
-      const sizePx = Math.min(frameH, frameW / wide);
+      const sizePx = Math.min(frameH, frameW / wide, ph ? Infinity : BAG_MAX); // the frame's extra height is air round it
       // the camera looks a little down at the bags, so a first guess is measured through it (the bag's top and bottom
       // at its front) and corrected, twice, until it fills the frame and sits in its middle
       let size = sizePx * unit, y = H0 / 2 + (h / 2 - (top + frameH / 2)) * unit;
