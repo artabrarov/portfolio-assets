@@ -134,9 +134,9 @@
       .fx-score .fx-num{display:inline-block;transform-origin:100% 60%;}
       .fx-back{all:unset;align-self:flex-start;cursor:pointer;color:var(--fx-link-color,${C.grey});
         ${font('link', '14px', '22px', 425)}
-        text-decoration:underline;text-decoration-color:var(--fx-link-deco,transparent);text-underline-offset:var(--fx-link-offset,3px);transition:color .2s,text-decoration-color .2s;}
+        text-decoration:underline;text-decoration-color:var(--fx-link-deco,transparent);text-underline-offset:var(--fx-link-offset,3px);transition:color .2s,text-decoration-color .2s,text-underline-offset .2s;}
       .fx-back:focus-visible{border-radius:4px;}   /* the site's focus ring (set in lightbox.js) rounds a little round the text */
-      .fx-back:hover{color:var(--fx-link-hover-color,${C.dark});text-decoration-color:var(--fx-link-hover-deco,${C.stroke});}
+      .fx-back:hover{color:var(--fx-link-hover-color,${C.dark});text-decoration-color:var(--fx-link-hover-deco,${C.stroke});text-underline-offset:var(--fx-link-hover-offset,var(--fx-link-offset,3px));}
       .fx-shop-foot{display:flex;gap:16px;margin-top:8px;}
       .fx-shop > .fx-up:first-child{margin-top:8px;}   /* spacing inside the shop, so it collapses with it */
       .fx-game :is([data-framer-name="Hero"],[data-framer-name="Header Content"]) :is([data-framer-name="Footer"],[data-framer-name="Links"]){pointer-events:none !important;}
@@ -160,7 +160,7 @@
       .fx-buy.fx-max:hover{background:${C.button};}
       .fx-buy.fx-cant:hover{background:${C.button};}
       .fx-up-bar{position:absolute;left:0;right:0;bottom:8px;height:4px;border-radius:2px;background:rgba(31,31,31,.12);
-        transform-origin:0 50%;scale:0 1;}
+        clip-path:inset(0 100% 0 0 round 2px);}   /* grows by revealing, so both ends stay round at every length */
       .fx-float{position:absolute;right:0;top:0;font-size:14px;line-height:20px;
         font-family:var(--fx-strong-family,${FAMILY});font-weight:var(--fx-strong-weight,700);font-variation-settings:var(--fx-strong-wght,"wght" 700);
         pointer-events:none;white-space:nowrap;}
@@ -187,11 +187,12 @@
         root.setProperty(`--fx-${role}-ls`, s.letterSpacing);
       };
       const footerLink = hero.querySelector(':is([data-framer-name="Footer"],[data-framer-name="Links"]) a');
-      // a standalone link in the header: a paragraph that is only a link (X · Email · GitHub on the one-column Home,
-      // Nov 6, 2026, not the "Apron Card" link inside the intro); the game's Back and Mute links take its text style and
-      // decoration, falling back to the footer links
+      // Back and Mute look like the links in the page's own footer (Coffee, Sites, Ideas: Paragraph text, Default Grey
+      // Underline, Nov 7, 2026), the first one on screen; before that footer they followed a standalone link in the
+      // header (a paragraph that is only a link, X · Email · GitHub on Nov 6), still the fallback, then the old footer links
+      const pageLink = [...document.querySelectorAll('footer a, [data-framer-name="Footer Content"] a')].find(a => a.offsetWidth > 0 && !a.closest('[class^="fx-"]'));
       const ownLink = [...hero.querySelectorAll('p a')].find(a => !a.closest('[class^="fx-"]') && a.closest('p').textContent.trim() === a.textContent.trim());
-      const link = ownLink || footerLink;
+      const link = pageLink || ownLink || footerLink;
       copy('body', [...hero.querySelectorAll('p')].find(p => !p.closest(':is([data-framer-name="Footer"],[data-framer-name="Links"]),[data-framer-name="Button"],[class^="fx-"]')));
       copy('small', footerLink);   // the shop's small text keeps the footer links' size
       copy('link', link);          // Back and Mute: the link row's own text style
@@ -222,7 +223,8 @@
         root.setProperty('--fx-link-hover-color', v('--framer-link-hover-text-color') || s.color);
         root.setProperty('--fx-link-deco', deco === 'underline' ? decoColor : 'transparent');
         root.setProperty('--fx-link-hover-deco', hoverDeco === 'underline' ? v('--framer-link-hover-text-decoration-color') || decoColor : 'transparent');
-        root.setProperty('--fx-link-offset', v('--framer-link-hover-text-decoration-offset') || v('--framer-link-text-decoration-offset') || '3px');
+        root.setProperty('--fx-link-offset', v('--framer-link-text-decoration-offset') || '3px');
+        root.setProperty('--fx-link-hover-offset', v('--framer-link-hover-text-decoration-offset') || v('--framer-link-text-decoration-offset') || '3px');
       }
     }
     syncFramerStyles();
@@ -849,7 +851,7 @@
       clearTimeout(autoTimer);
       const ms = UPGRADES.auto.every(game.auto) * 1000;
       const bar = shopEl && shopEl.querySelector('.fx-up-bar');
-      if (bar) bar.animate([{ scale: '0 1' }, { scale: '1 1' }], { duration: ms, easing: 'linear' });
+      if (bar) bar.animate([{ clipPath: 'inset(0 100% 0 0 round 2px)' }, { clipPath: 'inset(0 0% 0 0 round 2px)' }], { duration: ms, easing: 'linear' });
       autoTimer = setTimeout(() => {
         if (!document.hidden && playing) drop(null, true);
         startAuto();
