@@ -1,4 +1,12 @@
-/*  Coffee: the bags of coffee Arthur drinks, full screen like the lightbox. They stand in a line, newest in the
+/*  Coffee, since Nov 7, 2026 (line only): the bags stand in a line in the site's lines style, each in a box of its own
+    (540px wide; on phones the screen less 32px each side) between a line under Close and one near the bottom, with
+    its title ("<coffee> by <roaster>", both linked) and review under it. Each box has two frames with 64px padding
+    (32px on phones): the text, 32px above the bottom line, and the bag above it, sized to fit; every box takes the
+    tallest text so the bags match. Dragging a bag turns it where it stands; dragging elsewhere, scrolling or ← →
+    move along the line, which sits centred when every box fits. There's no zooming in: ?coffeeZoom=on brings back
+    the earlier view described below.
+
+    Coffee: the bags of coffee Arthur drinks, full screen like the lightbox. They stand in a line, newest in the
     middle and older ones to its left, each with its name and roaster under it; scroll, swipe or drag to move along
     it. Click a bag (or anywhere in its column, labels included) to zoom in: it flies to the middle while the rest
     fade where they are, with "<coffee> by <roaster>" and Arthur's review under it, and the lightbox's ‹ n / N ›
@@ -26,6 +34,10 @@
   const FRONT = 0.62;   // how much of the window's height a bag zoomed in takes (FRONT_PHONE on phones)
   const FRONT_PHONE = 0.68, LINE = 0.416, LINE_PHONE = 0.46; // and a bag on the line (a share of the height)
   const GAP = 1.0;      // on computers, from one bag's middle to the next, in bag heights
+  // Nov 7, 2026, local tryout: no zooming in; each bag's title and review sit under it on the line, the bags stand
+  // further apart, and dragging a bag turns it where it stands (it stays as it's left). ?coffeeZoom=on: the zoom
+  const LINE_ONLY = new URLSearchParams(location.search).get('coffeeZoom') !== 'on';
+  const CELL = 540;     // in that mode, each bag's box: 540px wide (1.9, 1.5 and 1.35 bag heights, then 520px, tried first)
   const phone = () => matchMedia('(max-width: 599px)').matches;
   const TILT = 0.2;     // the most a bag tips up or down while dragged, in radians (about 11°)
   const LEAN_Y = 0.22, LEAN_P = 0.12; // how far a bag zoomed in leans towards the pointer (radians, at the window's edge)
@@ -37,6 +49,9 @@
     bg: 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b, #fffffd)',     // White
     text: 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da, #2e261c)',   // Black
     muted: 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2, #726555)',  // Dark Grey
+    soft: 'var(--token-TcxaN9CXT, rgb(118, 105, 88))',
+    surface: 'var(--token-G7BejTTJn, rgb(253, 252, 251))',                 // Page (line only: the view's background)
+    stroke: 'var(--token-f682623a-bc5f-4262-bc82-733e13a97122, rgba(0, 0, 0, 0.15))', // Stroke (line only: the lines)                     // Dark Grey 10 ("by" and the review, Nov 7)
   };
   // the site's Framer text styles, by id (data-styles-preset), and what to use when the page doesn't have one
   const STYLES = {
@@ -137,11 +152,19 @@
   transition:opacity .2s ease;pointer-events:none}
 .cf-caption.cf-out{opacity:0}
 .cf-title{${css(title, C.text)}}
-.cf-by{color:${C.muted}}
+.cf-by{color:${C.soft}}
 .cf-title a{color:inherit;text-decoration:none;pointer-events:auto;cursor:pointer}
-.cf-review{${css(para, C.muted)};margin:2px 0 0;text-wrap:pretty}
+.cf-review{${css(para, C.soft)};margin:2px 0 0;text-wrap:pretty}
 .cf-labels{position:absolute;inset:0;pointer-events:none}
+.cf-root.cf-line{background:${C.surface}}
+.cf-rule{position:absolute;left:0;right:0;height:0.5px;background:${C.stroke};pointer-events:none}
+.cf-rule-top{top:var(--cf-line-y,104px)}
+.cf-rule-bottom{bottom:var(--cf-line-bottom,32px)}
 .cf-label{position:absolute;left:0;top:0;white-space:nowrap;text-align:center;transition:opacity .15s ease}
+.cf-label.cf-full{white-space:normal;box-sizing:border-box}
+.cf-cell{position:absolute;left:0;top:var(--cf-line-y,104px);bottom:var(--cf-line-bottom,32px);width:0.5px;
+  background:${C.stroke};transition:opacity .15s ease}
+.cf-label.cf-full .cf-review{margin-top:4px}
 .cf-name{${css(tl, C.text)}}
 .cf-roaster{${css(pl, C.muted)};margin-top:4px}
 @media (max-width:599px){
@@ -153,13 +176,13 @@
     document.head.appendChild(style);
 
     const root = document.createElement('div');
-    root.className = 'cf-root';
+    root.className = LINE_ONLY ? 'cf-root cf-line' : 'cf-root';
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     root.setAttribute('aria-label', 'Coffee');
     root.tabIndex = -1;
-    root.innerHTML = `<canvas class="cf-canvas"></canvas>
-      <div class="cf-labels" aria-hidden="true"></div>
+    root.innerHTML = `${LINE_ONLY ? '<div class="cf-rule cf-rule-top"></div><div class="cf-rule cf-rule-bottom"></div>' : ''}<canvas class="cf-canvas"></canvas>
+      <div class="cf-labels"${LINE_ONLY ? '' : ' aria-hidden="true"'}></div>
       <div class="lb-nav"><button class="lb-arrow" type="button" aria-label="Previous">${ICON_PREV}</button><div class="lb-count" aria-live="polite"></div><button class="lb-arrow" type="button" aria-label="Next">${ICON_NEXT}</button></div>
       <div class="cf-caption" aria-live="polite"><div class="cf-title"></div><p class="cf-review"></p></div>
       <button class="lb-close lb-show" type="button">Close</button>`;
@@ -338,11 +361,35 @@
       el.className = 'cf-label'; name.className = 'cf-name'; roaster.className = 'cf-roaster';
       name.textContent = c.name || '';
       roaster.textContent = c.roaster || '';
+      if (LINE_ONLY) {
+        // the zoomed-in caption's text, under the bag on the line: "<coffee> by <roaster>" and the review
+        el.classList.add('cf-full');
+        name.className = 'cf-title'; roaster.className = 'cf-review';
+        // the coffee links to its page and the roaster to its site, hidden in the words, as in the zoomed-in caption
+        const link = (text, url) => {
+          if (!url) return text || '';
+          const a = document.createElement('a');
+          a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = text || '';
+          return a;
+        };
+        name.textContent = '';
+        name.append(link(c.name, c.url));
+        if (c.roaster) { const by = document.createElement('span'); by.className = 'cf-by'; by.textContent = ' by '; name.append(by, link(c.roaster, c.roasterUrl)); }
+        roaster.textContent = c.review || '';
+      }
       el.append(name, roaster);
       el.style.opacity = '0';
       labelsEl.appendChild(el);
       return el;
     });
+
+    const xs = [];
+    const cells = LINE_ONLY ? Array.from({ length: n + 1 }, () => {
+      const d = document.createElement('div');
+      d.className = 'cf-cell';
+      labelsEl.appendChild(d);
+      return d;
+    }) : [];
 
     function makeBag(c) {
       const b = c.bag || {};
@@ -403,9 +450,50 @@
     // on phones the bag in the middle fills most of the width, with half of each neighbour at the screen's edges
     const spot = (i) => {
       const v = view(), ph = phone();
-      const gap = ph ? v.w / 2 : v.h * LINE * GAP, size = ph ? Math.min(v.w * 0.7, v.h * LINE_PHONE) : v.h * LINE;
+      const gap = ph ? v.w / 2 : LINE_ONLY ? CELL * v.h / (canvas.clientHeight || 1) : v.h * LINE * GAP, size = ph ? Math.min(v.w * 0.7, v.h * LINE_PHONE) : v.h * LINE;
+      if (LINE_ONLY && frm) return { x: (i - pos) * frm.gap, y: frm.y, z: 0, size: frm.size, gap: frm.gap };
       return { x: (i - pos) * gap, y: H0 / 2 + v.h * 0.03, z: 0, size, gap };
     };
+    // line only: each bag's cell, between the lines (the top one as far below Close as Close is from the top, the bottom
+    // one as far up), holds two frames with 32px padding: the text at the bottom (32px in from the sides and the bottom
+    // line) and, 32px above it, the bag (32px in from the sides and the top line), sized to fit its frame. Every cell
+    // takes the tallest text, so the bags all come out the same size.
+    const PAD_WIDE = 64; // 32 tried first, Nov 7; the text keeps 32 above the bottom line (phones: 32, and 16 at the bottom)
+    let frm = null;
+    function frame() {
+      const w = canvas.clientWidth, h = canvas.clientHeight, v = view(), unit = v.h / h; // world units per px
+      // the lines: the top one as far below Close as Close is from the top (32px on computers, 16px on phones), the
+      // bottom one as far up from the bottom as Close is from the top
+      const root = canvas.parentElement, cr = root.querySelector('.lb-close')?.getBoundingClientRect();
+      const edge = cr && cr.height ? cr.top : phone() ? 16 : 32;
+      const line = Math.round(2 * edge + (cr && cr.height ? cr.height : 40)), lineBottom = Math.round(edge);
+      root.style.setProperty('--cf-line-y', line + 'px');
+      root.style.setProperty('--cf-line-bottom', lineBottom + 'px');
+      // phones: each box is the screen less 32px each side (the neighbours show at the edges), with 32px padding
+      const ph = phone(), PAD = ph ? 32 : PAD_WIDE, PAD_BOTTOM = ph ? 16 : 32;
+      const gapPx = ph ? Math.max(200, w - 64) : CELL, textW = Math.max(120, Math.round(gapPx - 2 * PAD));
+      labels.forEach((l) => { l.style.width = textW + 'px'; });
+      const textH = Math.max(0, ...labels.map((l) => l.offsetHeight));
+      const textBottom = h - lineBottom - PAD_BOTTOM;                       // px from the top
+      const top = line + PAD, bottom = textBottom - textH - PAD;
+      const frameH = Math.max(40, bottom - top), frameW = Math.max(40, gapPx - 2 * PAD);
+      // the widest a bag gets turning round, as a share of its fitted size
+      const wide = Math.max(...bags.map((b) => Math.hypot(b.W, b.D) / Math.max(b.H, b.W * 0.8, b.D * 0.8)));
+      const sizePx = Math.min(frameH, frameW / wide);
+      // the camera looks a little down at the bags, so a first guess is measured through it (the bag's top and bottom
+      // at its front) and corrected, twice, until it fills the frame and sits in its middle
+      let size = sizePx * unit, y = H0 / 2 + (h / 2 - (top + frameH / 2)) * unit;
+      for (let k = 0; k < 2; k++) {
+        const z = size * 0.18;
+        const pTop = ((1 - v3.set(0, y + size / 2, z).project(camera).y) / 2) * h;
+        const pBot = ((1 - v3.set(0, y - size / 2, z).project(camera).y) / 2) * h;
+        size *= sizePx / Math.max(1, pBot - pTop);
+        y += ((pTop + pBot) / 2 - (top + frameH / 2)) * unit;
+      }
+      // the box's width measured where the bags stand (the camera looks a little down, so it isn't the screen's middle scale)
+      const a = v3.set(0, y, 0).project(camera).x, b = v3.set(1, y, 0).project(camera).x;
+      frm = { y, size, textBottom, w, h, gap: gapPx / Math.max(1e-6, ((b - a) / 2) * w) };
+    }
     const slide = () => view().w * 0.3; // how far bags slide when switching with ‹ ›
     // zoomed in: as big as FRONT allows, but always clear of the switcher and the caption (24px from each, 32px on
     // phones), and centred in the space between them
@@ -434,6 +522,10 @@
     function layout() {
       let moving = false;
       const w = canvas.clientWidth, h = canvas.clientHeight, all = everyReady();
+      if (LINE_ONLY && (!frm || frm.w !== w || frm.h !== h)) {
+        frame(); // only on open and resize: it measures the text
+        if (fitsAll()) pos = target = (n - 1) / 2; else pos = target = Math.max(0, Math.min(n - 1, target));
+      }
       bags.forEach((b, i) => {
         const t = goal(b, i);
         if (!b.cur || !placed) b.cur = { ...t };
@@ -452,10 +544,24 @@
         b.holder.visible = all && b.cur.s > 0.002 && b.cur.o > 0.01 && Math.abs(b.cur.x) < view().w;
         // its name and roaster, pinned under its place on the line, so they fade where they are
         const g = spot(i);
-        v3.set(g.x, g.y - g.size / 2 - 0.14, g.z).project(camera);
-        labels[i].style.transform = `translate(${((v3.x + 1) / 2) * w}px, ${((1 - v3.y) / 2) * h}px) translate(-50%, 0)`;
+        v3.set(g.x, LINE_ONLY ? g.y : g.y - g.size / 2 - 0.14, g.z).project(camera); // line only: at the bag's middle, where the 520px is measured
+        // line only: the text's frame sits 32px above the bottom line, under its bag
+        labels[i].style.transform = LINE_ONLY && frm
+          ? `translate(${((v3.x + 1) / 2) * w}px, ${frm.textBottom}px) translate(-50%, -100%)`
+          : `translate(${((v3.x + 1) / 2) * w}px, ${((1 - v3.y) / 2) * h}px) translate(-50%, 0)`;
         labels[i].style.opacity = all && focus < 0 && Math.abs(g.x) < view().w ? '1' : '0';
+        xs[i] = ((v3.x + 1) / 2) * w;
       });
+      // line only: a line on both sides of every bag, halfway to its neighbours (as far again past the first and last),
+      // between the top and bottom lines; drawn here, in the same frame as the bags, so they never trail behind
+      if (LINE_ONLY && frm) {
+        const step = n > 1 ? (xs[n - 1] - xs[0]) / (n - 1) : w;
+        for (let k = 0; k <= n; k++) {
+          const x = k === 0 ? xs[0] - step / 2 : k === n ? xs[n - 1] + step / 2 : (xs[k - 1] + xs[k]) / 2;
+          cells[k].style.transform = `translateX(${Math.round(x * 2) / 2}px)`;
+          cells[k].style.opacity = all ? '1' : '0';
+        }
+      }
       placed = true;
       // opening: each bag grows from a little smaller and turns from its side into its rest (from when it's ready)
       bags.forEach((b, i) => {
@@ -511,11 +617,20 @@
       }
       return null;
     };
+    // just the bag itself, not its column (line only: what a drag turns)
+    const body = (e) => {
+      const r = canvas.getBoundingClientRect();
+      ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+      const found = ray.intersectObjects(bags.filter((b) => b.holder.visible).map((b) => b.pivot), true)[0];
+      for (let o = found && found.object; o; o = o.parent) { const b = bags.find((t) => t.pivot === o); if (b) return b; }
+      return null;
+    };
     canvas.addEventListener('pointerdown', (e) => {
       if (e.button) return;
       try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
-      const b = hit(e);
-      drag = { on: b, turning: b && b === focused(), x: e.clientX, y: e.clientY, moved: 0, touch: e.pointerType !== 'mouse' };
+      const b = LINE_ONLY ? body(e) : hit(e);
+      drag = { on: b, turning: b && (LINE_ONLY || b === focused()), x: e.clientX, y: e.clientY, moved: 0, touch: e.pointerType !== 'mouse' };
+      if (LINE_ONLY && b) b.turned = true;
       glide = 0;
       if (drag.turning) { b.spin = 0; canvas.style.cursor = 'grabbing'; }
       kick();
@@ -525,10 +640,10 @@
       pointerX = (e.clientX - cr.left) / cr.width;
       pointerY = (e.clientY - cr.top) / cr.height;
       if (!drag) {
-        const b = hit(e);
+        const b = LINE_ONLY ? body(e) : hit(e);
         if (hover !== b) { hover = b; dirty = true; }
-        // the bag zoomed in can be grabbed and turned; one on the line opens with a click
-        canvas.style.cursor = !b ? '' : b === focused() ? 'grab' : 'zoom-in';
+        // the bag zoomed in can be grabbed and turned; one on the line opens with a click (line only: turned there)
+        canvas.style.cursor = !b ? '' : (LINE_ONLY || b === focused()) ? 'grab' : 'zoom-in';
         kick();
         return;
       }
@@ -553,7 +668,7 @@
       drag = null;
       canvas.style.cursor = '';
       if (!d.turning && d.moved < 6) {
-        if (d.on) focusOn(bags.indexOf(d.on));
+        if (d.on) { if (!LINE_ONLY) focusOn(bags.indexOf(d.on)); }
         // a click on nothing goes back from a bag zoomed in; on the line it closes, like the lightbox
         else if (!unfocus()) onOutside();
       } else if (d.touch && !d.turning && focus < 0 && performance.now() - (d.t || 0) < 80) {
@@ -573,7 +688,9 @@
       dirty = true;
       kick();
     }, { passive: false });
-    const clampPos = (p) => Math.max(0, Math.min(n - 1, p));
+    // line only: when every box fits on the screen, the line sits centred and doesn't scroll
+    const fitsAll = () => LINE_ONLY && frm && n * frm.gap <= view().w;
+    const clampPos = (p) => (fitsAll() ? (n - 1) / 2 : Math.max(0, Math.min(n - 1, p)));
 
     let lastFocus = null;
     const report = () => { if (focus !== lastFocus) { lastFocus = focus; onState(focus); } };
@@ -634,7 +751,7 @@
         if (Math.abs(b.pitch) > 0.0005) { b.pitch *= 0.88; moving = true; } else b.pitch = 0;
         // on the line, a bag turns back to its rest the short way round; hovered, it turns to face you (its front
         // square on), following the pointer only slightly
-        if (b !== focused() && Math.abs(b.spin) <= 0.0003) {
+        if (b !== focused() && Math.abs(b.spin) <= 0.0003 && !b.turned) {
           const aim = hover === b && focus < 0 ? (pointerX - 0.5) * 0.25 : b.rest;
           const d = Math.atan2(Math.sin(aim - b.yaw), Math.cos(aim - b.yaw));
           if (Math.abs(d) > 0.002) { b.yaw += d * 0.1; moving = true; }
@@ -672,6 +789,9 @@
           placed = false;
         }
         // opening: the bags play it together, now if their faces are in, or once they are
+        bags.forEach((t) => { t.turned = false; });
+        frm = null; // measured again on open, and once more when the fonts and lines have settled
+        setTimeout(() => { frm = null; dirty = true; kick(); }, 400);
         if (everyReady()) bags.forEach(intro);
         addEventListener('resize', onResize);
         frameCamera();
