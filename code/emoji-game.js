@@ -9,16 +9,29 @@
   window.__emojiGame = true;
   /* The coin counter sits on the shop's right edge. It used to be pinned to the right of its row, which matched in the
      old 256px sidebar; on the one-column Home (Nov 6, 2026) the row is four columns wide, so the play column (shop and
-     counter) is capped at 360px and the counter follows the shop's right edge. */
+     counter) is capped and the counter follows the shop's right edge. The cap was 360px (about two of the header's six
+     grid columns); since Nov 9, 2026 it's three columns, measured from the header's grid so it follows the page's
+     width (360px where there's no grid of at least three columns, as on phones). The intro block holding the game
+     spans two columns on computers, so while playing it spans three (its text is hidden then); see .fx-playing. */
   (() => {
-    const PLAY_MAX = 360;
+    const PLAY_COLS = 3;
+    const playMax = (row, pl, pr) => {
+      const grid = row.closest('[data-framer-name="Header Content"]');
+      if (!grid) return 360;
+      const g = getComputedStyle(grid);
+      const cols = g.gridTemplateColumns.split(' ').map(parseFloat).filter(n => n > 0);
+      if (cols.length < PLAY_COLS) return 360;
+      return cols[0] * PLAY_COLS + (parseFloat(g.columnGap) || 0) * (PLAY_COLS - 1) - pl - pr;
+    };
     const place = () => document.querySelectorAll('.fx-score').forEach(s => {
       const row = s.parentElement;
       if (!row) return;
       const cs = getComputedStyle(row);
       const pl = parseFloat(cs.paddingLeft) || 0, pr = parseFloat(cs.paddingRight) || 0;
+      const max = playMax(row, pl, pr);
+      row.style.setProperty('--fx-play-max', max + 'px');   // the shop's cap, below
       s.style.right = 'auto';
-      s.style.left = (pl + Math.min(row.clientWidth - pl - pr, PLAY_MAX)) + 'px';
+      s.style.left = (pl + Math.min(row.clientWidth - pl - pr, max)) + 'px';
       s.style.transform = 'translateX(-100%)';
     });
     new MutationObserver(place).observe(document.documentElement, { childList: true, subtree: true });
@@ -142,7 +155,8 @@
       .fx-game :is([data-framer-name="Hero"],[data-framer-name="Header Content"]) :is([data-framer-name="Footer"],[data-framer-name="Links"]){pointer-events:none !important;}
       .fx-game-full :is([data-framer-name="Hero"],[data-framer-name="Header Content"]) :is([data-framer-name="Footer"],[data-framer-name="Links"]){display:none !important;}
       .fx-play > :not(.fx-av):not(.fx-shop):not(.fx-score):not(:has(.fx-av)){display:none !important;}
-      .fx-shop{display:flex;flex-direction:column;gap:10px;align-self:stretch;width:100%;max-width:360px;box-sizing:border-box;
+      .fx-playing [data-framer-name="Header Content"] > :has(.fx-av){grid-column:span 3 !important;}   /* the game gets three columns */
+      .fx-shop{display:flex;flex-direction:column;gap:10px;align-self:stretch;width:100%;max-width:var(--fx-play-max,360px);box-sizing:border-box;
         ${font('small', '14px', '22px', 425)}color:${C.dark};}
       .fx-up{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:8px;
         transition:padding-bottom .4s cubic-bezier(.45,0,.2,1);}
