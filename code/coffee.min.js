@@ -1,5 +1,5 @@
 /*  Coffee, since Nov 7, 2026 (line only): the bags stand in a line in the site's lines style, each in a box of its own
-    (540px wide; on phones the screen less 32px each side) between a line under Close and one near the bottom, with
+    (540px wide; on phones the screen less 32px each side) between a line under Close and one near the bottom (the bands outside them in Page Deep, as the site's header and footer), with
     its title ("<coffee> by <roaster>", both linked) and review under it. Each box has two frames with 64px padding
     at the sides (32px on phones): the text, 32px above the bottom line, and the bag above it (at least 64px above and
     below, 32px on phones), sized to fit but at most 400px tall on computers, centred in its frame; every box takes the
@@ -52,6 +52,7 @@
     muted: 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2, #726555)',  // Dark Grey
     soft: 'var(--token-TcxaN9CXT, rgb(118, 105, 88))',
     surface: 'var(--token-G7BejTTJn, rgb(253, 252, 251))',                 // Page (line only: the view's background)
+    deep: 'var(--token-xUkx1l4mD, rgb(251, 249, 247))',                    // Page Deep (line only: the bands above and below the lines, as the site's header and footer)
     stroke: 'var(--token-f682623a-bc5f-4262-bc82-733e13a97122, rgba(0, 0, 0, 0.15))', // Stroke (line only: the lines)                     // Dark Grey 10 ("by" and the review, Nov 7)
   };
   // the site's Framer text styles, by id (data-styles-preset), and what to use when the page doesn't have one
@@ -160,6 +161,9 @@
 .cf-root.cf-line{background:${C.surface}}
 .cf-rule{position:absolute;left:0;right:0;height:0.5px;background:${C.stroke};pointer-events:none}
 .cf-rule-top{top:var(--cf-line-y,104px)}
+.cf-band{position:absolute;left:0;right:0;background:${C.deep};pointer-events:none}
+.cf-band-top{top:0;height:var(--cf-line-y,104px)}
+.cf-band-bottom{bottom:0;height:var(--cf-line-bottom,32px)}
 .cf-rule-bottom{bottom:var(--cf-line-bottom,32px)}
 .cf-label{position:absolute;left:0;top:0;white-space:nowrap;text-align:center;transition:opacity .15s ease}
 .cf-label.cf-full{white-space:normal;box-sizing:border-box}
@@ -182,7 +186,7 @@
     root.setAttribute('aria-modal', 'true');
     root.setAttribute('aria-label', 'Coffee');
     root.tabIndex = -1;
-    root.innerHTML = `${LINE_ONLY ? '<div class="cf-rule cf-rule-top"></div><div class="cf-rule cf-rule-bottom"></div>' : ''}<canvas class="cf-canvas"></canvas>
+    root.innerHTML = `${LINE_ONLY ? '<div class="cf-band cf-band-top"></div><div class="cf-band cf-band-bottom"></div><div class="cf-rule cf-rule-top"></div><div class="cf-rule cf-rule-bottom"></div>' : ''}<canvas class="cf-canvas"></canvas>
       <div class="cf-labels"${LINE_ONLY ? '' : ' aria-hidden="true"'}></div>
       <div class="lb-nav"><button class="lb-arrow" type="button" aria-label="Previous">${ICON_PREV}</button><div class="lb-count" aria-live="polite"></div><button class="lb-arrow" type="button" aria-label="Next">${ICON_NEXT}</button></div>
       <div class="cf-caption" aria-live="polite"><div class="cf-title"></div><p class="cf-review"></p></div>
