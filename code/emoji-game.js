@@ -107,7 +107,7 @@
 
     const css = document.createElement('style');
     css.textContent = `
-      .fx-av-emoji{position:absolute;inset:0;display:grid;place-items:center;font-size:32px;line-height:1;
+      .fx-av-emoji{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;line-height:1;   /* as big as the 40px avatar, so it lines up with the text below (32px until Nov 9, 2026) */
         opacity:0;scale:.5;transition:opacity .2s ease,scale .3s cubic-bezier(.3,1.6,.5,1);
         pointer-events:none;user-select:none;}
       .fx-av{cursor:pointer;touch-action:none;}
@@ -138,7 +138,10 @@
       .fx-rarity[data-tier="4"]{filter:drop-shadow(0 0 10px rgba(242,201,76,.55));}
       @keyframes fx-wave{from{background-position:125% 0}to{background-position:-125% 0}}
       .fx-body.fx-pop{animation:fx-pop .45s cubic-bezier(.3,1.6,.5,1);}
-      .fx-score{position:absolute;right:0;top:calc(20px - var(--fx-body-lh,26px) / 2);${font('body', '16px', '26px', 425)}
+      .fx-score{position:absolute;right:0;top:0;height:40px;box-sizing:border-box;display:inline-flex;align-items:center;
+        padding:0 14px;   /* the price buttons' inset, so the balance's text ends where their prices do (a grey pill, tried
+                             Nov 9, 2026, read as one more button) */
+        ${font('body', '16px', '26px', 425)}
         color:${C.dark};font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none;
         opacity:0;translate:0 -6px;scale:.6;transform-origin:100% 50%;
         transition:opacity .35s ease,translate .5s cubic-bezier(.3,1.6,.5,1),scale .5s cubic-bezier(.3,1.6,.5,1);}
@@ -163,7 +166,7 @@
       .fx-up.fx-has-bar{padding-bottom:18px;}   /* room for the progress line, so the gap to the next row stays the same */
       .fx-up-name{${font('title', '15px', '23px', 550)}}   /* Auto-drop, Luck: the site's Title style, read from the name in the header */
       .fx-up-lvl{color:${C.grey};}
-      .fx-up-info{color:${C.grey};font-size:var(--fx-small-size,14px);line-height:var(--fx-small-lh,22px);font-variant-numeric:tabular-nums;}
+      .fx-up-info{color:var(--token-TcxaN9CXT,rgb(118,105,88));font-size:var(--fx-small-size,14px);line-height:var(--fx-small-lh,22px);font-variant-numeric:tabular-nums;}   /* Dark Grey 10, as the Back and Mute links (Dark Grey 20 until Nov 9, 2026) */
       /* the shop's buttons look like the site's Primary button: fill, line, shadow, hover, label style (button), 14px sides */
       .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:40px;padding:0 14px;border-radius:999px;background:${C.button};box-shadow:${C.buttonEdge};
         ${font('strong', '14px', '40px', 525)}line-height:40px;color:${C.dark};
