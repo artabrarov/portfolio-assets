@@ -61,3 +61,14 @@ It's drawn from the site's Framer styles: the White, Black, Dark Grey and Backgr
 | `coffee.min.js` | Build loaded by Framer → Site Settings → Custom Code (end of body), after the lightbox: `<script src="https://artabrarov.github.io/portfolio-assets/code/coffee.min.js" defer></script>` |
 
 Rebuild: `npx esbuild code/coffee.js --minify --target=es2020 > code/coffee.min.js`
+
+## Reveal
+
+The opening animation on every page. As a page opens, the header's items rise 12px and fade in one after another, then each card (Surface) and each image or video in it rises 20px and fades in, the ones below the screen as you scroll to them; anything you jump past shows at once, and the footer is left alone. One strong ease-out, `cubic-bezier(.165,.84,.44,1)`, with a small blur clearing as things rise (4px, 2px on the header). Only the first page of a visit gets the full reveal (0.6–0.7s, 60–70ms apart); pages opened after it play a quick one (0.25–0.3s, 30ms apart). It survives Framer swapping elements while it builds a page: each spot remembers when its reveal began. Reduced motion turns it off, and so does `?intro=off` (for the visit; `?intro=on` brings it back). If the file fails to load, nothing is hidden.
+
+It finds things by their Framer layer names: Header Content, Body, Surface, Media, Image Frame, Image and Video Frame. Renaming one in Framer turns the animation off for it, nothing worse.
+
+| File | What it is |
+|---|---|
+| `reveal.js` | Source and build in one (no minified copy; it's 7KB). Loaded by Framer → Site Settings → Custom Code (**end of head**, so it can hide things before the first paint): `<script src="https://artabrarov.github.io/portfolio-assets/code/reveal.js"></script>` |
+
