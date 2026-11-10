@@ -16,6 +16,7 @@
     left hidden. If this file fails to load, nothing is hidden at all.
     Depends on Framer layer names: Header Content, Body, Surface, Media, Image Frame, Image, Video Frame. Renaming one
     turns the animation off for it (harmless). ?intro=off turns it off for the visit, ?intro=on back on.
+    Between Home, /lab and /about (the header switch's tabs) only the body reveals; the header stays as it is.
     Reduced motion: no animation. */
 (() => {
   const asked = new URLSearchParams(location.search).get('intro');
@@ -69,7 +70,10 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
   const at = new Map();            // "path#position" -> when its reveal starts (performance.now(), ms)
   const key = (i) => location.pathname + '#' + i;
   const watched = new WeakSet();
-  let io = null, opened = null;
+  let io = null, opened = null, quietHead = false;
+  // Home, /lab and /about are the tabs of the header's Work · Lab · About switch and share one header, so moving
+  // between them only reveals the body: the header stays put, as a tab switch should (Nov 10, 2026)
+  const TAB = /^\/(lab|about)?\/?$/;
 
   // mark each element whose spot has a start time, with the delay that makes it play from the right moment
   const sync = () => {
@@ -78,7 +82,7 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
     list().forEach((el, i) => {
       const k = key(i);
       // a header item that arrived after the page opened reveals now rather than staying hidden
-      if (!at.has(k) && isHead(el) && opened === location.pathname) at.set(k, now);
+      if (!at.has(k) && isHead(el) && opened === location.pathname) at.set(k, quietHead ? now - 10000 : now);
       if (at.has(k)) {
         const d = ((at.get(k) - now) / 1000).toFixed(3) + 's';
         // a spot whose reveal is long over just shows (data-rv="done": no animation at all)
@@ -95,11 +99,14 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
   };
   // a page opens (first load, or Framer moved to another page): the header in sequence, then what's on screen
   function open() {
+    const from = opened;
     opened = location.pathname;
+    quietHead = from !== null && TAB.test(from) && TAB.test(opened);
     for (const k of [...at.keys()]) if (k.startsWith(opened + '#')) at.delete(k);   // a page seen before plays again
     list().forEach((el) => el.removeAttribute('data-rv'));
     const all = list().filter(visible);
-    reveal(all.filter(isHead), T.HEAD_START, T.HEAD_STEP);
+    if (quietHead) { const now = performance.now(); all.filter(isHead).forEach((el) => at.set(key(list().indexOf(el)), now - 10000)); }
+    else reveal(all.filter(isHead), T.HEAD_START, T.HEAD_STEP);
     const onScreen = (el) => { const r = el.getBoundingClientRect(); return r.top < innerHeight * 0.95 && r.bottom > 0; };
     reveal(all.filter((el) => !isHead(el) && onScreen(el)), T.BODY_START, T.BODY_STEP);
   }
