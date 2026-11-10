@@ -928,7 +928,7 @@
 
     /* avatar */
     const seen = new WeakSet();
-    const onHome = () => location.pathname === '/' || location.pathname === '';   // the game lives on the homepage only
+    const onHome = () => /^\/(lab\/?|about\/?)?$/.test(location.pathname) || location.pathname === '';   // the game lives on the homepage only
     const scan = () => onHome() && document.querySelectorAll(':is([data-framer-name="Hero"],[data-framer-name="Header Content"]) img').forEach(img => {
       const r = img.getBoundingClientRect();
       if (!r.width || r.width > 48) return;
