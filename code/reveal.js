@@ -34,6 +34,8 @@
   const blur = 1;
 
   const HEAD = '[data-framer-name="Header Content"] > * > *';
+  // the emoji game's own pieces in the header (its shop and coin balance) are the game's to animate, never the reveal's
+  const GAME = '.fx-shop, .fx-score';
   const IN = '[data-framer-name="Body"]';
   const BODY = ['Surface', 'Image Frame', 'Video Frame'].map((n) => `${IN} [data-framer-name="${n}"]`)
     .concat('[data-framer-name="Media"] [data-framer-name="Image"]').join(', ');
@@ -44,17 +46,18 @@
   style.textContent = `
 @keyframes rv-head { from { opacity: 0; transform: translateY(12px); filter: blur(${2 * blur}px); } }
 @keyframes rv-body { from { opacity: 0; transform: translateY(20px); filter: blur(${4 * blur}px); } }
-html.rv :is(${HEAD}):not(.fx-score):not([data-rv]), html.rv :is(${BODY}):not([data-rv]) { opacity: 0; }
-html.rv :is(${HEAD})[data-rv] { animation: rv-head ${s(FULL.HEAD_DUR)} ${ease} var(--rv-delay, 0s) backwards; }
-html.rv :is(${BODY})[data-rv] { animation: rv-body ${s(FULL.BODY_DUR)} ${ease} var(--rv-delay, 0s) backwards; }
-html.rv.rv-quick :is(${HEAD})[data-rv] { animation-duration: ${s(QUICK.HEAD_DUR)}; }
-html.rv.rv-quick :is(${BODY})[data-rv] { animation-duration: ${s(QUICK.BODY_DUR)}; }
+html.rv :is(${HEAD}):not(${GAME}):not([data-rv]), html.rv :is(${BODY}):not([data-rv]) { opacity: 0; }
+html.rv :is(${HEAD}):not(${GAME})[data-rv=""] { animation: rv-head ${s(FULL.HEAD_DUR)} ${ease} var(--rv-delay, 0s) backwards; }
+html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(FULL.BODY_DUR)} ${ease} var(--rv-delay, 0s) backwards; }
+html.rv.rv-quick :is(${HEAD})[data-rv=""] { animation-duration: ${s(QUICK.HEAD_DUR)}; }
+html.rv.rv-quick :is(${BODY})[data-rv=""] { animation-duration: ${s(QUICK.BODY_DUR)}; }
 `;
   document.head.appendChild(style);
   document.documentElement.classList.add('rv');
 
   const visible = (el) => el.offsetWidth > 0 || el.offsetHeight > 0;
-  const list = () => [...document.querySelectorAll(ALL)].filter((el) => !el.classList.contains('fx-score'));
+  const list = () => [...document.querySelectorAll(ALL)].filter((el) => !el.matches(GAME));
+  const DONE_MS = FULL.HEAD_DUR * 1000 + 100;   // longer than any reveal
   const isHead = (el) => el.matches(HEAD);
   const at = new Map();            // "path#position" -> when its reveal starts (performance.now(), ms)
   const key = (i) => location.pathname + '#' + i;
@@ -71,7 +74,8 @@ html.rv.rv-quick :is(${BODY})[data-rv] { animation-duration: ${s(QUICK.BODY_DUR)
       if (!at.has(k) && isHead(el) && opened === location.pathname) at.set(k, now);
       if (at.has(k)) {
         const d = ((at.get(k) - now) / 1000).toFixed(3) + 's';
-        if (!el.hasAttribute('data-rv')) { el.style.setProperty('--rv-delay', d); el.setAttribute('data-rv', ''); }
+        // a spot whose reveal is long over just shows (data-rv="done": no animation at all)
+        if (!el.hasAttribute('data-rv')) { el.style.setProperty('--rv-delay', d); el.setAttribute('data-rv', now - at.get(k) > DONE_MS ? 'done' : ''); }
       } else if (io && !watched.has(el)) { watched.add(el); io.observe(el); }
     });
   };
@@ -94,6 +98,11 @@ html.rv.rv-quick :is(${BODY})[data-rv] { animation-duration: ${s(QUICK.BODY_DUR)
     reveal(all.filter((el) => !isHead(el) && onScreen(el)), T.BODY_START, T.BODY_STEP);
   }
 
+  // once an element's reveal has played, retire it: hiding and showing it again (the game hides the intro while you
+  // play, Framer re-renders things) would otherwise restart the animation
+  document.addEventListener('animationend', (e) => {
+    if (/^rv-/.test(e.animationName) && e.target.getAttribute && e.target.getAttribute('data-rv') === '') e.target.setAttribute('data-rv', 'done');
+  }, true);
   const begin = () => {
     io = new IntersectionObserver((entries) => {
       const seen = entries.filter((e) => e.isIntersecting && e.target.isConnected && !e.target.hasAttribute('data-rv')).map((e) => e.target);
