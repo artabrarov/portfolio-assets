@@ -12,7 +12,9 @@
      counter) is capped and the counter follows the shop's right edge. The cap was 360px (about two of the header's six
      grid columns); since Nov 9, 2026 it's three columns, measured from the header's grid so it follows the page's
      width (360px where there's no grid of at least three columns, as on phones). The intro block holding the game
-     spans two columns on computers, so while playing it spans three (its text is hidden then); see .fx-playing. */
+     spans two columns on computers, so while playing it spans three; see .fx-wide. The switch happens while nothing in
+     it can reflow: on opening, the intro keeps its width while it fades out; on closing, the column narrows only once
+     the shop has faded out (Nov 10, 2026: the text used to jump from two columns to three for a moment). */
   (() => {
     const PLAY_COLS = 3;
     const playMax = (row, pl, pr) => {
@@ -158,7 +160,7 @@
       .fx-game :is([data-framer-name="Hero"],[data-framer-name="Header Content"]) :is([data-framer-name="Footer"],[data-framer-name="Links"]){pointer-events:none !important;}
       .fx-game-full :is([data-framer-name="Hero"],[data-framer-name="Header Content"]) :is([data-framer-name="Footer"],[data-framer-name="Links"]){display:none !important;}
       .fx-play > :not(.fx-av):not(.fx-shop):not(.fx-score):not(:has(.fx-av)){display:none !important;}
-      .fx-playing [data-framer-name="Header Content"] > :has(.fx-av){grid-column:span 3 !important;}   /* the game gets three columns */
+      .fx-wide [data-framer-name="Header Content"] > :has(.fx-av){grid-column:span 3 !important;}   /* the game gets three columns (see openShop) */
       .fx-shop{display:flex;flex-direction:column;gap:10px;align-self:stretch;width:100%;max-width:var(--fx-play-max,360px);box-sizing:border-box;
         ${font('small', '14px', '22px', 425)}color:${C.dark};}
       .fx-up{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:8px;
@@ -749,13 +751,20 @@
     const visibleAvatar = () => [...document.querySelectorAll('.fx-av')].find(a => a.offsetWidth > 0) || avatarEl;
     const introOf = (row, anchor) => [...row.children].filter(c => c !== anchor && c !== shopEl && !c.classList.contains('fx-score'));
 
+    // the play column is three grid columns wide (.fx-wide); the intro keeps the width it had, so its text never reflows
+    let frozen = [];
+    const freeze = els => { frozen = els; els.forEach(el => { el.style.maxWidth = el.offsetWidth + 'px'; }); };
+    const unfreeze = () => { frozen.forEach(el => { el.style.maxWidth = ''; }); frozen = []; };
+    let narrowTimer = 0;
     function openShop() {
       avatarEl = visibleAvatar();
       if (!shopEl || !avatarEl) return;
       playing = true;
-      document.body.classList.add('fx-game', 'fx-playing');
+      clearTimeout(narrowTimer);
       const { col: row, anchor } = slotOf(avatarEl);
       const intro = introOf(row, anchor), foot = footerOf();
+      if (!document.body.classList.contains('fx-wide')) freeze(intro);
+      document.body.classList.add('fx-game', 'fx-playing', 'fx-wide');
       // 1) intro + footer links fade out
       [...intro, foot].filter(Boolean).forEach(el => fadeOut(el));
       // 2) intro and footer close while the shop opens — one continuous height change
@@ -792,8 +801,10 @@
 
       avatarEl = visibleAvatar();
       const { col: row, anchor } = slotOf(avatarEl);
-      // 1) shop content fades out
+      // 1) shop content fades out, and only then does the column go back to two grid columns
       fadeOut(shopEl);
+      clearTimeout(narrowTimer);
+      narrowTimer = setTimeout(() => { if (!playing) document.body.classList.remove('fx-wide'); }, FADE);
       // 2) shop closes while the intro and footer links reopen (still invisible)
       document.querySelectorAll('.fx-play').forEach(c => c.classList.remove('fx-play'));   // every breakpoint's copy
       document.body.classList.remove('fx-game-full');
@@ -802,7 +813,10 @@
       [...intro, foot].filter(Boolean).forEach((el, i) => {
         grow(el, FADE);
         // 3) then fade back in
-        fadeIn(el, FADE + SWAP - 120 + i * 60).finished.then(() => el === foot && document.body.classList.remove('fx-game'));
+        fadeIn(el, FADE + SWAP - 120 + i * 60).finished.then(() => {
+          if (el === foot) document.body.classList.remove('fx-game');
+          if (!playing && i === 0) unfreeze();            // back at two columns: its own width again
+        });
       });
       if (!foot) document.body.classList.remove('fx-game');
     }
@@ -821,7 +835,9 @@
       if (scoreEl) scoreEl.classList.remove('fx-show');
       if (shopEl) { settle(shopEl); shopEl.remove(); }
       document.querySelectorAll('.fx-play').forEach(c => c.classList.remove('fx-play'));
-      document.body.classList.remove('fx-game', 'fx-playing', 'fx-game-full');
+      clearTimeout(narrowTimer);
+      unfreeze();
+      document.body.classList.remove('fx-game', 'fx-playing', 'fx-game-full', 'fx-wide');
     }
     function updateShop() {
       if (!shopEl) return;
