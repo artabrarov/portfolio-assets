@@ -145,9 +145,11 @@
                              Nov 9, 2026, read as one more button) */
         ${font('body', '16px', '26px', 425)}
         color:${C.dark};font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none;
-        opacity:0;translate:0 -6px;scale:.6;transform-origin:100% 50%;
-        transition:opacity .35s ease,translate .5s cubic-bezier(.3,1.6,.5,1),scale .5s cubic-bezier(.3,1.6,.5,1);}
-      .fx-score.fx-show{opacity:1;translate:0 0;scale:1;}
+        /* enters and leaves like the shop's rows, a fade and an 8px rise (Nov 10, 2026: it used to pop in from 60% with
+           a bounce, the game's style for moments of play; the balance is steady interface beside the shop) */
+        opacity:0;translate:0 8px;
+        transition:opacity .38s cubic-bezier(.2,.8,.2,1),translate .38s cubic-bezier(.2,.8,.2,1);}
+      .fx-score.fx-show{opacity:1;translate:0 0;}
       .fx-score .fx-pts{margin-left:4px;}
       .fx-score .fx-num{display:inline-block;transform-origin:100% 60%;}
       .fx-back{all:unset;align-self:flex-start;cursor:pointer;color:var(--fx-link-color,${C.grey});
