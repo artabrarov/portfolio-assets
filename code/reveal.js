@@ -71,13 +71,24 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
   const key = (i) => location.pathname + '#' + i;
   const watched = new WeakSet();
   let io = null, opened = null, quietHead = false;
+  // The address changes before the new page is drawn: on a first visit Framer still has to download the page's code
+  // (a second or more), with the old page on screen. Opening then hid and replayed the old header and spent the new
+  // page's start times on it, so the new header's items came in already 'done' (Home → Apron after a hard refresh:
+  // the second paragraph didn't animate). So a page opens when its own Header Content has arrived (a new element),
+  // or 1.5s after the address changed if the element is kept. (Nov 11, 2026)
+  let openedHC = null, waiting = null;
+  const headerContent = () => { const all = [...document.querySelectorAll('[data-framer-name="Header Content"]')]; return all.find(visible) || all[0] || null; };
   // Home, /lab and /about are the tabs of the header's Work · Lab · About switch and share one header, so moving
   // between them only reveals the body: the header stays put, as a tab switch should (Nov 10, 2026)
   const TAB = /^\/(lab|about)?\/?$/;
 
   // mark each element whose spot has a start time, with the delay that makes it play from the right moment
   const sync = () => {
-    if (opened !== location.pathname && document.querySelector('[data-framer-name="Header Content"]')) open();
+    if (opened !== location.pathname) {
+      const hc = headerContent();
+      if (hc && (opened === null || hc !== openedHC || (waiting && waiting.path === location.pathname && performance.now() - waiting.since > 1500))) open(hc);
+      else if (hc && (!waiting || waiting.path !== location.pathname)) { waiting = { path: location.pathname, since: performance.now() }; setTimeout(sync, 1600); }
+    }
     const now = performance.now();
     list().forEach((el, i) => {
       const k = key(i);
@@ -98,7 +109,8 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
       .forEach((el, i) => { const k = key(all.indexOf(el)); if (!at.has(k)) at.set(k, now + (wait + i * step) * 1000); });
   };
   // a page opens (first load, or Framer moved to another page): the header in sequence, then what's on screen
-  function open() {
+  function open(hc) {
+    openedHC = hc; waiting = null;
     const from = opened;
     opened = location.pathname;
     quietHead = from !== null && TAB.test(from) && TAB.test(opened);
