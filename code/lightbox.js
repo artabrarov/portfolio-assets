@@ -8,6 +8,7 @@
     the background or Close to close.
     Keyboard: Tab reaches each image and video, Enter or Space opens it, and focus returns to it on close.
     Media stays in Framer: images open in a bigger version from Framer's image server, videos keep playing from where they were.
+    On /things the photo opens with its grey frame round it (the Thing card's Image layer), so the cut-out keeps its background.
     Also here, as it runs on every page: one keyboard focus ring for the whole site. */
 (() => {
   if (window.__lightbox) return;           // run once, even with Framer's page transitions
@@ -124,7 +125,19 @@
     if (!(e.target instanceof Element) || e.target.closest('a, button, input, [role="button"]')) return null;
     return document.elementsFromPoint(e.clientX, e.clientY).find(zoomable) || null;
   }
-  const ratioOf = el => (el.naturalWidth / el.naturalHeight) || (el.videoWidth / el.videoHeight) || (el.offsetWidth / el.offsetHeight);
+  // a Things card (/things): the photo is a transparent cut-out inset in a grey frame (Thing › Image › Img). The lightbox
+  // opens the whole frame, its fill, stroke and the space round the product included, so the product keeps its background
+  function frameOf(el) {
+    if (!(el instanceof HTMLImageElement)) return null;
+    const f = el.parentElement && el.parentElement.closest('[data-framer-name="Image"]');
+    if (!f || !f.closest('[data-framer-name="Thing"]')) return null;
+    const bg = getComputedStyle(f).backgroundColor;
+    return bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent' ? null : f;
+  }
+  // what the lightbox flies from and back to, and hides on the page while open: the Things frame, or the media itself
+  const spotOf = el => frameOf(el) || el;
+  const ratioOf = el => { const f = frameOf(el); if (f) return f.offsetWidth / f.offsetHeight;
+    return (el.naturalWidth / el.naturalHeight) || (el.videoWidth / el.videoHeight) || (el.offsetWidth / el.offsetHeight); };
   // the media's own box and the ancestors that share it (Framer adds zero-size wrappers in between: skip those)
   function* sameBox(el) {
     const r = el.getBoundingClientRect();
@@ -146,15 +159,21 @@
   }
   // a transparent image sitting in a Framer card (a frame with a fill, a stroke and rounded corners): the card's
   // look, so the lightbox can draw it behind the image. Read from the page, so it follows the colour styles
+  function lookOf(n) {
+    const s = getComputedStyle(n);
+    if (s.backgroundColor === 'rgba(0, 0, 0, 0)' || s.backgroundColor === 'transparent') return null;
+    const a = getComputedStyle(n, '::after');   // Framer draws a frame's stroke on ::after
+    const line = parseFloat(a.borderTopWidth) ? `${a.borderTopWidth} ${a.borderTopColor}`
+      : parseFloat(s.borderTopWidth) ? `${s.borderTopWidth} ${s.borderTopColor}` : '';
+    return { bg: s.backgroundColor, line };
+  }
   function cardOf(el) {
+    const f = frameOf(el);
+    if (f) return lookOf(f);
     for (const n of sameBox(el)) {
       if (n === el) continue;
-      const s = getComputedStyle(n);
-      if (s.backgroundColor === 'rgba(0, 0, 0, 0)' || s.backgroundColor === 'transparent') continue;
-      const a = getComputedStyle(n, '::after');   // Framer draws a frame's stroke on ::after
-      const line = parseFloat(a.borderTopWidth) ? `${a.borderTopWidth} ${a.borderTopColor}`
-        : parseFloat(s.borderTopWidth) ? `${s.borderTopWidth} ${s.borderTopColor}` : '';
-      return { bg: s.backgroundColor, line };
+      const look = lookOf(n);
+      if (look) return look;
     }
     return null;
   }
@@ -195,10 +214,21 @@
 
   // the full screen copy of an image or video
   function makeClone(el) {
-    const video = el instanceof HTMLVideoElement;
-    const clone = document.createElement(video ? 'video' : 'img');
+    const video = el instanceof HTMLVideoElement, frame = frameOf(el);
+    // a Things frame: a box in the frame's look, holding the photo at the same inset (in %, so it scales with the box).
+    // It answers to .src like an image, so sharpening and the full size original work as usual
+    const clone = document.createElement(video ? 'video' : frame ? 'div' : 'img');
     clone.className = 'lb-media';
-    if (video) {
+    if (frame) {
+      const img = document.createElement('img'), r = el.getBoundingClientRect(), q = frame.getBoundingClientRect();
+      const pc = (a, b) => (b ? a / b * 100 : 0) + '%';
+      img.alt = el.alt;
+      img.src = el.complete && el.naturalWidth ? el.currentSrc || el.src : bigSrc(el);
+      Object.assign(img.style, { position: 'absolute', margin: 0, pointerEvents: 'none', objectFit: getComputedStyle(el).objectFit || 'cover',
+        left: pc(r.left - q.left, q.width), top: pc(r.top - q.top, q.height), width: pc(r.width, q.width), height: pc(r.height, q.height) });
+      clone.append(img);
+      Object.defineProperty(clone, 'src', { get: () => img.src, set: v => { img.src = v; } });
+    } else if (video) {
       Object.assign(clone, { muted: true, loop: el.loop, playsInline: true, autoplay: true, poster: el.poster });
       clone.src = el.currentSrc || el.src;
       const start = el.currentTime;
@@ -464,8 +494,8 @@
 
   function openMedia(el, viaPointer = false) {
     if (open) return;
-    const from = el.getBoundingClientRect();
-    const radius = radiusOf(el);
+    const from = spotOf(el).getBoundingClientRect();
+    const radius = radiusOf(spotOf(el));
     const backdrop = document.createElement('div');
     backdrop.className = 'lb-backdrop';
     const clone = makeClone(el), video = clone instanceof HTMLVideoElement;
@@ -475,7 +505,7 @@
     showClose();
     setQuiet(viaPointer);
     closeBtn.focus({ preventScroll: true });
-    el.style.opacity = '0';
+    spotOf(el).style.opacity = '0';
     open = { src: el, clone, backdrop, radius, y: scrollY, z: 1, tx: 0, ty: 0 };
     addEventListener('wheel', onWheel, { passive: false });
     TOUCH.forEach(([t, f, o]) => addEventListener(t, f, o));
@@ -510,10 +540,10 @@
     const { src: prev, clone: old } = open;
     // hand the playhead back to the page clip being left, and show it again
     if (old instanceof HTMLVideoElement) try { prev.currentTime = old.currentTime; } catch (e) {}
-    prev.style.opacity = '';
+    spotOf(prev).style.opacity = '';
     // the page stays still while browsing: closing flies back if this one is on screen, and fades out otherwise
-    next.style.opacity = '0';
-    open = { ...open, src: next, clone, radius: radiusOf(next), z: 1, tx: 0, ty: 0 };
+    spotOf(next).style.opacity = '0';
+    open = { ...open, src: next, clone, radius: radiusOf(spotOf(next)), z: 1, tx: 0, ty: 0 };
     sharpen(next, clone);
     showCount(next);
     showLogo(next, dir);
@@ -571,7 +601,7 @@
   // the full size original from Framer's image server, once zooming in
   function fullRes() {
     const { clone, src } = open;
-    if (clone.dataset.full || !(clone instanceof HTMLImageElement)) return;
+    if (clone.dataset.full || clone instanceof HTMLVideoElement) return;
     clone.dataset.full = '1';
     let url;
     try { url = new URL(src.currentSrc || src.src); } catch (e) { return; }
@@ -723,7 +753,7 @@
     if (logo) logo.classList.remove('lb-show');
     closeBtn.classList.remove('lb-show');
     // fly back only to a spot that's on screen (after browsing with the arrows it may not be)
-    const r = src.isConnected ? src.getBoundingClientRect() : null;
+    const r = src.isConnected ? spotOf(src).getBoundingClientRect() : null;
     const to = r && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth ? r : null;
     const time = REDUCED ? 0 : M.close;
     removeEventListener('wheel', onWheel);
@@ -733,7 +763,7 @@
     const done = () => {
       // hand the video's playhead back, so the page clip carries on from the same frame
       if (clone instanceof HTMLVideoElement && src.isConnected) try { src.currentTime = clone.currentTime; } catch (e) {}
-      clone.remove(); backdrop.remove(); src.style.opacity = '';
+      clone.remove(); backdrop.remove(); spotOf(src).style.opacity = '';
     };
     // keyboard use (opened with Enter, or Tab pressed): focus goes straight back to where the lightbox was, so Tab
     // carries on from there. Opened with the mouse: just let go of focus, so Esc doesn't leave a ring on the image
