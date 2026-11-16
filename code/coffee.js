@@ -43,6 +43,9 @@
   const TILT = 0.2;     // the most a bag tips up or down while dragged, in radians (about 11°)
   const LEAN_Y = 0.22, LEAN_P = 0.12; // how far a bag zoomed in leans towards the pointer (radians, at the window's edge)
   // opening: how much smaller and how far round to the side bags start, over the lightbox's own 300ms and easing
+  // reduced motion (as the lightbox and reveal): no opening turn, no leaning or turning towards the pointer, no
+  // coasting after a fling or a spin, and the line moves to a bag at once; fades stay
+  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const INTRO_SCALE = 0.86, INTRO_TURN = 0.9, INTRO_MS = 300, EASE = [0.32, 0.72, 0, 1];
   // the site's colour styles (Framer tokens), with their values as fallbacks
   const C = {
@@ -146,12 +149,12 @@
       const tl = textStyle('titleLarge'), pl = textStyle('paragraphLarge');
       style.textContent = `
 .cf-root{position:fixed;inset:0;z-index:10002;background:${C.bg};opacity:0;visibility:hidden;
-  transition:opacity .25s ease,visibility 0s linear .25s;-webkit-font-smoothing:antialiased;overscroll-behavior:contain;touch-action:none}
+  transition:opacity .25s cubic-bezier(.165,.84,.44,1),visibility 0s linear .25s;-webkit-font-smoothing:antialiased;overscroll-behavior:contain;touch-action:none}
 .cf-root:focus{outline:none}
-.cf-root.cf-on{opacity:1;visibility:visible;transition:opacity .25s ease}
+.cf-root.cf-on{opacity:1;visibility:visible;transition:opacity .25s cubic-bezier(.165,.84,.44,1)}
 .cf-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .cf-caption{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 48px));text-align:center;
-  transition:opacity .2s ease;pointer-events:none}
+  transition:opacity .2s cubic-bezier(.165,.84,.44,1);pointer-events:none}
 .cf-caption.cf-out{opacity:0}
 .cf-title{${css(title, C.text)}}
 .cf-by{color:${C.soft}}
@@ -165,10 +168,10 @@
 .cf-band-top{top:0;height:var(--cf-line-y,104px)}
 .cf-band-bottom{bottom:0;height:var(--cf-line-bottom,32px)}
 .cf-rule-bottom{bottom:var(--cf-line-bottom,32px)}
-.cf-label{position:absolute;left:0;top:0;white-space:nowrap;text-align:center;transition:opacity .15s ease}
+.cf-label{position:absolute;left:0;top:0;white-space:nowrap;text-align:center;transition:opacity .15s cubic-bezier(.165,.84,.44,1)}
 .cf-label.cf-full{white-space:normal;box-sizing:border-box}
 .cf-cell{position:absolute;left:0;top:var(--cf-line-y,104px);bottom:var(--cf-line-bottom,32px);width:0.5px;
-  background:${C.stroke};transition:opacity .15s ease}
+  background:${C.stroke};transition:opacity .15s cubic-bezier(.165,.84,.44,1)}
 .cf-label.cf-full .cf-review{margin-top:4px}
 .cf-name{${css(tl, C.text)}}
 .cf-roaster{${css(pl, C.muted)};margin-top:4px}
@@ -341,7 +344,7 @@
     let raf = 0, running = false, dirty = true, placed = false, drag = null, glide = 0;
     // a bag's opening: it starts turned towards its side and a little smaller, then settles into its rest
     // its clock starts after the first frame it's drawn in (0 until then), so a slow first frame can't eat it
-    const intro = (b) => { b.introAt = 0; b.yaw = b.rest - INTRO_TURN; b.spin = 0; orient(b); };
+    const intro = (b) => { if (REDUCED) { b.introAt = -1; b.yaw = b.rest; b.spin = 0; orient(b); return; } b.introAt = 0; b.yaw = b.rest - INTRO_TURN; b.spin = 0; orient(b); };
 
     const textures = [];
     let bags = [];
@@ -747,6 +750,7 @@
       raf = 0;
       if (!running) return;
       let moving = false;
+      if (REDUCED) glide = 0;
       if (glide && !drag) {
         target = pos = clampPos(pos + glide);
         glide *= 0.95;
@@ -754,22 +758,23 @@
         moving = true;
       } else if (!drag || drag.turning) {
         const d = target - pos;
-        if (Math.abs(d) > 0.0005) { pos += d * 0.14; moving = true; } else pos = target;
+        if (Math.abs(d) > 0.0005 && !REDUCED) { pos += d * 0.14; moving = true; } else pos = target;
       }
       bags.forEach((b) => {
         if (drag && drag.turning && drag.on === b) return;
         // let go, it keeps turning a little and levels out
+        if (REDUCED) b.spin = 0;
         if (Math.abs(b.spin) > 0.0003) { b.yaw += b.spin; b.spin *= 0.94; moving = true; }
         if (Math.abs(b.pitch) > 0.0005) { b.pitch *= 0.88; moving = true; } else b.pitch = 0;
         // on the line, a bag turns back to its rest the short way round; hovered, it turns to face you (its front
         // square on), following the pointer only slightly
         if (b !== focused() && Math.abs(b.spin) <= 0.0003 && !b.turned) {
-          const aim = hover === b && focus < 0 ? (pointerX - 0.5) * 0.25 : b.rest;
+          const aim = hover === b && focus < 0 && !REDUCED ? (pointerX - 0.5) * 0.25 : b.rest;
           const d = Math.atan2(Math.sin(aim - b.yaw), Math.cos(aim - b.yaw));
           if (Math.abs(d) > 0.002) { b.yaw += d * 0.1; moving = true; }
         }
         // zoomed in, it leans a little towards the pointer
-        const leaning = b === focused() && !(drag && drag.turning);
+        const leaning = b === focused() && !(drag && drag.turning) && !REDUCED;
         const ly = leaning ? (pointerX - 0.5) * 2 * LEAN_Y : 0, lp = leaning ? (pointerY - 0.5) * 2 * LEAN_P : 0;
         if (Math.abs(ly - b.leanY) + Math.abs(lp - b.leanP) > 1e-4) {
           b.leanY += (ly - b.leanY) * 0.08;

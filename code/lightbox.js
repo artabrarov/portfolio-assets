@@ -73,7 +73,7 @@
     /* top left: ← counter →, top right: Close. All look like the site's Primary button: 40px tall, White with a line and
        a soft shadow, dark text */
     .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:${SIZE}px;margin:0;border:0;
-      border-radius:999px;background:${FILL};box-shadow:${EDGE};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color ${HOVER};
+      border-radius:999px;background:${FILL};box-shadow:${EDGE};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms cubic-bezier(.165,.84,.44,1),background-color ${HOVER};
       /* type copied from the page's Framer styles by syncType(); the values after the commas are fallbacks */
       font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,13px);line-height:var(--lb-lh,20px);
       letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,420);font-variation-settings:var(--lb-text-wght,"wght" 420);}
@@ -82,12 +82,12 @@
     .lb-count,.lb-close{display:inline-flex;align-items:center;justify-content:center;}
     .lb-count{padding:0 18px;}
     .lb-close{padding:0 14px;}   /* the site's Button component: 14px sides */
-    .lb-nav{position:fixed;top:${MARGIN}px;left:50%;translate:-50% 0;z-index:10003;display:flex;gap:8px;opacity:0;transition:opacity ${M.controls}ms ease;}
+    .lb-nav{position:fixed;top:${MARGIN}px;left:50%;translate:-50% 0;z-index:10003;display:flex;gap:8px;opacity:0;transition:opacity ${M.controls}ms cubic-bezier(.165,.84,.44,1);}
     /* phones: ← counter → at the bottom, within reach of a thumb (above the home indicator) */
     ${PHONE ? `.lb-nav{top:auto;bottom:calc(${MARGIN}px + env(safe-area-inset-bottom,0px));}` : ''}
     /* top left: the logo of the company the current item belongs to */
     .lb-logo{position:fixed;top:${MARGIN}px;left:${MARGIN}px;z-index:10003;width:${SIZE}px;height:${SIZE}px;overflow:hidden;opacity:0;
-      pointer-events:none;transition:opacity ${M.controls}ms ease;}
+      pointer-events:none;transition:opacity ${M.controls}ms cubic-bezier(.165,.84,.44,1);}
     .lb-logo img{display:block;width:100%;height:100%;object-fit:cover;}
     .lb-logo::after{content:"";position:absolute;inset:0;border-radius:inherit;corner-shape:inherit;box-shadow:var(--lb-logo-line,none);
       pointer-events:none;}
@@ -111,7 +111,7 @@
        View buttons, the logo link over the Hero's avatar) or Tab. Clicks pass through as soon as they start fading out;
        visibility follows once the fade is done, so the fade still shows */
     .lb-close:not(.lb-show),.lb-nav:not(.lb-show),.lb-logo:not(.lb-show){pointer-events:none !important;visibility:hidden;
-      transition:opacity ${M.controls}ms ease,visibility 0s linear ${M.controls}ms;}
+      transition:opacity ${M.controls}ms cubic-bezier(.165,.84,.44,1),visibility 0s linear ${M.controls}ms;}
   `;
   document.head.appendChild(css);
 
@@ -514,7 +514,7 @@
     const time = REDUCED ? 0 : M.open;
     clone.animate([{ ...px(from), borderRadius: radius }, { ...px(to), borderRadius: '12px' }],
       { duration: time, easing: EASE, fill: 'forwards' });
-    backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: REDUCED ? 150 : M.bgIn, easing: 'ease', fill: 'forwards' });
+    backdrop.animate([{ opacity: 0 }, { opacity: 1 }], { duration: REDUCED ? 150 : M.bgIn, easing: EASE, fill: 'forwards' });
     sharpen(el, clone);
     showCount(el);
     showLogo(el);
@@ -769,7 +769,7 @@
     // carries on from there. Opened with the mouse: just let go of focus, so Esc doesn't leave a ring on the image
     if (!closeBtn.classList.contains('lb-quiet') && src.isConnected && src.hasAttribute(KEY)) src.focus({ preventScroll: true });
     else closeBtn.blur();
-    backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: REDUCED ? 150 : M.bgOut, easing: 'ease', fill: 'forwards' });
+    backdrop.animate([{ opacity: 1 }, { opacity: 0 }], { duration: REDUCED ? 150 : M.bgOut, easing: EASE, fill: 'forwards' });
     if (to) clone.animate([{ ...current, borderRadius: '12px' }, { ...px(to), borderRadius: radius }],
       { duration: time, easing: EASE, fill: 'forwards' }).finished.then(done, done);
     else clone.animate([{ opacity: 1, scale: 1 }, { opacity: 0, scale: 0.96 }],
