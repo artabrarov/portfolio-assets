@@ -17,6 +17,7 @@
     Depends on Framer layer names: Header Content, Body, Surface, Media, Image Frame, Image, Video Frame. Renaming one
     turns the animation off for it (harmless). ?intro=off turns it off for the visit, ?intro=on back on.
     Between Home, /lab and /about (the header switch's tabs) only the body reveals; the header stays as it is.
+    /things: picking a group in the filter menu fades the new cards in, a quicker version of the same motion (below).
     Reduced motion: no animation. */
 (() => {
   const asked = new URLSearchParams(location.search).get('intro');
@@ -123,6 +124,34 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
     reveal(all.filter((el) => !isHead(el) && onScreen(el)), T.BODY_START, T.BODY_STEP);
   }
 
+  // Things filter (/things, Nov 16, 2026): picking a group in the filter menu fades the cards now on screen in, a
+  // shorter, gentler cousin of the reveal (a filter gets used again and again, so it mustn't make you wait): each card's
+  // contents rise 8px and clear a 2px blur in 0.25s, 30ms apart. The grid's lines stay put (only what's inside a
+  // Thing animates). Set off by a click on a menu row (a layer named "… Option"), and only if the cards then change,
+  // so picking the group that's already chosen does nothing. Depends on the layer names Grid, Thing and "… Option".
+  const CARD = '[data-framer-name="Grid"] [data-framer-name="Thing"]';
+  const cards = () => [...document.querySelectorAll(CARD)].filter(visible);
+  const sign = () => cards().map((el) => el.textContent).join('|');   // what the cards show, kept or swapped
+  let picked = null;
+  document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('[data-framer-name$=" Option"]')) picked = { at: performance.now(), before: sign() };
+  }, true);
+  const fadeCards = () => {
+    if (!picked) return;
+    if (performance.now() - picked.at > 1500) { picked = null; return; }
+    if (sign() === picked.before) return;   // not changed yet
+    picked = null;
+    cards().map((el) => [el, el.getBoundingClientRect()])
+      .filter(([, r]) => r.top < innerHeight && r.bottom > 0)
+      .sort(([, a], [, b]) => a.top - b.top || a.left - b.left)
+      .forEach(([el], i) => [...el.children].forEach((part) => {
+        part.getAnimations().forEach((a) => a.id === 'rv-card' && a.cancel());
+        part.animate(
+          [{ opacity: 0, translate: '0 8px', filter: 'blur(2px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0px)' }],
+          { id: 'rv-card', duration: 250, delay: Math.min(i, 8) * 30, easing: ease, fill: 'backwards' });
+      }));
+  };
+
   // once an element's reveal has played, retire it: hiding and showing it again (the game hides the intro while you
   // play, Framer re-renders things) would otherwise restart the animation
   document.addEventListener('animationend', (e) => {
@@ -141,6 +170,8 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
     }, { rootMargin: '0px 0px -8% 0px' });
     sync();
     new MutationObserver(sync).observe(document.body, { childList: true, subtree: true });
+    // the Things filter: its own watcher, since the cards can change only their text when Framer reuses them
+    new MutationObserver(fadeCards).observe(document.body, { childList: true, subtree: true, characterData: true });
   };
 
   // start once the text can draw in its real font (nothing reflows mid-animation), but never wait long
