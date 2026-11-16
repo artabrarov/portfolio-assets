@@ -735,8 +735,9 @@
     };
     function shrink(el, delay) {
       const h = el.offsetHeight, g = gapOf(el);
-      el.style.overflow = 'hidden';
-      return own(el.animate([{ height: h + 'px', marginTop: '0px' }, { height: '0px', marginTop: -g + 'px' }],
+      // clip only while the height closes, not during the fade before it (delay): clipping from the click cut off the
+      // Work · Lab · About switch's ring, its top and bottom lines, for the whole fade (Nov 16, 2026)
+      return own(el.animate([{ height: h + 'px', marginTop: '0px', overflow: 'hidden' }, { height: '0px', marginTop: -g + 'px', overflow: 'hidden' }],
         { duration: SWAP, delay, easing: EASE, fill: 'forwards' })).finished;
     }
     function grow(el, delay) {
