@@ -35,18 +35,18 @@
   }, window.__lbMotion || {});
   const EASE = M.ease;
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const OVERLAY = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fff)';   // behind open media: the White colour style (the cards'), no effects
+  const OVERLAY = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,rgb(255,255,255))';   // behind open media: White 10, no effects
   const MAX_ZOOM = 4;                      // a pinch zooms open media up to 4×
-  const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,#1f1f1f)';   // the site's colour styles
-  // the buttons: the site's Primary button (White, a 0.5px ring in the Stroke colour style, a soft shadow)
-  const FILL = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)';
+  const DARK = 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,rgb(35,29,21))';   // Black
+  // the buttons: the site's Primary button (White 10, a 0.5px ring in Stroke Alpha, the Shadow style)
+  const FILL = 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,rgb(255,255,255))';
   // a disabled button keeps the line but loses the shadow. The line and shadow are copied from the page's button when
   // the lightbox opens (--site-btn-*); these are the fallbacks
-  const LINE = 'inset 0 0 0 var(--site-btn-line-width,0.5px) var(--site-btn-line,var(--token-f682623a-bc5f-4262-bc82-733e13a97122,#e0ddd4))';
-  const EDGE = 'inset 0 0 0 var(--site-btn-line-width,0.5px) var(--site-btn-line,var(--token-f682623a-bc5f-4262-bc82-733e13a97122,#e0ddd4)), var(--site-btn-shadow,0 1px 1px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)), 0 2px 4px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))';
+  const LINE = 'inset 0 0 0 var(--site-btn-line-width,0.5px) var(--site-btn-line,var(--token-f682623a-bc5f-4262-bc82-733e13a97122,rgba(0,0,0,.14)))';
+  const EDGE = 'inset 0 0 0 var(--site-btn-line-width,0.5px) var(--site-btn-line,var(--token-f682623a-bc5f-4262-bc82-733e13a97122,rgba(0,0,0,.14))), var(--site-btn-shadow,0 1px 1px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.06)), 0 2px 4px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.06)))';
   const TYPE = '"Inter Variable","Inter",sans-serif';   // fallback before the page's styles are read
-  const QUIET = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the counter isn't a button: the Background colour style, flat
-  const FILL_HOVER = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)';   // the buttons' hover colour: the Background colour style
+  const QUIET = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,rgb(246,245,242))';   // the counter isn't a button: Light Grey 20, flat
+  const FILL_HOVER = 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,rgb(246,245,242))';   // the buttons' hover colour: Light Grey 20
   const HOVER = '.15s cubic-bezier(.4,0,.2,1)';   // the buttons' hover, as the site's Button components: quick, starting fast (was .2s ease)
 
   const css = document.createElement('style');
@@ -75,8 +75,8 @@
     .lb-count,.lb-close,.lb-arrow{box-sizing:border-box;height:${SIZE}px;margin:0;border:0;
       border-radius:999px;background:${FILL};box-shadow:${EDGE};color:${DARK};white-space:nowrap;transition:opacity ${M.controls}ms ease,background-color ${HOVER};
       /* type copied from the page's Framer styles by syncType(); the values after the commas are fallbacks */
-      font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,14px);line-height:var(--lb-lh,22px);
-      letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,425);font-variation-settings:var(--lb-text-wght,"wght" 425);}
+      font-family:var(--lb-text-family,${TYPE});font-size:var(--lb-size,13px);line-height:var(--lb-lh,20px);
+      letter-spacing:var(--lb-ls,normal);font-weight:var(--lb-text-weight,420);font-variation-settings:var(--lb-text-wght,"wght" 420);}
     /* the label is centred in the pill, as in the site's Button component, rather than held by top and bottom padding:
        the copied line height (22px) plus 8px padding overflowed the pill and sat the text 1px low */
     .lb-count,.lb-close{display:inline-flex;align-items:center;justify-content:center;}
@@ -102,7 +102,7 @@
     .lb-arrow svg{display:block;width:16px;height:16px;}   /* the site's chevron-left / chevron-right */
     .lb-arrow:disabled{opacity:.4;cursor:default;box-shadow:${LINE};}
     .lb-close{position:fixed;top:${MARGIN}px;right:${MARGIN}px;z-index:10003;opacity:0;cursor:pointer;font-family:var(--lb-btn-family,${TYPE});
-      font-weight:var(--lb-btn-weight,525);font-variation-settings:var(--lb-btn-wght,"wght" 525);}   /* button label style */
+      font-weight:var(--lb-btn-weight,500);font-variation-settings:var(--lb-btn-wght,"wght" 500);}   /* button label style */
     .lb-close:hover,.lb-arrow:hover:not(:disabled){background:${FILL_HOVER};}
     .lb-close:focus-visible,.lb-arrow:focus-visible{outline:2px solid ${DARK};outline-offset:2px;}
     .lb-quiet:focus-visible,a.lb-logo.lb-quiet:focus-visible{outline:none;}   /* opened with the mouse: no rings until Tab is pressed */

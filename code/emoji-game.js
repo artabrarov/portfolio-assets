@@ -90,17 +90,17 @@
     // Colours follow the Framer colour styles (their --token variables); text follows the Framer text styles,
     // copied into --fx-* variables by syncFramerStyles() below. The values after the commas are fallbacks.
     const C = {
-      dark: 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,rgb(31,31,31))',
-      grey: 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2,rgb(104,104,112))',
-      stroke: 'var(--token-c0c08a01-85af-48e1-a222-d1e74edf9e8e,#E3E3E3)',
-      fill: 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)',   // the Background colour style
-      // the site's Primary button (About, View): White, the page background on hover, a 0.5px ring in the Stroke colour
-      // style and a soft shadow
-      button: 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,#fffffd)',
-      buttonHover: 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,#f5f4f0)',
+      dark: 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,rgb(35,29,21))',   // Black
+      grey: 'var(--token-615fb88e-2b97-4a94-a05e-5dc74036ced2,rgb(86,75,60))',   // Dark Grey 20
+      stroke: 'var(--token-f780d393-93b2-4b91-a1c8-3b63f4d21069,rgb(224,221,212))',   // Grey 20, the underline colour (the old Stroke style is gone)
+      fill: 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,rgb(246,245,242))',   // Light Grey 20
+      // the site's Primary button (View): White 10, Light Grey 20 on hover, a 0.5px ring in Stroke Alpha and the Shadow
+      // style
+      button: 'var(--token-772df573-5188-456c-a0aa-cb8aab4df26b,rgb(255,255,255))',
+      buttonHover: 'var(--token-152a03bd-74bc-479f-a914-107adfcad8e6,rgb(246,245,242))',
       // the line and shadow are copied from the page's button (--site-btn-*); these are the fallbacks
-      buttonLine: 'inset 0 0 0 var(--site-btn-line-width,0.5px) var(--site-btn-line,var(--token-f682623a-bc5f-4262-bc82-733e13a97122,#e0ddd4))',   // a disabled button: the line without the shadow
-      buttonEdge: 'inset 0 0 0 var(--site-btn-line-width,0.5px) var(--site-btn-line,var(--token-f682623a-bc5f-4262-bc82-733e13a97122,#e0ddd4)), var(--site-btn-shadow,0 1px 1px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)), 0 2px 4px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.04)))',
+      buttonLine: 'inset 0 0 0 var(--site-btn-line-width,0.5px) var(--site-btn-line,var(--token-f682623a-bc5f-4262-bc82-733e13a97122,rgba(0,0,0,.14)))',   // a disabled button: the line without the shadow
+      buttonEdge: 'inset 0 0 0 var(--site-btn-line-width,0.5px) var(--site-btn-line,var(--token-f682623a-bc5f-4262-bc82-733e13a97122,rgba(0,0,0,.14))), var(--site-btn-shadow,0 1px 1px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.06)), 0 2px 4px var(--token-6f68cdb7-2c9e-42a8-b3f6-6e9adb0bc672,rgba(114,101,85,.06)))',
     };
     const FAMILY = '"Inter Variable","Inter",sans-serif';
     const font = (role, size, lh, wght) => `font-family:var(--fx-${role}-family,${FAMILY});font-size:var(--fx-${role}-size,${size});` +
@@ -123,11 +123,11 @@
         pointer-events:auto;cursor:grab;user-select:none;touch-action:none;will-change:transform;}
       .fx-body.fx-held{cursor:grabbing;}
       .fx-body.fx-new{pointer-events:none;}
-      .fx-rarity{position:absolute;left:calc(100% + 12px);top:calc(50% - var(--fx-small-lh,22px) / 2);${font('small', '14px', '22px', 425)}
+      .fx-rarity{position:absolute;left:calc(100% + 12px);top:calc(50% - var(--fx-small-lh,23px) / 2);${font('small', '15px', '23px', 420)}
         color:${C.grey};white-space:nowrap;pointer-events:none;opacity:0;translate:-4px 0;
         transition:opacity .3s ease,translate .3s ease;}
       .fx-rarity.fx-show{opacity:1;translate:0 0;}
-      .fx-rarity[data-tier]{color:transparent;-webkit-background-clip:text;background-clip:text;font-weight:var(--fx-strong-weight,525);font-variation-settings:var(--fx-strong-wght,"wght" 525);
+      .fx-rarity[data-tier]{color:transparent;-webkit-background-clip:text;background-clip:text;font-weight:var(--fx-strong-weight,500);font-variation-settings:var(--fx-strong-wght,"wght" 500);
         background-size:250% 100%;animation:fx-wave 1.6s linear infinite;}
       .fx-rarity[data-tier="1"]{background-image:linear-gradient(100deg,#2f9e5b 0%,#2f9e5b 35%,#8ee6a9 50%,#2f9e5b 65%,#2f9e5b 100%);}
       .fx-rarity[data-tier="2"]{background-image:linear-gradient(100deg,#2f6fe0 0%,#2f6fe0 35%,#9cc3ff 50%,#2f6fe0 65%,#2f6fe0 100%);}
@@ -143,7 +143,7 @@
       .fx-score{position:absolute;right:0;top:0;height:40px;box-sizing:border-box;display:inline-flex;align-items:center;
         padding:0 14px;   /* the price buttons' inset, so the balance's text ends where their prices do (a grey pill, tried
                              Nov 9, 2026, read as one more button) */
-        ${font('body', '16px', '26px', 425)}
+        ${font('body', '15px', '23px', 420)}
         color:${C.dark};font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none;
         /* enters and leaves like the shop's rows, a fade and an 8px rise (Nov 10, 2026: it used to pop in from 60% with
            a bounce, the game's style for moments of play; the balance is steady interface beside the shop) */
@@ -153,7 +153,7 @@
       .fx-score .fx-pts{margin-left:4px;}
       .fx-score .fx-num{display:inline-block;transform-origin:100% 60%;}
       .fx-back{all:unset;align-self:flex-start;cursor:pointer;color:var(--fx-link-color,${C.grey});
-        ${font('link', '14px', '22px', 425)}
+        ${font('link', '15px', '23px', 420)}
         text-decoration:underline;text-decoration-color:var(--fx-link-deco,transparent);text-underline-offset:var(--fx-link-offset,3px);transition:color .2s,text-decoration-color .2s,text-underline-offset .2s;}
       .fx-back:focus-visible{border-radius:4px;}   /* the site's focus ring (set in lightbox.js) rounds a little round the text */
       .fx-back:hover{color:var(--fx-link-hover-color,${C.dark});text-decoration-color:var(--fx-link-hover-deco,${C.stroke});text-underline-offset:var(--fx-link-hover-offset,var(--fx-link-offset,3px));}
@@ -164,23 +164,23 @@
       .fx-play > :not(.fx-av):not(.fx-shop):not(.fx-score):not(:has(.fx-av)){display:none !important;}
       .fx-wide [data-framer-name="Header Content"] > :has(.fx-av){grid-column:span 3 !important;}   /* the game gets three columns (see openShop) */
       .fx-shop{display:flex;flex-direction:column;gap:10px;align-self:stretch;width:100%;max-width:var(--fx-play-max,360px);box-sizing:border-box;
-        ${font('small', '14px', '22px', 425)}color:${C.dark};}
+        ${font('small', '15px', '23px', 420)}color:${C.dark};}
       .fx-up{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:8px;
         transition:padding-bottom .4s cubic-bezier(.45,0,.2,1);}
       .fx-up.fx-has-bar{padding-bottom:18px;}   /* room for the progress line, so the gap to the next row stays the same */
-      .fx-up-name{${font('title', '15px', '23px', 550)}}   /* Auto-drop, Luck: the site's Title style, read from the name in the header */
+      .fx-up-name{${font('title', '15px', '23px', 500)}}   /* Auto-drop, Luck: the site's Title style, read from the name in the header */
       .fx-up-lvl{color:${C.grey};}
-      .fx-up-info{color:var(--token-TcxaN9CXT,rgb(118,105,88));font-size:var(--fx-small-size,14px);line-height:var(--fx-small-lh,22px);font-variant-numeric:tabular-nums;}   /* Dark Grey 10, as the Back and Mute links (Dark Grey 20 until Nov 9, 2026) */
+      .fx-up-info{color:var(--token-TcxaN9CXT,rgb(118,105,88));font-size:var(--fx-small-size,15px);line-height:var(--fx-small-lh,23px);font-variant-numeric:tabular-nums;}   /* Dark Grey 10, as the Back and Mute links (Dark Grey 20 until Nov 9, 2026) */
       /* the shop's buttons look like the site's Primary button: fill, line, shadow, hover, label style (button), 14px sides */
       .fx-buy{all:unset;box-sizing:border-box;margin-left:auto;flex:none;height:40px;padding:0 14px;border-radius:999px;background:${C.button};box-shadow:${C.buttonEdge};
-        ${font('strong', '14px', '40px', 525)}line-height:40px;color:${C.dark};
+        ${font('strong', '13px', '40px', 500)}line-height:40px;color:${C.dark};
         white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums;transition:background-color .2s,opacity .2s;}
       .fx-buy:hover{background:${C.buttonHover};}
       .fx-buy.fx-cant{opacity:.45;cursor:default;box-shadow:${C.buttonLine};}
       .fx-buy.fx-max{cursor:default;opacity:.45;box-shadow:${C.buttonLine};}
       .fx-buy.fx-max:hover{background:${C.button};}
       .fx-buy.fx-cant:hover{background:${C.button};}
-      .fx-up-bar{position:absolute;left:0;right:0;bottom:8px;height:4px;border-radius:2px;background:rgba(31,31,31,.12);
+      .fx-up-bar{position:absolute;left:0;right:0;bottom:8px;height:4px;border-radius:2px;background:var(--token-f780d393-93b2-4b91-a1c8-3b63f4d21069,rgb(224,221,212));
         clip-path:inset(0 100% 0 0 round 2px);}   /* grows by revealing, so both ends stay round at every length */
       .fx-float{position:absolute;right:0;top:0;font-size:14px;line-height:20px;
         font-family:var(--fx-strong-family,${FAMILY});font-weight:var(--fx-strong-weight,700);font-variation-settings:var(--fx-strong-wght,"wght" 700);
@@ -214,11 +214,15 @@
       const pageLink = [...document.querySelectorAll('footer a, [data-framer-name="Footer Content"] a')].find(a => a.offsetWidth > 0 && !a.closest('[class^="fx-"]'));
       const ownLink = [...hero.querySelectorAll('p a')].find(a => !a.closest('[class^="fx-"]') && a.closest('p').textContent.trim() === a.textContent.trim());
       const link = pageLink || ownLink || footerLink;
-      copy('body', [...hero.querySelectorAll('p')].find(p => !p.closest(':is([data-framer-name="Footer"],[data-framer-name="Links"]),[data-framer-name="Button"],[class^="fx-"]')));
-      copy('small', footerLink);   // the shop's small text keeps the footer links' size
+      // Since Nov 10, 2026 the header has no Links or Button, so these read the bio (Description), the page's footer
+      // links and any visible Button label (View), falling back to the old places
+      const own = sel => [...hero.querySelectorAll(sel)].find(p => !p.closest('[class^="fx-"]'));
+      const label = [...document.querySelectorAll('[data-framer-name="Button"] p')].find(p => p.offsetWidth > 0 && !p.closest('[class^="fx-"]'));
+      copy('body', own('[data-framer-name="Description"] p') || [...hero.querySelectorAll('p')].find(p => !p.closest(':is([data-framer-name="Footer"],[data-framer-name="Links"]),[data-framer-name="Button"],[class^="fx-"]')));
+      copy('small', footerLink || pageLink);   // the shop's small text: the footer links' size (Paragraph)
       copy('link', link);          // Back and Mute: the link row's own text style
-      copy('strong', hero.querySelector('[data-framer-name="Button"] p'));
-      copy('title', [...hero.querySelectorAll('p')].find(p => !p.closest('[class^="fx-"]')));   // the name, in the Title style
+      copy('strong', hero.querySelector('[data-framer-name="Button"] p') || label);   // the Button style
+      copy('title', own('[data-framer-name="Title"] p') || own('p'));   // the name, in the Title style
       // the buttons' line and shadow, from the page's Primary button (not its fill, which may be mid-hover)
       const primary = [...document.querySelectorAll('[data-framer-name="Primary"]')].find(e => e.offsetWidth > 0);
       if (primary) {
@@ -471,7 +475,7 @@
         background-size:250% 100%;animation:fx-wave 1.4s linear infinite;}
       .fx-show-name[data-tier="3"]{background-image:linear-gradient(100deg,#8a3ee0 0%,#8a3ee0 30%,#e08bff 45%,#6a8bff 55%,#8a3ee0 70%,#8a3ee0 100%);}
       .fx-show-name[data-tier="4"]{background-image:linear-gradient(100deg,#b8860b 0%,#b8860b 30%,#ffe27a 45%,#fff6cf 50%,#ffe27a 55%,#b8860b 70%,#b8860b 100%);}
-      .fx-show-odds{${font('small', '14px', '1', 425)}line-height:1;color:${C.grey};}
+      .fx-show-odds{${font('small', '15px', '1', 420)}line-height:1;color:${C.grey};}
       .fx-rays{position:absolute;width:520px;height:520px;border-radius:50%;
         background:repeating-conic-gradient(from 0deg,rgba(var(--c),.22) 0deg 7deg,transparent 7deg 20deg);
         -webkit-mask:radial-gradient(circle,#000 20%,transparent 68%);mask:radial-gradient(circle,#000 20%,transparent 68%);
@@ -878,7 +882,7 @@
       const f = document.createElement('span');
       f.className = 'fx-float';
       f.textContent = '−' + short(cost);
-      f.style.color = '#686870';
+      f.style.color = C.grey;
       scoreEl.appendChild(f);
       f.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: 'translate(0,22px)', opacity: 0 }],
         { duration: 800, easing: 'cubic-bezier(.2,.7,.3,1)' }).finished.then(() => f.remove());
