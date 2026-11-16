@@ -240,10 +240,13 @@
         const s = getComputedStyle(link), v = p => s.getPropertyValue(p).trim();
         const deco = v('--framer-link-text-decoration'), hoverDeco = v('--framer-link-hover-text-decoration') || deco;
         const decoColor = v('--framer-link-text-decoration-color') || s.color;
-        root.setProperty('--fx-link-color', s.color);
-        root.setProperty('--fx-link-hover-color', v('--framer-link-hover-text-color') || s.color);
-        root.setProperty('--fx-link-deco', deco === 'underline' ? decoColor : 'transparent');
-        root.setProperty('--fx-link-hover-deco', hoverDeco === 'underline' ? v('--framer-link-hover-text-decoration-color') || decoColor : 'transparent');
+        // Colours are fixed, not copied (Nov 16, 2026): the Footer component's links turned Black with an underline only
+        // on hover (Nov 15), and copying them made Back and Mute read as plain text. They stay Dark Grey 10 with a
+        // Grey 20 underline, Black on hover; only the font and the underline offsets still come from the page's link.
+        root.setProperty('--fx-link-color', 'var(--token-TcxaN9CXT,rgb(118,105,88))');
+        root.setProperty('--fx-link-hover-color', 'var(--token-5bd8d564-6722-4f00-b75b-168ab9b708da,rgb(35,29,21))');
+        root.setProperty('--fx-link-deco', 'var(--token-f780d393-93b2-4b91-a1c8-3b63f4d21069,rgb(224,221,212))');
+        root.setProperty('--fx-link-hover-deco', 'var(--token-f780d393-93b2-4b91-a1c8-3b63f4d21069,rgb(224,221,212))');
         root.setProperty('--fx-link-offset', v('--framer-link-text-decoration-offset') || '3px');
         root.setProperty('--fx-link-hover-offset', v('--framer-link-hover-text-decoration-offset') || v('--framer-link-text-decoration-offset') || '3px');
       }
