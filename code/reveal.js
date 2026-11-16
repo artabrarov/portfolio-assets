@@ -126,7 +126,7 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
 
   // Things filter (/things, Nov 16, 2026): picking a group in the filter menu fades the cards now on screen in, a
   // shorter, gentler cousin of the reveal (a filter gets used again and again, so it mustn't make you wait): each card's
-  // contents rise 8px and clear a 2px blur in 0.25s, 30ms apart. The grid's lines stay put (only what's inside a
+  // contents rise 8px and clear a 2px blur in 0.25s, 30ms apart, once their photos are drawn. The grid's lines stay put (only what's inside a
   // Thing animates). Set off by a click on a menu row (a layer named "… Option"), and only if the cards then change,
   // so picking the group that's already chosen does nothing. Depends on the layer names Grid, Thing and "… Option".
   const CARD = '[data-framer-name="Grid"] [data-framer-name="Thing"]';
@@ -141,15 +141,23 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
     if (performance.now() - picked.at > 1500) { picked = null; return; }
     if (sign() === picked.before) return;   // not changed yet
     picked = null;
-    cards().map((el) => [el, el.getBoundingClientRect()])
+    const shown = cards().map((el) => [el, el.getBoundingClientRect()])
       .filter(([, r]) => r.top < innerHeight && r.bottom > 0)
-      .sort(([, a], [, b]) => a.top - b.top || a.left - b.left)
-      .forEach(([el], i) => [...el.children].forEach((part) => {
-        part.getAnimations().forEach((a) => a.id === 'rv-card' && a.cancel());
-        part.animate(
-          [{ opacity: 0, translate: '0 8px', filter: 'blur(2px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0px)' }],
-          { id: 'rv-card', duration: 250, delay: Math.min(i, 8) * 30, easing: ease, fill: 'backwards' });
-      }));
+      .sort(([, a], [, b]) => a.top - b.top || a.left - b.left).map(([el]) => el);
+    // Framer makes new <img> elements for the new cards, which have to load and decode again (even from the cache,
+    // and sometimes at a size not loaded yet). Fading in at once showed a card with no photo that then popped in, a
+    // blink. So the cards wait, hidden, until their photos are drawn (0.4s at most), then fade in whole (Nov 16, 2026)
+    const anims = [];
+    shown.forEach((el, i) => [...el.children].forEach((part) => {
+      part.getAnimations().forEach((a) => a.id === 'rv-card' && a.cancel());
+      const a = part.animate(
+        [{ opacity: 0, translate: '0 8px', filter: 'blur(2px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0px)' }],
+        { id: 'rv-card', duration: 250, delay: Math.min(i, 8) * 30, easing: ease, fill: 'backwards' });
+      a.pause();
+      anims.push(a);
+    }));
+    const drawn = Promise.all(shown.flatMap((el) => [...el.querySelectorAll('img')]).map((im) => im.decode().catch(() => {})));
+    Promise.race([drawn, new Promise((r) => setTimeout(r, 400))]).then(() => anims.forEach((a) => a.playState === 'paused' && a.play()));
   };
 
   // once an element's reveal has played, retire it: hiding and showing it again (the game hides the intro while you
