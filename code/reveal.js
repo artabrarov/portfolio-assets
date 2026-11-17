@@ -77,7 +77,11 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
   // page's start times on it, so the new header's items came in already 'done' (Home → Apron after a hard refresh:
   // the second paragraph didn't animate). So a page opens when its own Header Content has arrived (a new element),
   // or 1.5s after the address changed if the element is kept. (Nov 11, 2026)
-  let openedHC = null, waiting = null;
+  // The 1.5s fallback can fire while the old page is still on screen (a first visit's download can take 2s or more).
+  // When the new page's Header Content then replaces the old one, the page opens again with it: otherwise its items
+  // took start times left by the old page's elements and the late ones came in already 'done' (Home → Apron after a
+  // hard refresh: the right arrow didn't animate). `fallback` remembers such an opening for a few seconds. (Nov 17, 2026)
+  let openedHC = null, waiting = null, fallback = null;
   const headerContent = () => { const all = [...document.querySelectorAll('[data-framer-name="Header Content"]')]; return all.find(visible) || all[0] || null; };
   // Home, /lab and /about are the tabs of the header's Work · Lab · About switch and share one header, so moving
   // between them only reveals the body: the header stays put, as a tab switch should (Nov 10, 2026)
@@ -87,8 +91,17 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
   const sync = () => {
     if (opened !== location.pathname) {
       const hc = headerContent();
-      if (hc && (opened === null || hc !== openedHC || (waiting && waiting.path === location.pathname && performance.now() - waiting.since > 1500))) open(hc);
+      if (hc && (opened === null || hc !== openedHC)) open(hc);
+      else if (hc && waiting && waiting.path === location.pathname && performance.now() - waiting.since > 1500) {
+        const from = opened;
+        open(hc);
+        fallback = { path: opened, from, since: performance.now() };
+      }
       else if (hc && (!waiting || waiting.path !== location.pathname)) { waiting = { path: location.pathname, since: performance.now() }; setTimeout(sync, 1600); }
+    } else if (fallback) {
+      const hc = headerContent();
+      if (fallback.path !== location.pathname || performance.now() - fallback.since > 5000) fallback = null;
+      else if (hc && hc !== openedHC && !openedHC.isConnected) { const from = fallback.from; fallback = null; open(hc, from); }
     }
     const now = performance.now();
     list().forEach((el, i) => {
@@ -110,9 +123,9 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
       .forEach((el, i) => { const k = key(all.indexOf(el)); if (!at.has(k)) at.set(k, now + (wait + i * step) * 1000); });
   };
   // a page opens (first load, or Framer moved to another page): the header in sequence, then what's on screen
-  function open(hc) {
+  function open(hc, prev) {
     openedHC = hc; waiting = null;
-    const from = opened;
+    const from = prev !== undefined ? prev : opened;
     opened = location.pathname;
     quietHead = from !== null && TAB.test(from) && TAB.test(opened);
     for (const k of [...at.keys()]) if (k.startsWith(opened + '#')) at.delete(k);   // a page seen before plays again
