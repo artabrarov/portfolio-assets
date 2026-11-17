@@ -16,7 +16,8 @@
     left hidden. If this file fails to load, nothing is hidden at all.
     Depends on Framer layer names: Header Content, Body, Surface, Media, Image Frame, Image, Video Frame. Renaming one
     turns the animation off for it (harmless). ?intro=off turns it off for the visit, ?intro=on back on.
-    Between Home, /lab and /about (the header switch's tabs) only the body reveals; the header stays as it is.
+    Between Home, /lab and /about (the header switch's tabs), and between /sites and /sites/grid (List · Grid), only
+    the body reveals; the header stays as it is.
     /things: picking a group in the filter menu fades the new cards in, a quicker version of the same motion (below).
     Reduced motion: no animation. */
 (() => {
@@ -85,7 +86,9 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
   const headerContent = () => { const all = [...document.querySelectorAll('[data-framer-name="Header Content"]')]; return all.find(visible) || all[0] || null; };
   // Home, /lab and /about are the tabs of the header's Work · Lab · About switch and share one header, so moving
   // between them only reveals the body: the header stays put, as a tab switch should (Nov 10, 2026)
-  const TAB = /^\/(lab|about)?\/?$/;
+  // /sites and /sites/grid are the List · Grid switch's two tabs, the same way (Nov 17, 2026)
+  const TABS = [/^\/(lab|about)?\/?$/, /^\/sites(\/grid)?\/?$/];
+  const sameTabs = (a, b) => TABS.some((t) => t.test(a) && t.test(b));
 
   // mark each element whose spot has a start time, with the delay that makes it play from the right moment
   const sync = () => {
@@ -127,7 +130,7 @@ html.rv :is(${BODY})[data-rv=""] { animation: rv-body ${s(T.BODY_DUR)} ${ease} v
     openedHC = hc; waiting = null;
     const from = prev !== undefined ? prev : opened;
     opened = location.pathname;
-    quietHead = from !== null && TAB.test(from) && TAB.test(opened);
+    quietHead = from !== null && sameTabs(from, opened);
     for (const k of [...at.keys()]) if (k.startsWith(opened + '#')) at.delete(k);   // a page seen before plays again
     list().forEach((el) => el.removeAttribute('data-rv'));
     const all = list().filter(visible);
