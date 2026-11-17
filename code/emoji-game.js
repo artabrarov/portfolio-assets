@@ -548,8 +548,9 @@
         { scale: 0.6, opacity: 0, translate: '0 -30px' },
       ], { duration: hold, easing: 'cubic-bezier(.3,1.3,.5,1)' }).finished.then(() => wrap.remove());
       const rays = wrap.querySelector('.fx-rays');
-      if (rays) rays.animate([{ opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, offset: o(0.25) }, { opacity: 1, offset: h(0.8) }, { opacity: 0, scale: 1.2 }],
-        { duration: hold, easing: 'ease-out' });
+      // the rays leave with the card: same moment, same curve (they used to start earlier on ease-out and outlast it)
+      if (rays) rays.animate([{ opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, offset: o(0.25) }, { opacity: 1, offset: h(0.82) }, { opacity: 0, scale: 1.2 }],
+        { duration: hold, easing: 'cubic-bezier(.3,1.3,.5,1)' });
     }
 
     let audio = null;
@@ -801,9 +802,13 @@
       saveNow();
       scoreEl.classList.remove('fx-show');
       if (held) release();
+      // the pile is drawn back into the avatar it came from, wherever the layout puts it (it used to shrink with the CSS
+      // `scale`, which also scales the translate in `transform`, so everything slid to the top-left corner, Nov 17, 2026)
+      const home = visibleAvatar().getBoundingClientRect(), hx = home.left + home.width / 2, hy = home.top + home.height / 2;
       for (const b of bodies.splice(0)) {
-        b.el.animate([{ opacity: 1, scale: 1 }, { opacity: 0, scale: 0.4 }],
-          { duration: 350, delay: Math.random() * 250, easing: 'ease-in', fill: 'forwards' }).finished.then(() => b.el.remove());
+        const to = `translate(${(hx - b.d / 2).toFixed(1)}px, ${(hy - b.d / 2).toFixed(1)}px) rotate(${(b.a + 180).toFixed(1)}deg) scale(0.2)`;
+        b.el.animate([{ transform: b.tf, opacity: 1 }, { opacity: 1, offset: 0.75 }, { transform: to, opacity: 0 }],
+          { duration: 450, delay: Math.random() * 250, easing: 'cubic-bezier(.5,0,.75,0)', fill: 'forwards' }).finished.then(() => b.el.remove());
       }
       world.querySelectorAll('.fx-body').forEach(el => el.isConnected && !el.getAnimations().length && el.remove());   // any stragglers
       avatarEl.classList.remove('fx-av-on');
